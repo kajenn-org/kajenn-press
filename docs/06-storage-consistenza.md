@@ -1,8 +1,10 @@
 # 06 · Storage, versioning e consistenza
 
 Stato: gestione iniziale su filesystem e Genro Storage acquisita; Asqueel è un
-futuro backend del catalogo. I protocolli sotto sono proposti, da implementare
-e qualificare. Conservazione, backup e parametri operativi sono rinviati.
+futuro backend del catalogo. La persistenza locale della fase 1 è implementata e
+verificata nei limiti descritti nella sezione finale. Le sezioni progettuali più
+ampie includono ancora funzioni future. Conservazione, backup e parametri
+operativi sono rinviati.
 
 ## Due responsabilità di persistenza
 
@@ -264,3 +266,56 @@ attivazione e revoca. Le prove S3 valgono per il profilo S3; quelle sui file
 locali per il backend iniziale. Il futuro backend Asqueel richiederà gli stessi
 controlli semantici e prove di migrazione. Sono prove future, non test eseguiti
 in questa sessione.
+
+
+## Phase 1 implementation evidence — 2026-10-21
+
+The local implementation now lives in `src/kajenn_public_site/catalog/` and
+`objects.py`. Earlier architectural sections describe the wider target; jobs,
+release activation, event delivery, retention, S3 and Asqueel are still future work.
+
+The private root contains `owner.lock`, `current.json`, `manifests/`, `intents/`,
+`staging/` and `payloads/`. JSON uses schema version 1, deterministic UTF-8 encoding
+and SHA-256 over stored bytes. Catalog references identify a manifest by generated
+name, generation and hash. Record and revision IDs are independently generated;
+each record has its own generation. Historical manifests and all revisions remain
+reachable. There is no automatic pruning.
+
+A process holds `flock` for its entire coordinator lifetime; an `RLock` serializes
+threads. Authorization and expected-generation checks precede preparation under
+that lock. Authorization may read snapshots but cannot recursively mutate or
+close the coordinator. Receipts are scoped by authenticated principal, command
+scope and idempotency key; different input under the same key conflicts.
+
+The coordinator writes a durable intent, then immutable payloads through public
+`StorageNode.open('xb')`, flushes the returned streams, checks their digest, and
+synchronizes the explicitly configured payload directory. It writes a complete
+catalog manifest containing heads, revisions, receipt, audit and event identities.
+Only replacement of `current.json` makes these changes visible. Catalog metadata
+uses same-filesystem temporary files and `os.replace`, followed by directory sync;
+Storage `move_to` is never a commit primitive. Payload bytes never use private
+backend attributes or direct filesystem reads/writes.
+
+Startup qualifies exclusive creation, public stream `fileno`/flush/fsync,
+F_FULLFSYNC on macOS, directory synchronization and catalog replacement. Missing
+required primitives reject the profile. Opening an existing catalog checks hashes,
+schemas, exact revision associations and ancestry; corruption is an error rather
+than an implicit rollback. An uncertain commit poisons further writes until the
+coordinator is reopened. Recovery distinguishes committed intents from uncommitted
+preparations and missing/incomplete payloads, without deleting or activating them.
+
+Qualification uses real temporary directories and process termination after the
+intent, during a payload, after payload completion, after the manifest, before
+head replacement, immediately after replacement and after the final sync. Old or
+new complete state is observed after restart; idempotent replay creates no duplicate
+receipt/revision/audit/event. Tests also cover stale multi-record changesets, scoped
+authorization, concurrent threads, owner death, corruption and symlink/traversal
+rejection. This verifies process-crash behavior on the tested local platform, not
+arbitrary power-loss/hardware-cache behavior or network filesystems.
+
+The runnable example is `python3 examples/persistence.py /tmp/kajenn-public-site-demo`
+after installing the project in a virtual environment. Run it twice: generation 2
+and the same stable IDs survive close/reopen and replay. Backend read APIs remain
+trusted internal operations; Phase 2 supplies authenticated site/library grants
+for all external consumers. The JSON snapshot implementation is intentionally
+unoptimized; large-history scalability remains a limitation to measure.

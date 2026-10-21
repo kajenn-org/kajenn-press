@@ -1,7 +1,8 @@
 # 04 · Catalogo delle funzioni esposte
 
-Stato: proposta successiva al [modello](02-dominio.md). I nomi sono etichette
-concettuali da discutere, non endpoint, tool MCP o metodi già approvati.
+Stato: il catalogo progettuale segue il [modello](02-dominio.md). Le tabelle
+iniziali descrivono il prodotto completo; la sezione finale “Phase 2 implemented
+API” distingue i 18 endpoint/tool effettivamente implementati dalle funzioni future.
 
 ## Contratto comune
 
@@ -211,3 +212,92 @@ polling e MCP una funzione di stato. Gli aggiornamenti push sono un'ottimizzazio
 non l'unico modo di conoscere l'esito. Le capabilities del framework non
 autorizzano automaticamente tutte le operazioni elencate: esposizione REST/MCP
 e policy sono selezionate esplicitamente.
+
+
+## Phase 2 implemented API
+
+The published Kajenn 0.5.0 wheel provides the qualified host without Gramlot.
+`PublicSiteApplication` exposes the same `EditorialService` through authenticated
+POST routes at `/<operation>` and MCP `tools/call` at `/mcp`. OpenAPI discovery is
+`GET /_meta/schema_json`; MCP discovery is `tools/list`. The request principal is
+Kajenn's authenticated avatar. An `editor` tag admits these routes; domain grants
+still decide each operation. Request fields cannot assign identities or grants.
+
+| Operation | Main input | Result |
+|---|---|---|
+| `capabilities` | none | Supported operations, formats, template/block shape, permissions and limits |
+| `site_create` | key, name, languages, review_required=false | Stable site ID and configuration revision |
+| `sites_list` | none | Sites readable by the authenticated identity |
+| `site_configure` | site_id, expected_generation, key, name, languages, review_required | New exact site configuration; removing a language with variants conflicts |
+| `records_list` | scope, optional kind | Readable records in an explicit library/site scope |
+| `content_create` | site_id, key, title | Language-independent content identity |
+| `variant_create` | content_id, language, template_revision, key, blocks, optional translated_from | One shared draft for that content/language; independent identity/generation |
+| `draft_save` | variant_id, expected_generation, template_revision, blocks, key | Complete new named-block source snapshot; incomplete drafts allowed |
+| `resource_save` | scope, kind, name, source, key; optional record_id/expected_generation, engine, blocks, dependencies | Template/CSS/JavaScript source revision, never executed on save |
+| `media_save` | scope, name, data_base64, mime_type, key; optional record_id/expected_generation | Private binary revision, exact hash/size, MIME marked unverified |
+| `resource_copy` | source_revision, site_id, name, key | Independent site identity/history from an exact library resource, provenance retained |
+| `record_read` | record_id, optional revision_id | Current or exact historical metadata, payload references and source bytes/text |
+| `revision_history` | record_id | Immutable revisions of one authorized record, ordered by generation from oldest to newest |
+| `revision_compare` | record_id, left_revision, right_revision | Metadata change flag and source diffs/change flags |
+| `revision_checkpoint` | record_id, expected_generation, key, message | New labeled revision preserving exact payloads |
+| `revision_restore` | record_id, source_revision, expected_generation, key | New revision from historical data, with explicit provenance |
+| `dependencies` | record_id, optional revision_id | Direct exact resource dependencies, each read-authorized |
+| `readiness` | record_id, optional revision_id | Named required-block diagnostics for one variant/template revision |
+
+`scope` is `library` or `site:<stable site ID>`. The separate `installation` scope
+controls `create_site`. Server-owned policy maps identity → scope → permission
+names: `read`, `write`, `use`, `create_site`; `*` is an explicitly configured
+administrator wildcard. New site creation requires create_site and wildcard
+read/write/use, so the creator can manage the generated ID. Existing site/team
+grants may be narrow. Write does not imply read or use. A copy needs library
+read/use and target-site read/write; editing the generic original needs library
+write. Cross-site live dependencies are rejected.
+
+Templates have kind `template`, engine `gramlot` or `htmlbuilder`, exact Python
+source text and a declaration such as:
+
+```json
+{"intro":{"format":"html","required":true},"body":{"format":"markdown","required":false}}
+```
+
+Block names match `[A-Za-z][A-Za-z0-9_]{0,63}`. Variant `blocks` values look like:
+
+```json
+{"intro":{"format":"html","source":"<p>Ciao!</p>\r\n"},"body":{"format":"markdown","source":"# Titolo\n"}}
+```
+
+The template's exact revision controls accepted names/formats. Missing required
+blocks and whitespace-only source are saveable but produce `required_block_missing`
+readiness diagnostics; optional empty blocks do not. Readiness covers this block
+contract only; complete render/security/review/publication validation is future
+work. Template updates cannot silently change an old variant's selected contract.
+CSS and JavaScript use `kind: css` / `kind: javascript`; `source` remains exact text.
+Resource `dependencies` are unique exact revision IDs, not current-head references.
+Media uses strict base64 and is returned as base64, never as a public file URL.
+
+Mutation results contain `receipt` and `records`; record views contain `record_id`,
+`revision_id`, record `generation`, `scope`, `kind`, `attributes`, exact `payloads`,
+`sources` and `previous_revision`. Named block source keys are `block.<name>`;
+ordinary source uses `source`, media uses `binary`. Text is returned as
+`{"text":"..."}`, media as `{"base64":"..."}`. Internal command fingerprints are
+persisted for replay but excluded from these record views.
+
+Both channels return `{"ok":true,"result":...}` or
+`{"ok":false,"error":{"code":...,"message":...,"resource_id":...,"block":...,"details":...}}`.
+REST domain errors use 403/404/409/422, and uncertain persistence uses 503. MCP
+carries the same envelope in `result.structuredContent` with HTTP 200; transport
+and framework authentication/schema errors retain Kajenn's own HTTP/JSON-RPC
+format. No client should infer success from HTTP 200 alone.
+
+Idempotency keys are unique per principal across this editorial service; the
+fingerprint includes operation and normalized arguments. Reusing a key for another
+operation or input conflicts. A successful retry returns the original IDs and
+sources after rechecking current access. Record generations are independent of
+the installation-wide catalog generation. A stale write changes no head/history.
+
+No public serving, template execution, sanitization, approval transition, release
+activation, UI/editor, pagination, upload session, scanner, rendition job or
+Asqueel backend is implemented by this phase. Review-required declarations are
+stored; publication enforcement belongs to the later release workflow. Source
+payloads/media are limited to 8 MiB each and listing/history returns all results;
+these are documented local-profile limits, not production capacity claims.
