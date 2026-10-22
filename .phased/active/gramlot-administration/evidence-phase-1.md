@@ -38,3 +38,7 @@ Demo: `GRAMLOT_DEV=YES PYTHONPATH=src /tmp/kajenn-macro3-admin-env/bin/python ex
 ### Demo login correction
 
 The demo credentials are now `demo` / `demo`, as requested. Command controls use Gramlot `button`: native `html_button` does not execute nested dataRpc/dataController (Gramlot public guide 097). The restarted browser shows the actual Gramlot command button on the login form. Authenticated browser verification still requires the human login.
+
+### Orientation Home
+
+At the owner’s request, Home now opens automatically in a retained iframe tab and remains the first tree entry. The authenticated guide explains the editorial model, first actions, current capabilities, the planned publication UI and LLM commands, with a bilingual page example. Browser verification confirmed automatic opening and readable stacked sections at the current 820px viewport. Screenshot: `mockups/phase-1-home.png`. Admin suite: 11 passed (8.24s); the existing iframe route check now includes Home. Full phase visual/UX verification remains pending.

@@ -133,3 +133,7 @@ riutilizzato in produzione. Esempio di chiamata dopo aver ottenuto l’ID del si
 Ripetere la stessa operazione con la stessa chiave evita duplicati. Il catalogo
 dei tool descrive gli argomenti; le capability effettive e i servizi stabiliscono
 ciò che l’identità del LLM può eseguire.
+
+### Home di orientamento
+
+Dopo l’accesso si apre **Home · Come funziona**, sempre raggiungibile dall’albero di navigazione. La guida presenta i primi passi, il rapporto tra siti, contenuti, varianti, template e blocchi Data, la Libreria condivisa e le revisioni. Un esempio bilingue illustra il percorso fino alla pubblicazione. La Home distingue le funzioni già disponibili da editor e comandi di pubblicazione previsti nelle prossime fasi, e spiega l’utilizzo di un assistente autorizzato tramite MCP/OpenAPI.

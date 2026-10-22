@@ -131,7 +131,7 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):  # wf:phase-1:
             )
             source = response.json()["value"]
             assert "evil.test" not in source and "content?site=" + site["record_id"] in source
-            for path in ("content", "resources", "library"):
+            for path in ("home", "content", "resources", "library"):
                 response = await http.get("/admin/" + path)
                 assert response.status_code == 200
                 assert "frame-ancestors 'self'" in response.headers["content-security-policy"]

@@ -42,6 +42,14 @@ class Page(AdminPage, IndexPage):
     @staticmethod
     def navigation_bag(site, sites):  # wf:phase-1:new
         navigation, current = Bag(), Bag()
+        navigation.set_item(
+            "home",
+            None,
+            title="Home · Come funziona",
+            label="Home · Come funziona",
+            url="home",
+            section="home",
+        )
         item = next((item for item in sites if item["record_id"] == site), None)
         if item:
             label = item["attributes"]["name"]
@@ -153,6 +161,7 @@ class Page(AdminPage, IndexPage):
 
     def behavior(self, shell):  # wf:phase-1:new
         IndexPage.behavior(self, shell)
+        shell.dataController("this.SET('index.navigationSelection','home')", _onStart=True)
         shell.dataRpc(
             "navigation_for_site",
             site="^admin.site",
@@ -172,7 +181,9 @@ class Page(AdminPage, IndexPage):
         # Navigation is client Data: validate its scope and derive the URL again.
         node = selection.get_node("#0")
         section, site = node.attr.get("section"), node.attr.get("site", "")
-        if section == "library":
+        if section == "home":
+            url, title = "home", "Home · Come funziona"
+        elif section == "library":
             await execute_read("records_index", scope="library")
             url, title = "library", "Libreria condivisa"
         elif section in {"content", "resource"}:
