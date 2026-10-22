@@ -1,7 +1,7 @@
 # kajenn-public-site
 
 Proposta di piattaforma editoriale e pubblicazione di siti della famiglia Genro.
-**Stato al 21 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. Gli editor restano alle macro successive.**
+**Stato al 22 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. È in verifica l’amministrazione Gramlot per consultazione multisito, risorse, Libreria e revisioni; gli editor restano alla fase successiva.**
 
 La proposta separa identità dei contenuti, revisioni editoriali immutabili e
 release pubblicate. Si parte con un backend su filesystem per catalogo e stato
@@ -32,6 +32,7 @@ pubblicazione, attraverso gli stessi servizi usati dalla UI.
 | [10 · Rendering statico](docs/10-rendering-statico.md) | Contratto template/Data, filtro editoriale, worker e profilo opzionale verificato |
 | [11 · Build e anteprime](docs/11-build-anteprime.md) | Candidati, job persistenti, percorsi, grant privati e nove operazioni REST/MCP |
 | [12 · Pubblicazione e rollback](docs/12-publication-rollback.md) | Canali, attivazione condizionale, serving pubblico e ciclo completo |
+| [13 · Amministrazione Gramlot](docs/13-amministrazione.md) | Consultazione multisito, sessioni, profili opzionali e dipendenze qualificate |
 
 Per iniziare il confronto: leggere 01, 02 e 08. Il catalogo delle funzioni viene
 dopo il modello: nomi, schemi e raccomandazioni non sono API approvate.

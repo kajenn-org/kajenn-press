@@ -108,3 +108,10 @@ stati eseguiti**, e nessun servizio S3/Telegram è stato avviato.
 Le estensioni sono necessità progettuali, non autorizzazioni a modificare i
 framework in questa sessione. Non è proposta alcuna facciata che simuli metodi
 mancanti usando attributi privati.
+
+## Macro 3, fase 1 — amministrazione in verifica
+
+- Artefatti qualificati: Gramlot 0.3.9 e gramlot-py-server 0.2.12, con gli SHA256 in [admin-artifacts.json](admin-artifacts.json). Il wheel Kajenn 0.5.0 headless resta quello già qualificato; non sostituirlo con un checkout omonimo.
+- Grammatica e bundle installati contengono CodeMirror, HTML/Jodit, Markdown/ProseMirror e `markdownPreview.allowHtml`. L'integrazione interattiva degli editor e HTML abilitato nel workspace appartengono alla fase 2.
+- Nove test di contratto amministrativi verificano isolamento delle identità, revoca/logout, origine delle richieste, confini degli ambiti, letture senza payload e parità UI/REST/MCP; la prova include una build e un'anteprima reali.
+- La consultazione usa FramePage/Source/Data e Gramlot Base. Per configurazione, profili separati, sessioni e demo vedere [13 · Amministrazione](13-amministrazione.md).

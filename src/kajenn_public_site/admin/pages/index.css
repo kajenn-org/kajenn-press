@@ -1,0 +1,46 @@
+/* Layout over the shipped Gramlot Base theme; colors follow its native navigation. */
+body { margin:0; }
+.admin-top header { height:100%; display:flex; align-items:center; gap:18px; padding:0 16px; }
+.admin-top strong { white-space:nowrap; }
+.account { margin-left:auto; display:flex; align-items:center; gap:12px; }
+.admin-nav { background:var(--gramlot-navigation); color:var(--gramlot-navigation-text); padding:18px 12px; }
+.admin-nav label { display:block; font-size:12px; margin-bottom:8px; color:#d3dce5; }
+.admin-nav select { width:100%; background:var(--gramlot-surface); color:var(--gramlot-ink); margin-bottom:22px; }
+.admin-nav nav { display:grid; gap:5px; }
+.nav-item { width:100%; text-align:left; border:0; border-radius:4px; background:transparent; color:#e5edf5; padding:11px; }
+.nav-item:hover { background:#28455e; }
+.nav-item.selected { background:#315f85; color:white; border-left:3px solid var(--gramlot-brand-yellow); }
+.nav-item:disabled { color:#a4b4c2; opacity:1; }
+.library-nav { border-top:1px solid #3e5163; margin-top:22px; padding-top:12px; }
+.library-nav p,.scope-permissions { font-size:12px; color:#c9d5e0; }
+.scope-permissions { border-top:1px solid #3e5163; margin-top:24px; padding-top:12px; }
+.admin-main { background:var(--gramlot-background); min-width:0; }
+.page-tabs { display:flex; gap:4px; background:var(--gramlot-surface); border-bottom:1px solid var(--gramlot-border); padding:8px 20px 0; }
+.page-tabs button { border-radius:4px 4px 0 0; border-bottom:3px solid transparent; }
+.page-tabs button.selected { border-bottom-color:var(--gramlot-brand-yellow); background:var(--gramlot-selected); }
+.workspace-host { padding:0 24px 24px; }
+.breadcrumb { margin:0 0 6px; color:var(--gramlot-text-secondary); font-size:13px; }
+.heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.heading h1 { margin:0; font-size:25px; }
+.toolbar { display:flex; gap:10px; padding:20px 24px; }
+.toolbar input { width:320px; max-width:75%; }
+.workspace { display:grid; grid-template-columns:minmax(220px,1fr) minmax(300px,1.3fr); gap:18px; }
+.record-list,.record-detail { background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:6px; min-width:0; }
+.record-detail { padding:18px; }
+.record-detail h2 { margin:12px 0 16px; font-size:21px; }
+.list-heading { padding:12px 16px; border-bottom:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); font-size:12px; }
+.record-row { display:grid; gap:4px; width:100%; text-align:left; border:0; border-radius:0; background:transparent; color:var(--gramlot-ink); padding:15px 16px; border-bottom:1px solid var(--gramlot-border); }
+.record-row:hover { background:var(--gramlot-selected); }
+.record-row small,.muted { color:var(--gramlot-text-secondary); }
+.status { display:inline-block; border:1px solid var(--gramlot-border); border-radius:20px; padding:3px 9px; font-size:12px; color:var(--gramlot-text-secondary); background:var(--gramlot-surface-subtle); }
+.record-detail dt { font-size:12px; color:var(--gramlot-text-secondary); margin-top:12px; }
+.record-detail dd { margin:3px 0 0; overflow-wrap:anywhere; }
+.record-detail pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
+.empty { padding:16px; }
+.admin-footer { padding:6px 16px; font-size:11px; background:var(--gramlot-surface); border-top:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); }
+.login-shell { min-height:100vh; display:grid; place-items:center; background:var(--gramlot-background); }
+.login-card { width:min(380px,90vw); padding:28px; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:8px; }
+.login-card label,.login-card input { display:block; width:100%; margin-bottom:12px; }
+.login-card button { margin-top:12px; }
+button:focus-visible,select:focus-visible,input:focus-visible { outline:3px solid var(--gramlot-focus-ring); outline-offset:2px; }
+@media(max-width:850px) { .workspace { grid-template-columns:1fr; } .workspace-host { padding:0 12px 16px; } .toolbar { padding:12px; } .admin-top .muted { display:none; } .admin-nav { max-width:180px; } .admin-top header { gap:8px; padding:0 10px; } .account { gap:5px; font-size:12px; } }

@@ -175,6 +175,21 @@ class PublicSiteApplication(McpOpenApiApplication):
         return self._execute(_request, "records_list", {"scope": scope, "kind": kind})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def records_index(self, scope: str, kind: str | None = None, _request=None) -> dict:  # wf:phase-1:new
+        """List authorized editorial metadata without source or media payloads."""
+        return self._execute(_request, "records_index", {"scope": scope, "kind": kind})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def revision_index(self, record_id: str, _request=None) -> dict:  # wf:phase-1:new
+        """List exact revision metadata without reading historical payloads."""
+        return self._execute(_request, "revision_index", {"record_id": record_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def scope_capabilities(self, scope: str, _request=None) -> dict:  # wf:phase-1:new
+        """Read the current principal's actual permissions in a readable scope."""
+        return self._execute(_request, "scope_capabilities", {"scope": scope})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def content_create(self, site_id: str, key: str, title: str, _request=None) -> dict:
         """Content create. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(
@@ -554,7 +569,7 @@ class PublicSiteApplication(McpOpenApiApplication):
         return self._execute(_request, "release_history", {"settings_id": settings_id})
 
 
-def create_server(catalog_root, *, auth, grants, publication=None):
+def create_server(catalog_root, *, auth, grants, publication=None, administration=None):
     """Build a host with explicit credentials/policy and private local storage.
 
     Authentication configuration belongs to the deployment; API clients cannot
@@ -563,8 +578,7 @@ def create_server(catalog_root, *, auth, grants, publication=None):
     """
     root = private_directory(catalog_root)
     private_directory(root / "host")
-    server = AsgiServer(
-        applications=[
+    applications = [
             (
                 PublicSiteApplication,
                 {
@@ -575,7 +589,22 @@ def create_server(catalog_root, *, auth, grants, publication=None):
                     "publication_config": publication,
                 },
             )
-        ],
+        ]
+    options = {}
+    if administration is not None:
+        from .admin.host import AdminApplication, AdminConfiguration
+
+        admin = dict(administration)
+        management_origin = admin.pop("origin")
+        users = admin.pop("users")
+        if admin:
+            raise ValueError("Unknown administration configuration")
+        if publication is not None and management_origin != publication["management_origin"]:
+            raise ValueError("Administration and publication management origins must match")
+        applications.append((AdminApplication, {"code": "admin", "mount": "admin"}))
+        options.update(users=users, middleware={"session": {"secure": management_origin.startswith("https:")}})
+    server_options = dict(
+        applications=applications,
         auth=auth,
         plugins={"openapi": True},
         credential_cache_ttl=0,
@@ -583,7 +612,19 @@ def create_server(catalog_root, *, auth, grants, publication=None):
             {"name": "site", "protocol": "local", "base_path": str(root / "host")},
             {"name": "home", "protocol": "local", "base_path": str(root / "host")},
         ],
+        **options,
     )
+    if administration is not None:
+        from kajenn.config import ConfigurationHandler, DefaultConfiguration
+
+        config = ConfigurationHandler(AdminConfiguration(server_options), parents=[DefaultConfiguration])
+        server = AsgiServer(config=config, **server_options)
+    else:
+        server = AsgiServer(**server_options)
+    if administration is not None:
+        from .admin.host import ManagementGuard
+
+        server = ManagementGuard(server, management_origin)
 
     if publication is not None:
         return PreviewGateway(
