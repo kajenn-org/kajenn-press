@@ -187,11 +187,21 @@ class AdminPage(GramlotPage):
         box = root.main(class_="login-shell").section(class_="login-card")
         box.p("kajenn public site", class_="muted")
         box.h1("Sign in to your sites")
-        box.html_label("Username", for_="username")
-        box.input(id="username", value="^login.username", autocomplete="username")
-        box.html_label("Password", for_="password")
-        box.input(
-            id="password", type="password", value="^login.password", autocomplete="current-password"
+        box.textbox(
+            value="^login.username",
+            lbl="Username",
+            lbl_position="TL",
+            live=True,
+            width="100%",
+            box_margin_bottom="16px",
+        )
+        box.passwordbox(
+            value="^login.password",
+            lbl="Password",
+            lbl_position="TL",
+            live=True,
+            width="100%",
+            box_margin_bottom="16px",
         )
         box.button("Sign in").dataRpc(
             "sign_in",
