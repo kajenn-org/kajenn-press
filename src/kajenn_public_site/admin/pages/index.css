@@ -75,3 +75,13 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .guide-llm { border-top:1px solid var(--gramlot-border); padding-top:28px; }
 .guide blockquote { margin:20px 0; padding:16px 22px; border-left:3px solid var(--gramlot-action); background:var(--gramlot-surface); font-size:17px; }
 @media(max-width:680px) { .guide-grid,.guide-flow { grid-template-columns:1fr; } .guide { padding-top:24px; } .guide-card { padding:20px; } }
+
+.author-page { max-width:1100px; margin:auto; padding:24px; }
+.author-page h1 { font-size:28px; margin:8px 0 14px; }
+.author-page > p { max-width:900px; line-height:1.6; }
+.author-actions { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:22px 0 12px; }
+.author-message { min-height:24px; font-weight:600; }
+.author-page label { display:block; margin:10px 0 6px; }
+.author-page input { width:min(100%,480px); }
+.author-page select { min-width:120px; }
+.author-page a { color:var(--gramlot-action); }

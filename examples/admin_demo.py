@@ -2,11 +2,14 @@
 
 import argparse
 import copy
+import os
+import secrets
 import tempfile
 
 import uvicorn
 from kajenn.auth.user_store import UserStore
 
+from kajenn_public_site.admin.pages.author import BLOCKS, TEMPLATE
 from kajenn_public_site.application import create_server
 from kajenn_public_site.catalog.local import LocalCatalog
 from kajenn_public_site.domain import AccessPolicy
@@ -41,9 +44,10 @@ class DemoUsers(UserStore):
 def main():  # wf:phase-1:new
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8874)
+    parser.add_argument("--render-python", default=os.environ.get("KAJENN_RENDER_PYTHON"))
     args = parser.parse_args()
     root = tempfile.mkdtemp(prefix="kajenn-admin-demo-")
-    grants = {"demo": {"*": ["read", "write", "use", "create_site"]}}
+    grants = {"demo": {"*": ["read", "write", "use", "create_site", "build"]}}
     service = EditorialService(LocalCatalog(root), AccessPolicy(grants))
     template = service.execute(
         "demo",
@@ -52,13 +56,21 @@ def main():  # wf:phase-1:new
         scope="library",
         kind="template",
         name="Standard page",
-        source="def build(source, data):\n    source.h1('^page.title')\n",
+        source=TEMPLATE,
         engine="gramlot",
-        blocks={"body": {"format": "markdown", "required": True}},
+        blocks=BLOCKS,
     )["records"][0]
     for index, name in enumerate(("Kajenn", "Gramlot")):
         site = service.execute(
             "demo", "site_create", key=f"site-{index}", name=name, languages=["it", "en"]
+        )["records"][0]
+        local_template = service.execute(
+            "demo",
+            "resource_copy",
+            source_revision=template["revision_id"],
+            site_id=site["record_id"],
+            name="Standard page",
+            key=f"copy-{index}",
         )["records"][0]
         for title in ("About us", "The project", "Contact"):
             content = service.execute(
@@ -75,11 +87,11 @@ def main():  # wf:phase-1:new
                     key=f"{index}-{title}-{language}",
                     content_id=content["record_id"],
                     language=language,
-                    template_revision=template["revision_id"],
+                    template_revision=local_template["revision_id"],
                     blocks={
                         "body": {
-                            "format": "markdown",
-                            "source": f"# {title}\n\nSample content.",
+                            "format": "html",
+                            "source": f"<p>Welcome to {title}. Replace this sample with your own content.</p>",
                         }
                     },
                 )
@@ -96,6 +108,14 @@ def main():  # wf:phase-1:new
     server = create_server(
         root,
         auth={},
+        publication={
+            "render_python": args.render_python,
+            "management_origin": f"http://127.0.0.1:{args.port}",
+            "preview_origin": f"http://localhost:{args.port}",
+            "preview_secret": secrets.token_bytes(32),
+        }
+        if args.render_python
+        else None,
         grants=grants,
         administration={
             "origin": f"http://127.0.0.1:{args.port}",

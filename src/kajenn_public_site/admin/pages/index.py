@@ -54,6 +54,15 @@ class Page(AdminPage, IndexPage):
         if item:
             label = item["attributes"]["name"]
             current.set_item(
+                "author",
+                None,
+                label="Create page",
+                title="Site " + label + " · Create page",
+                url="author?site=" + site,
+                site=site,
+                section="author",
+            )
+            current.set_item(
                 "content",
                 None,
                 label="Content",
@@ -161,7 +170,10 @@ class Page(AdminPage, IndexPage):
 
     def behavior(self, shell):  # wf:phase-1:new
         IndexPage.behavior(self, shell)
-        shell.dataController("this.SET('index.navigationSelection','home')", _onStart=True)
+        shell.dataController(
+            "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.author' : 'home')",
+            _onStart=True,
+        )
         shell.dataRpc(
             "navigation_for_site",
             site="^admin.site",
@@ -186,16 +198,20 @@ class Page(AdminPage, IndexPage):
         elif section == "library":
             await execute_read("records_index", scope="library")
             url, title = "library", "Shared library"
-        elif section in {"content", "resource"}:
+        elif section in {"author", "content", "resource"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
                 raise DomainError("forbidden", "Site not accessible")
-            url = ("content" if section == "content" else "resources") + "?site=" + site
+            url = (
+                {"author": "author", "content": "content", "resource": "resources"}[section]
+                + "?site="
+                + site
+            )
             title = (
                 item["attributes"]["name"]
                 + " · "
-                + ("Content" if section == "content" else "Resources")
+                + {"author": "Create page", "content": "Content", "resource": "Resources"}[section]
             )
         else:
             raise DomainError("invalid_input", "Page unavailable")

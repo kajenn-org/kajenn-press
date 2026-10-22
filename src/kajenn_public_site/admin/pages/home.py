@@ -25,9 +25,9 @@ class Page(AdminPage):
         status = home.aside(class_="guide-status", aria_label="Available features")
         status.strong("What you can do today")
         status.p(
-            "Create a site, browse content and language variants, and inspect resources, "
-            "source files and revisions. Editing and publishing controls will arrive in later "
-            "phases. The current content and resource views are read-only."
+            "Open Create page under your site to edit a Gramlot template, write its HTML body "
+            "with Jodit, save both and render the result. You can also reopen saved pages. "
+            "Multi-block, Markdown and media editing, and publication controls, are still to come."
         )
         start = home.section(class_="guide-section")
         start.h2("Getting started")
@@ -41,10 +41,11 @@ class Page(AdminPage):
                 ),
             ),
             (
-                "Open Content",
+                "Open Create page",
                 (
-                    "In the navigation tree on the left, open Content under the site name. "
-                    "Select a page from the list, then choose a language to inspect its blocks."
+                    "In the navigation tree on the left, open Create page under the site name. "
+                    "Save the starter template, open Content to write in Jodit, save the page "
+                    "and click Render saved page."
                 ),
             ),
             (

@@ -15,7 +15,9 @@ from .domain import MUTATIONS, AccessPolicy, DomainError
 from .publication.gateway import PreviewGateway
 from .publication.service import OPERATIONS as PUBLICATION_OPERATIONS
 from .publication.service import READS, PublicationService
+from .rendering.contract import RenderProblem
 from .rendering.process import RenderWorker
+from .rendering.service import RenderService
 from .services.editorial import EditorialService
 
 
@@ -74,13 +76,28 @@ class PublicSiteApplication(McpOpenApiApplication):
         is_rest = request.scope.get("kajenn.channel") != "mcp"
         if (
             is_rest
-            and operation in (MUTATIONS | (PUBLICATION_OPERATIONS - READS))
+            and operation in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | {"render_preview"})
             and request.scope["method"] != "POST"
         ):
             raise HTTPException(405, "Mutations require POST")
         if self.service is None:
             raise HTTPException(503, "Editorial service is not started")
         try:
+            if operation == "render_preview":
+                if set(arguments) != {"variant_id", "revision_id"} or any(
+                    not isinstance(value, str) or not value for value in arguments.values()
+                ):
+                    raise DomainError("invalid_input", "An exact variant ID and revision ID are required")
+                if self.publication is None:
+                    raise DomainError("unavailable", "Configure the optional rendering worker first")
+                renderer = RenderService(self.service.catalog, self.policy, self.publication.worker)
+                identity = request.avatar().identity
+                try:
+                    frozen = renderer.freeze(identity, **arguments)
+                    result = renderer.render(identity, frozen)
+                except RenderProblem as error:
+                    result = {"status": "failed", "diagnostics": [error.diagnostic]}
+                return {"ok": True, "result": result}
             service = self.publication if operation in PUBLICATION_OPERATIONS else self.service
             if service is None:
                 raise DomainError("unavailable", "Configure the optional publication worker first")
@@ -90,7 +107,7 @@ class PublicSiteApplication(McpOpenApiApplication):
                     rendering=True,
                     preview=True,
                     publication=True,
-                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS),
+                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS | {"render_preview"}),
                     permissions=result["permissions"] + ["build", "preview_grant", "publish"],
                 )
             return {"ok": True, "result": result}
@@ -392,6 +409,11 @@ class PublicSiteApplication(McpOpenApiApplication):
         return self._execute(
             _request, "readiness", {"record_id": record_id, "revision_id": revision_id}
         )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def render_preview(self, variant_id: str, revision_id: str, _request=None) -> dict:  # wf:phase-1:new
+        """Render an exact saved variant in the configured worker, without publishing it."""
+        return self._execute(_request, "render_preview", {"variant_id": variant_id, "revision_id": revision_id})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_settings_save(

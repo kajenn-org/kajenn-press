@@ -136,8 +136,18 @@ ciò che l’identità del LLM può eseguire.
 
 ### Home di orientamento
 
-Dopo l’accesso si apre **Home · How it works**, sempre raggiungibile dall’albero di navigazione. La guida presenta i primi passi, il rapporto tra siti, contenuti, varianti, template e blocchi Data, la Libreria condivisa e le revisioni. Un esempio bilingue illustra il percorso fino alla pubblicazione. La Home distingue le funzioni già disponibili da editor e comandi di pubblicazione previsti nelle prossime fasi, e spiega l’utilizzo di un assistente autorizzato tramite MCP/OpenAPI.
+Dopo l’accesso, se esiste un sito, si apre **Create page**. **Home · How it works** resta raggiungibile dall’albero di navigazione. La guida presenta i primi passi, il rapporto tra siti, contenuti, varianti, template e blocchi Data, la Libreria condivisa e le revisioni. Un esempio bilingue illustra il percorso fino alla pubblicazione. La Home distingue le funzioni già disponibili da editor e comandi di pubblicazione previsti nelle prossime fasi, e spiega l’utilizzo di un assistente autorizzato tramite MCP/OpenAPI.
 
 ### Interface language
 
 All administration UI is in English, including the orientation Home, authentication, navigation, forms, permissions and feedback. The disposable demo also uses English sample titles and text. Editorial language variants remain independent of the administration language.
+
+### First authoring workflow
+
+Select a site and open **Create page**. The first tab provides a working Gramlot Python template in CodeMirror. **Save template** stores an exact resource revision. In **Content**, enter the title and language and edit the HTML `body` block using Jodit or HTML source. **Save page** creates the content/variant or conditionally saves a new revision. **Render saved page** renders those saved revisions in the separately installed worker and shows a restricted quick preview; it does not publish a release.
+
+Saved templates can be reused for new pages; saved pages can be reopened. This initial slice supports site-owned Gramlot templates with one required HTML `body` block. Multi-block/Markdown/CSS/JS/media editing and full conflict comparison remain in phase 2. Existing incompatible or shared templates produce an explicit explanation rather than being rewritten. Title and language become immutable in this first editor after creation. New template revisions affect a page only after its content is explicitly saved against them.
+
+Drafts stay in memory. A browser navigation/exit warning protects unsaved work where the browser permits it. A save snapshots its submitted text; later typing stays dirty. A transport failure retains the same operation key and snapshot for retry. Revision conflicts preserve the draft and never overwrite a newer revision.
+
+The `render_preview` REST/MCP operation requires exact variant/revision IDs, POST for REST, current read/use/build grants and the existing optional publication worker configuration. It uses the existing RenderService/RenderWorker; no Python executes in the administration process. The demo can enable it with `KAJENN_RENDER_PYTHON=/path/to/qualified-render-env/bin/python`; the qualified development worker is `/tmp/kajenn-macro2-render-env/bin/python`. The demo is disposable; deployed catalog roots are configured separately.
