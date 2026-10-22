@@ -34,6 +34,7 @@ The owner approved this three-phase plan, its branch, interactive execution in t
 
 - [>] **Phase 1**: Authenticated multisite administration and dependency qualification `ui`
   > In execution since 2026-10-22T04:28:47.029245+00:00
+  > WIP: done: authenticated Gramlot host, Base theme, metadata services and 9 passing contracts; installed admin/headless wheels | missing: complete baseline suite, authenticated browser states, visual judge and human Verify | next: finish manual login and browser navigation verification | commit: 61d1eea
   - Run: fable / high
   - Pattern: `/private/tmp/gramlot-py-server-intermediate-release/src/gramlot_py_server/kajenn.py:Application` at `8574708` (public adapter composition); `src/kajenn_public_site/application.py:PublicSiteApplication._execute` (trusted request identity and common services). The transient upstream checkout may disappear: use the recorded Git object from the owning repository, not a fabricated replacement path.
   - Files: existing `pyproject.toml`, `src/kajenn_public_site/application.py`, `src/kajenn_public_site/services/editorial.py`, `tests/api/support.py`, `README.md`; new `src/kajenn_public_site/admin/`, `tests/admin/`, `examples/administration.py`, `docs/13-amministrazione.md`. Discover the exact public Kajenn configuration/UserStore interfaces in the qualified package before authoring integration code.
