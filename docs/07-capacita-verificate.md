@@ -113,5 +113,5 @@ mancanti usando attributi privati.
 
 - Artefatti qualificati: Gramlot 0.3.9 e gramlot-py-server 0.2.12, con gli SHA256 in [admin-artifacts.json](admin-artifacts.json). Il wheel Kajenn 0.5.0 headless resta quello già qualificato; non sostituirlo con un checkout omonimo.
 - Grammatica e bundle installati contengono CodeMirror, HTML/Jodit, Markdown/ProseMirror e `markdownPreview.allowHtml`. L'integrazione interattiva degli editor e HTML abilitato nel workspace appartengono alla fase 2.
-- Nove test di contratto amministrativi verificano isolamento delle identità, revoca/logout, origine delle richieste, confini degli ambiti, letture senza payload e parità UI/REST/MCP; la prova include una build e un'anteprima reali.
-- La consultazione usa FramePage/Source/Data e Gramlot Base. Per configurazione, profili separati, sessioni e demo vedere [13 · Amministrazione](13-amministrazione.md).
+- Undici test amministrativi (nove contratti del piano e due verifiche Gallery/MCP) verificano isolamento delle identità, revoca/logout, origine delle richieste, confini degli ambiti, letture senza payload e parità UI/REST/MCP; la prova include una build e un'anteprima reali.
+- La consultazione usa IndexPage/IndexLogic, albero e iframe come la Gallery, Source/Data e Gramlot Base. Nuovo sito è stato anticipato alla fase 1 su richiesta esplicita. Per configurazione, profili separati, sessioni e demo vedere [13 · Amministrazione](13-amministrazione.md).

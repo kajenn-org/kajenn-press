@@ -72,19 +72,24 @@ async def open_page(http):  # wf:phase-1:new
     return re.search(r'"pageId":"([a-f0-9]+)"', response.text)[1]
 
 
-async def rpc(http, page, name, content_type="data", **params):  # wf:phase-1:new
+async def rpc(http, page, method, content_type="data", **params):  # wf:phase-1:new
     response = await http.post(
         "/admin/gramlot/rpc",
         json={
             "id": "test",
             "pageId": page,
-            "name": name,
+            "name": method,
             "contentType": content_type,
             "params": params,
         },
     )
     assert response.status_code == 200, response.text
-    return response.json()
+    from genro_tytx import from_tytx, to_tytx
+
+    result = from_tytx(response.text)
+    if content_type == "source" and "value" in result and not isinstance(result["value"], str):
+        result["value"] = to_tytx(result["value"])
+    return result
 
 
 async def login(http, identity="admin"):  # wf:phase-1:new

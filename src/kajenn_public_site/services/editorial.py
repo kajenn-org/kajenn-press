@@ -129,6 +129,8 @@ class EditorialService:
             for permission in ("read", "write", "use"):
                 self.policy.require(identity, "*", permission)
             return
+        if operation == "scope_capabilities" and params.get("scope") == "installation":
+            return
         permission = "write" if operation in MUTATIONS else "read"
         if operation in ("resource_save", "media_save", "records_list", "records_index", "scope_capabilities"):
             scope = params["scope"]
@@ -403,6 +405,10 @@ class EditorialService:
         ]
 
     def _scope_capabilities(self, snapshot, identity, scope):  # wf:phase-1:new
+        if scope == "installation":
+            allowed = self.policy.allows(identity, scope, "create_site") and all(
+                self.policy.allows(identity, "*", permission) for permission in ("read", "write", "use"))
+            return {"scope": scope, "permissions": ["create_site"] if allowed else []}
         permissions = ("read", "write", "use", "build", "preview_grant", "publish")
         return {"scope": scope, "permissions": [
             name for name in permissions if self.policy.allows(identity, scope, name)

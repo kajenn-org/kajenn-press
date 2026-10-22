@@ -20,7 +20,7 @@ idna==3.20
 iniconfig==2.3.1
 kajenn @ file:///tmp/kajenn-phase2-artifacts/kajenn-0.5.0-py3-none-any.whl#sha256=937cf31db4644369792a6396bb148f404b9ee2d81d9bc7772e883b3b52f3f58b
 kajenn-kbus==0.1.2
-kajenn-public-site @ file:///Users/gporcari/Sviluppo/kajenn/kajenn-public-site
+kajenn-public-site @ file:///tmp/kajenn-macro3-wheels/kajenn_public_site-0.1.0-py3-none-any.whl#sha256=954c35716637dec395ab82cad9252653b2b8cb6f0c47426226460d344effa7d4
 packaging==26.3
 pluggy==1.7.0
 psutil==7.2.2

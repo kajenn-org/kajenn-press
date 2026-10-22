@@ -1,10 +1,11 @@
 # Amministrazione Gramlot
 
-La fase 1 offre consultazione autenticata: selettore del sito, Contenuti, Risorse,
-Libreria condivisa, dettagli, sorgenti e revisioni. Usa FramePage, Source/Data,
+La fase 1 offre consultazione autenticata: toolbar con selettore del sito e Nuovo sito, Contenuti, Risorse,
+Libreria condivisa, dettagli, sorgenti e revisioni. Usa IndexPage e IndexLogic come la Gallery, albero di navigazione, schede
+con iframe mantenuti, Source/Data,
 controlli pubblici e il tema Gramlot Base originale. Le superfici usano i token
 del tema e seguono la preferenza chiaro/scuro del sistema. La Libreria è un ambito
-separato; Pubblicazione è indicata come funzione successiva. Creazione, editor,
+separato; Pubblicazione è indicata come funzione successiva. Creazione di contenuti, editor,
 salvataggio, confronto e media arrivano nella fase 2; il pannello di pubblicazione
 nella fase 3. Le operazioni di backend già esistenti restano disponibili via API.
 
@@ -68,8 +69,9 @@ scaduta riporta al login. I permessi mostrati si aggiornano cambiando ambito o
 ricaricando la pagina; i servizi li ricontrollano sempre.
 
 Le richieste non sicure richiedono l'Origin amministrativo, anche sui trasporti
-REST/MCP. Client API senza cookie possono usare Bearer senza Origin; una richiesta
-con cookie non può eludere il controllo aggiungendo un Bearer. Login/logout diretti
+REST/MCP. Client API possono usare Bearer senza Origin; in questo caso i cookie vengono
+esclusi prima dell’autenticazione, quindi un Bearer invalido non può ripiegare
+sulla sessione del browser. Login/logout diretti
 richiedono POST. Anteprima e pubblico attraversano il dispatcher separato della
 Macro 2 e non espongono route o cookie amministrativi.
 
@@ -86,6 +88,8 @@ Macro 2 e non espongono route o cookie amministrativi.
 UI, REST e MCP condividono gli stessi servizi. I record operativi di pubblicazione
 restano esclusi dalle letture editoriali. I riferimenti alterati o non più
 accessibili restituiscono un esito di errore; non attraversano l'ambito selezionato.
+Le schede conservano il sito indicato nel titolo e nel proprio URL: il selettore
+aggiorna la navigazione per aprire nuove schede senza alterare quelle già aperte.
 Il ricaricamento ricostruisce i siti dai servizi e seleziona il primo leggibile;
 non mantiene una cache locale dei contenuti o handle del filesystem.
 
@@ -111,3 +115,21 @@ eseguiti separatamente nel primo comando. La qualificazione della grammatica e d
 bundle rileva CodeMirror, Jodit, ProseMirror e `markdownPreview.allowHtml`.
 L'uso interattivo degli editor e l'abilitazione HTML nel workspace sono oggetto
 della fase 2; qui non si dichiara già disponibile un editor di contenuti.
+
+## Comandi MCP per un LLM
+
+Il trasporto `/mcp` usa `tools/list` e `tools/call` con JSON-RPC 2.0. L’identità
+viene dal Bearer configurato nell’installazione; il payload non può sceglierla.
+Il test `test_new_site_uses_shared_authority_and_mcp_creates_content` esegue con
+un vero client MCP la sequenza `site_create`, `resource_save` (template),
+`content_create`, `variant_create`, quindi confronta il risultato con REST e UI.
+Verifica anche il rifiuto dopo revoca dei permessi. Nessun token dimostrativo va
+riutilizzato in produzione. Esempio di chiamata dopo aver ottenuto l’ID del sito:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"content_create","arguments":{"site_id":"ID_DEL_SITO","title":"Chi siamo","key":"operazione-univoca"}}}
+```
+
+Ripetere la stessa operazione con la stessa chiave evita duplicati. Il catalogo
+dei tool descrive gli argomenti; le capability effettive e i servizi stabiliscono
+ciò che l’identità del LLM può eseguire.

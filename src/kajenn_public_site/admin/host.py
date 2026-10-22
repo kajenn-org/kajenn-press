@@ -27,9 +27,17 @@ READ_OPERATIONS = frozenset(
 
 
 async def execute_read(operation, **arguments):  # wf:phase-1:new
-    request = CURRENT_REQUEST.get()
     if operation not in READ_OPERATIONS:
         raise DomainError("invalid_operation", "Unsupported administration read")
+    return await execute_service(operation, arguments)
+
+
+async def execute_site_create(**arguments):  # wf:phase-1:new
+    return await execute_service("site_create", arguments)
+
+
+async def execute_service(operation, arguments):  # wf:phase-1:new
+    request = CURRENT_REQUEST.get()
     avatar = request.avatar()
     if avatar is None or "editor" not in avatar.tags:
         raise DomainError("unauthenticated", "Accedi per continuare")
@@ -80,7 +88,7 @@ class AdminApplication(Application):
                 "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-{nonce}'; "
                 "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                 "connect-src 'self'; frame-src 'self' about:; object-src 'none'; "
-                "base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+                "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
             ),
             **kwargs,
         )
@@ -123,9 +131,15 @@ class ManagementGuard:
         elif scope["method"] not in {"GET", "HEAD", "OPTIONS"}:
             authorization = headers.get(b"authorization", [])
             bearer = len(authorization) == 1 and authorization[0].startswith("Bearer ")
-            if origins != [self.origin] and (origins or not bearer or b"cookie" in headers):
+            if origins != [self.origin] and (origins or not bearer):
                 response = Response("Same-origin request required", status_code=403)
             else:
+                if not origins and bearer:
+                    # API requests cannot fall back to browser session credentials.
+                    scope = {
+                        **scope,
+                        "headers": [(k, v) for k, v in scope["headers"] if k.lower() != b"cookie"],
+                    }
                 return await self.server(scope, receive, send)
         else:
             return await self.server(scope, receive, send)

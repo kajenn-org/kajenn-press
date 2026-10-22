@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="it" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kajenn · proposta amministrazione</title>
+<style>
+/* Gramlot Base: application UI theme. Brand sources: assets/branding/theme-tokens.json. */
+@layer gramlot.reset, gramlot.tokens, gramlot.base, gramlot.components, gramlot.utilities, gramlot.touch;
+
+@layer gramlot.reset {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { margin: 0; }
+  img, picture, video, canvas { display: block; max-inline-size: 100%; }
+  svg { max-inline-size: 100%; }
+  button, input, select, textarea { font: inherit; }
+}
+
+@layer gramlot.tokens {
+  :root {
+    color-scheme: light;
+    --gramlot-brand-blue: #456bc4;
+    --gramlot-brand-yellow: #ffc400;
+    --gramlot-ink: #243449;
+    --gramlot-background: #f7f8f5;
+    --gramlot-surface: #ffffff;
+    --gramlot-surface-subtle: #edf1f7;
+    --gramlot-text-secondary: #566579;
+    --gramlot-border: #d5dce5;
+    --gramlot-border-control: #7a8798;
+    --gramlot-navigation: #182333;
+    --gramlot-navigation-text: #edf2fa;
+    --gramlot-action: #456bc4;
+    --gramlot-action-hover: #3557ab;
+    --gramlot-selected: #eaf0fc;
+    --gramlot-success: #23745b;
+    --gramlot-success-background: #eaf5ef;
+    --gramlot-warning: #785000;
+    --gramlot-warning-background: #fff4cf;
+    --gramlot-error: #b13d48;
+    --gramlot-error-background: #fceef0;
+
+    --gramlot-field-height: 2.75rem;
+    --gramlot-field-padding: .55rem .75rem;
+    --gramlot-field-font-size: .875rem;
+    --gramlot-field-background: var(--gramlot-surface);
+    --gramlot-field-readonly-background: var(--gramlot-surface-subtle);
+    --gramlot-label-size: 1em;
+    --gramlot-font-ui: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --gramlot-font-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --gramlot-space-1: 0.25rem;
+    --gramlot-space-2: 0.5rem;
+    --gramlot-space-3: 0.75rem;
+    --gramlot-space-4: 1rem;
+    --gramlot-space-6: 1.5rem;
+    --gramlot-space-8: 2rem;
+    --gramlot-space-12: 3rem;
+    --gramlot-radius-sm: 0.375rem;
+    --gramlot-radius: 0.5rem;
+    --gramlot-radius-lg: 0.75rem;
+    --gramlot-shadow: 0 1px 2px rgb(24 35 51 / 5%), 0 8px 24px rgb(24 35 51 / 5%);
+    --gramlot-focus-ring: #456bc4;
+    --gramlot-page-width: 72rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --gramlot-ink: #edf2fa;
+      --gramlot-background: #111b29;
+      --gramlot-surface: #1b293b;
+      --gramlot-surface-subtle: #24354b;
+      --gramlot-text-secondary: #bdc9d9;
+      --gramlot-border: #44566d;
+      --gramlot-border-control: #9bacbf;
+      --gramlot-navigation: #0b1420;
+      --gramlot-navigation-text: #edf2fa;
+      --gramlot-action: #91adf4;
+      --gramlot-action-hover: #b3c6fa;
+      --gramlot-selected: #283c61;
+      --gramlot-success: #89d4b7;
+      --gramlot-success-background: #163c34;
+      --gramlot-warning: #ffdc86;
+      --gramlot-warning-background: #483718;
+      --gramlot-error: #ffb3bb;
+      --gramlot-error-background: #4d2630;
+      --gramlot-focus-ring: #ffc400;
+      --gramlot-shadow: 0 1px 2px rgb(0 0 0 / 15%), 0 8px 24px rgb(0 0 0 / 12%);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --gramlot-ink: #edf2fa;
+    --gramlot-background: #111b29;
+    --gramlot-surface: #1b293b;
+    --gramlot-surface-subtle: #24354b;
+    --gramlot-text-secondary: #bdc9d9;
+    --gramlot-border: #44566d;
+    --gramlot-border-control: #9bacbf;
+    --gramlot-navigation: #0b1420;
+    --gramlot-navigation-text: #edf2fa;
+    --gramlot-action: #91adf4;
+    --gramlot-action-hover: #b3c6fa;
+    --gramlot-selected: #283c61;
+    --gramlot-success: #89d4b7;
+    --gramlot-success-background: #163c34;
+    --gramlot-warning: #ffdc86;
+    --gramlot-warning-background: #483718;
+    --gramlot-error: #ffb3bb;
+    --gramlot-error-background: #4d2630;
+    --gramlot-shadow: 0 1px 2px rgb(0 0 0 / 15%), 0 8px 24px rgb(0 0 0 / 12%);
+  }
+}
+
+@layer gramlot.base {
+  html { font-size: 14px; scroll-behavior: smooth; }
+  body {
+    min-block-size: 100vh;
+    background: var(--gramlot-background);
+    color: var(--gramlot-ink);
+    font: 400 1rem/1.5 var(--gramlot-font-ui);
+    text-rendering: optimizeLegibility;
+  }
+  :where(h1, h2, h3, h4, h5, h6, p, ul, ol, dl, blockquote, pre, figure) { margin-block: 0 .75rem; }
+  :where(h1, h2, h3, h4, h5, h6) { line-height: 1.25; letter-spacing: -0.025em; text-wrap: balance; }
+  h1 { font-size: clamp(1.4rem, 1.2rem + .7vw, 1.8rem); }
+  h2 { font-size: clamp(1.15rem, 1rem + .4vw, 1.35rem); }
+  h3 { font-size: 1.125rem; }
+  :where(p, li, dd, td, th) { overflow-wrap: anywhere; }
+  :where(ul, ol) { padding-inline-start: 1.5rem; }
+  :where(li + li) { margin-block-start: 0.25rem; }
+  :where(a) { color: var(--gramlot-action); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+  :where(a:hover) { color: var(--gramlot-action-hover); }
+  :where(a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+    textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible) {
+    outline: 2px solid var(--gramlot-focus-ring);
+    outline-offset: 2px;
+  }
+  :where(code, kbd, samp, pre) { font-family: var(--gramlot-font-code); }
+  :where(code, kbd) { border-radius: var(--gramlot-radius-sm); background: var(--gramlot-surface-subtle); padding: 0.1em 0.3em; font-size: 0.9em; }
+  pre { overflow-x: auto; border: 1px solid var(--gramlot-border); border-radius: var(--gramlot-radius); background: var(--gramlot-surface-subtle); padding: 1rem; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-inline-start: 3px solid var(--gramlot-brand-blue); padding-inline-start: 1rem; color: var(--gramlot-text-secondary); }
+  hr { border: 0; border-block-start: 1px solid var(--gramlot-border); margin-block: 2rem; }
+  :where(small, figcaption, caption) { color: var(--gramlot-text-secondary); font-size: 0.875rem; }
+  :where(svg.gramlot-icon) { inline-size: 1.25em; block-size: 1.25em; flex: none; fill: currentColor; vertical-align: -0.2em; }
+  :where(svg.gramlot-icon--stroke) { fill: none; stroke: currentColor; }
+  :where(svg.gramlot-icon--stroke *) { vector-effect: non-scaling-stroke; }
+  :where([hidden]) { display: none !important; }
+}
+
+@layer gramlot.components {
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"],
+    .button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gramlot-space-2);
+    min-block-size: 2.75rem;
+    border: 1px solid var(--gramlot-action);
+    border-radius: var(--gramlot-radius-sm);
+    background: var(--gramlot-action);
+    color: var(--gramlot-surface);
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+  }
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"], .button):hover:not(:disabled) {
+    background: var(--gramlot-action-hover);
+    border-color: var(--gramlot-action-hover);
+    color: var(--gramlot-surface);
+  }
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"], .button):active:not(:disabled) { transform: translateY(1px); }
+  :where(button, input[type="button"], input[type="submit"], input[type="reset"], .button):disabled { opacity: 0.55; cursor: not-allowed; }
+  :where(.button--secondary, button.secondary) {
+    background: var(--gramlot-surface);
+    color: var(--gramlot-action);
+    border-color: var(--gramlot-border-control);
+  }
+  :where(.button--secondary, button.secondary):hover:not(:disabled) {
+    background: var(--gramlot-selected);
+    color: var(--gramlot-action-hover);
+    border-color: var(--gramlot-action-hover);
+  }
+  :where(.button--quiet, button.quiet) { background: transparent; color: var(--gramlot-action); border-color: transparent; }
+  :where(.button--quiet, button.quiet):hover:not(:disabled) { background: var(--gramlot-selected); color: var(--gramlot-action-hover); border-color: transparent; }
+
+  :where(label) { display: inline-block; margin-block-end: var(--gramlot-space-1); font-size: 0.875rem; font-weight: 600; }
+  :where(label:has(input:disabled)) { color: var(--gramlot-text-secondary); }
+  :where(input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), select, textarea) {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: var(--gramlot-field-height);
+    border: 1px solid var(--gramlot-border-control);
+    border-radius: var(--gramlot-radius-sm);
+    background: var(--gramlot-field-background);
+    color: var(--gramlot-ink);
+    padding: var(--gramlot-field-padding);
+    font-size: var(--gramlot-field-font-size);
+    line-height: var(--gramlot-field-line-height,1.5);
+  }
+  :where(textarea) { min-block-size: 7rem; resize: vertical; }
+  :where(input, textarea)::placeholder { color: var(--gramlot-text-secondary); opacity: 1; }
+  :where(input, select, textarea):disabled { opacity: 0.6; cursor: not-allowed; }
+  :where(input, select, textarea)[aria-invalid="true"] { border-color: var(--gramlot-error); }
+  :where(input, select, textarea):user-invalid { border-color: var(--gramlot-error); }
+  :where(input[type="checkbox"], input[type="radio"], input[type="range"], input[type="color"], progress) { accent-color: var(--gramlot-brand-blue); }
+  :where(input[type="checkbox"], input[type="radio"]) { inline-size: 1.125rem; block-size: 1.125rem; margin: 0; vertical-align: -0.2em; cursor: pointer; }
+  :where(input[type="range"]) { inline-size: 100%; cursor: pointer; }
+  :where(input[type="color"]) { min-inline-size: 3rem; min-block-size: 2.75rem; border: 1px solid var(--gramlot-border-control); border-radius: var(--gramlot-radius-sm); background: var(--gramlot-surface); cursor: pointer; }
+  :where(input[type="file"]) { max-inline-size: 100%; color: var(--gramlot-text-secondary); font-size: 0.875rem; }
+  :where(input[type="file"])::file-selector-button { margin-inline-end: 0.75rem; border: 1px solid var(--gramlot-border-control); border-radius: var(--gramlot-radius-sm); background: var(--gramlot-surface); color: var(--gramlot-ink); padding: 0.5rem 0.75rem; font: inherit; cursor: pointer; }
+  :where(fieldset) { min-inline-size: 0; margin: 0 0 1rem; border: 1px solid var(--gramlot-border); border-radius: var(--gramlot-radius); padding: 1rem; }
+  :where(legend) { padding-inline: 0.25rem; font-weight: 650; }
+  :where(form > * + *) { margin-block-start: var(--gramlot-space-4); }
+  :where(output) { font-variant-numeric: tabular-nums; }
+
+  :where(table) { inline-size: 100%; border-collapse: collapse; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+  :where(caption) { text-align: start; padding-block-end: var(--gramlot-space-2); }
+  :where(th, td) { border-block-end: 1px solid var(--gramlot-border); padding: 0.7rem 0.8rem; text-align: start; vertical-align: top; }
+  :where(thead) { background: var(--gramlot-surface-subtle); }
+  :where(th) { font-weight: 650; }
+  :where(tbody tr:hover) { background: var(--gramlot-selected); }
+  :where(tr[aria-selected="true"]) { background: var(--gramlot-selected); }
+
+  :where(details) { border: 1px solid var(--gramlot-border); border-radius: var(--gramlot-radius); background: var(--gramlot-surface); padding: 0.75rem 1rem; }
+  :where(summary) { cursor: pointer; font-weight: 650; }
+  :where(details[open] > summary) { margin-block-end: 0.75rem; }
+  :where(dialog) { max-inline-size: min(90vw, 40rem); border: 1px solid var(--gramlot-border); border-radius: var(--gramlot-radius-lg); background: var(--gramlot-surface); color: var(--gramlot-ink); padding: clamp(1rem, 3vw, 2rem); box-shadow: var(--gramlot-shadow); }
+  :where(dialog::backdrop) { background: rgb(11 20 32 / 70%); }
+  :where(progress, meter) { inline-size: 100%; block-size: 0.75rem; }
+  :where([role="status"]) { color: var(--gramlot-success); }
+  :where([role="alert"]) { color: var(--gramlot-error); }
+  :where(mark) { background: var(--gramlot-brand-yellow); color: #182333; padding-inline: 0.2em; }
+}
+
+@layer gramlot.components {
+  .hljs { color: var(--gramlot-ink); }
+  .hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: var(--gramlot-action); }
+  .hljs-string, .hljs-regexp { color: var(--gramlot-success); }
+  .hljs-number, .hljs-literal { color: var(--gramlot-warning); }
+  .hljs-title, .hljs-attr, .hljs-property { color: var(--gramlot-action); }
+  .hljs-comment, .hljs-meta { color: var(--gramlot-text-secondary); }
+  .hljs-comment { font-style: italic; }
+}
+
+@layer gramlot.utilities {
+  .example-page { inline-size: min(100% - 2rem, var(--gramlot-page-width)); margin-inline: auto; padding-block: clamp(.75rem, 2vw, 1.25rem); }
+  .stack { display: grid; gap: var(--gramlot-space-4); align-content: start; }
+  .stack > * { margin-block: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--gramlot-space-4); align-items: start; }
+  .card { container-type: inline-size; min-inline-size: 0; border: 1px solid var(--gramlot-border); border-radius: var(--gramlot-radius-lg); background: var(--gramlot-surface); padding: clamp(.75rem, 1.5vw, 1rem); box-shadow: var(--gramlot-shadow); }
+  .card > :last-child { margin-block-end: 0; }
+  .example-art { display: block; inline-size: 100%; block-size: auto; }
+  .example-art { display: block; inline-size: 100%; block-size: auto; }
+  .muted { color: var(--gramlot-text-secondary); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--gramlot-space-2); }
+  .eyebrow { margin: 0; color: var(--gramlot-text-secondary); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .surface-subtle { background: var(--gramlot-surface-subtle); }
+  .status { display: inline-flex; align-items: center; gap: 0.4em; border-radius: 999px; padding: 0.25em 0.65em; font-size: 0.75rem; font-weight: 650; }
+  .status--success { background: var(--gramlot-success-background); color: var(--gramlot-success); }
+  .status--warning { background: var(--gramlot-warning-background); color: var(--gramlot-warning); }
+  .status--error { background: var(--gramlot-error-background); color: var(--gramlot-error); }
+  .sr-only { position: absolute; inline-size: 1px; block-size: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @container (max-width: 25rem) { .card .grid { grid-template-columns: 1fr; } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Interaction density is independent of the selected color/profile theme. */
+@layer gramlot.touch {
+  :root[data-gramlot-touch="off"] {--gramlot-drawer-reveal:0;}
+  :root[data-gramlot-touch="on"] {--gramlot-drawer-reveal:1;--gramlot-touch-target:44px; --gramlot-field-height:44px; --gramlot-field-font-size:16px;
+    --gramlot-field-padding:8px 10px; --gramlot-field-line-height:1.35;
+    --gramlot-label-size:14px; --gramlot-label-gap:6px; --gramlot-space-2:10px;
+    --gramlot-calendar-width:322px; --gramlot-choice-toggle-width:44px;}
+  @media (pointer: coarse) {
+    :root:not([data-gramlot-touch="off"]) {--gramlot-drawer-reveal:1;--gramlot-touch-target:44px; --gramlot-field-height:44px; --gramlot-field-font-size:16px;
+    --gramlot-field-padding:8px 10px; --gramlot-field-line-height:1.35;
+    --gramlot-label-size:14px; --gramlot-label-gap:6px; --gramlot-space-2:10px;
+    --gramlot-calendar-width:322px; --gramlot-choice-toggle-width:44px;}
+  }
+  button, select, input:not([type=checkbox]):not([type=radio]), summary {
+    min-block-size:var(--gramlot-touch-target, revert-layer);
+  }
+  button { min-inline-size:var(--gramlot-touch-target, revert-layer); }
+  input[type=checkbox], input[type=radio] {
+    min-inline-size:calc(var(--gramlot-touch-target, 0px) / 2);
+    min-block-size:calc(var(--gramlot-touch-target, 0px) / 2);
+  }
+}
+
+.index-shell { block-size: 100dvh; display: grid; grid-template-rows: minmax(0, 1fr) auto; grid-template-columns: min(var(--sidebar-width, 240px), 60vw) 8px minmax(0, 1fr); overflow: hidden; }
+.index-sidebar { min-block-size: 0; min-inline-size: 0; display: flex; flex-direction: column; overflow: hidden; padding: .5rem; background: var(--gramlot-navigation); color: var(--gramlot-navigation-text); border-block-start: 3px solid var(--gramlot-brand-yellow); border-inline-end: 1px solid var(--gramlot-border); }
+.index-sidebar nav { flex: 1; min-block-size: 0; overflow: auto; }
+.index-sidebar h1 { margin: 0 .4rem .5rem; font-size: 1.1rem; }
+.index-logo { display: block; inline-size: 56px; block-size: auto; margin: 0 auto .3rem; }
+.index-list { list-style: none; margin: 0; padding: 0; }
+.index-list li + li { margin-block-start: 1px; }
+.index-list a { display: block; inline-size: 100%; min-block-size: 26px; padding: .25rem .45rem; border: 0; border-radius: .25rem; background: transparent; color: var(--gramlot-navigation-text); text-align: start; text-decoration: none; font-size: 1rem; font-weight: 450; overflow-wrap: normal; }
+.index-list a:hover { background: var(--gramlot-action-hover); color: var(--gramlot-navigation-text); }
+.index-list a[aria-current="page"] { background: var(--gramlot-brand-blue); color: #fff; font-weight: 650; }
+.index-list .index-list { margin-inline-start: .5rem; padding-inline-start: .3rem; border-inline-start: 1px solid var(--gramlot-border-control); }
+.index-list .index-family { font-weight: 650; }
+.index-list details { border: 0; border-radius: 0; background: transparent; padding: 0; }
+.index-list summary { display: flex; align-items: center; list-style: none; cursor: pointer; border-radius: .25rem; }
+.index-list summary::-webkit-details-marker { display: none; }
+.index-list summary::before { content: '\25B8'; flex: none; inline-size: 1rem; text-align: center; color: var(--gramlot-navigation-text); opacity: .75; transition: transform .15s; }
+.index-list summary:hover::before { opacity: 1; }
+.index-list details[open] > summary::before { transform: rotate(90deg); }
+.index-list details[open] > summary { margin-block-end: 0; }
+.index-list summary > .index-family { flex: 1; min-inline-size: 0; padding-inline-start: .1rem; }
+.index-footer { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1.25rem; padding: .3rem .75rem; border-block-start: 1px solid var(--gramlot-border); background: var(--gramlot-surface-subtle); color: var(--gramlot-ink); font-size: .95rem; }
+.index-keyboard { flex: none; }
+.index-keyboard label { display: flex; align-items: center; gap: .4rem; margin: 0; font-size: inherit; color: inherit; }
+.index-keyboard input { margin: 0; }
+.index-theme { display: flex; align-items: center; gap: .4rem; }
+.index-theme label { margin: 0; font-size: inherit; }
+.index-theme select { inline-size: auto; min-inline-size: 7rem; min-block-size: 26px; padding: .15rem .4rem; font-size: inherit; }
+.index-shell:not(:has(#keyboard-navigation:checked)) :is(.index-list a, .index-list summary, .index-tabs button):focus-visible { outline: none; }
+.index-shell:has(#keyboard-navigation:checked) :is(.index-list a, .index-list summary):focus-visible { outline: 2px solid var(--gramlot-brand-yellow); outline-offset: -2px; }
+.index-main { display: grid; grid-template-rows: auto minmax(0, 1fr); min-inline-size: 0; min-block-size: 0; }
+.index-tabs { display: flex; gap: .15rem; overflow-x: auto; padding: .25rem .4rem 0; border-block-end: 1px solid var(--gramlot-border); background: var(--gramlot-surface-subtle); }
+.index-tabs button { flex: none; white-space: nowrap; min-block-size: 27px; border: 1px solid var(--gramlot-border); border-block-end: 0; border-radius: .25rem .25rem 0 0; background: transparent; color: var(--gramlot-text-secondary); padding: .2rem .55rem; font-size: 1rem; line-height: 1.25; }
+.index-tabs button:hover, .index-tabs button[aria-selected="true"] { background: var(--gramlot-surface); color: var(--gramlot-action); }
+.index-tabs button[aria-selected="true"] { border-block-start: 2px solid var(--gramlot-brand-blue); }
+.index-panels { min-block-size: 0; min-inline-size: 0; overflow: hidden; }
+.index-intro, .index-category { block-size: 100%; overflow: auto; padding: .8rem; background: var(--gramlot-surface); font-size: 1rem; }
+.index-intro > * { max-inline-size: 70ch; }
+.index-intro h2, .index-category h1 { font-size: 1.3rem; margin-block: 0 .5rem; }
+.index-intro p { font-size: 1rem; }
+.index-category table { font-size: 1rem; }
+.index-divider { min-inline-size: 8px; block-size: 100%; cursor: col-resize; touch-action: none; user-select: none; background: var(--gramlot-surface-subtle); border-inline: 1px solid var(--gramlot-border); position: relative; }
+.index-divider::after { content: ''; position: absolute; inline-size: 2px; block-size: 24px; inset-inline-start: calc(50% - 1px); inset-block-start: calc(50% - 12px); border-radius: 2px; background: var(--gramlot-border-control); }
+.index-divider:focus-visible { outline: 2px solid var(--gramlot-focus-ring); outline-offset: -2px; }
+.index-shell[data-resizing="true"] iframe { pointer-events: none; }
+
+
+.index-panel { height:100%; min-height:0; }
+.index-panel > iframe { width:100%; height:100%; display:block; border:0; }
+.index-install { position:relative; margin:0; padding:.2rem .4rem; }
+.index-install[open] { position:absolute; bottom:0; right:0; z-index:5; max-width:32rem; background:var(--gramlot-surface); padding:.6rem; }
+.index-install p { font-size:inherit; }
+
+
+/* Layout only: colors, controls, typography and focus come from Gramlot Base. */
+html,body{height:100%}body{overflow:hidden}.hidden{display:none!important}
+body>header{height:44px;border-top:3px solid var(--gramlot-brand-yellow);border-bottom:1px solid var(--gramlot-border);display:flex;align-items:center;gap:12px;padding:0 10px;background:var(--gramlot-surface-subtle)}
+.brand{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:650;flex:1}.brand>span:not(.mark){font-weight:400;color:var(--gramlot-text-secondary)!important}.brand small{font-size:12px;margin-left:12px;padding-left:14px;border-left:1px solid var(--gramlot-border)}.mark{display:none}.account{display:flex;align-items:center;gap:10px}.avatar{display:grid;place-items:center;width:26px;height:26px;background:var(--gramlot-selected);color:var(--gramlot-action);border-radius:50%;font-size:11px}.account>button{min-block-size:28px;padding:2px 10px}
+.app{height:calc(100dvh - 74px);display:grid;grid-template-columns:240px minmax(0,1fr);min-height:0}.app>aside{background:var(--gramlot-navigation);color:var(--gramlot-navigation-text);border-right:1px solid var(--gramlot-border);padding:14px 10px;display:flex;flex-direction:column;gap:20px;overflow:auto;min-height:0}.label{font-size:12px;font-weight:650;letter-spacing:0;margin-bottom:8px}.sitebox{padding:0 4px}.sitebox select{min-height:34px;padding:5px 8px}.sitehint{font-size:11px;margin-top:8px;opacity:.8}.nav{display:grid;gap:2px}.nav button{justify-content:flex-start;text-align:left;border:0;border-radius:4px;background:transparent;color:var(--gramlot-navigation-text);padding:6px 10px;min-height:32px;font-size:14px;font-weight:450;gap:8px}.nav button:hover:not(:disabled){background:var(--gramlot-action-hover)}.nav button.active{background:var(--gramlot-brand-blue);font-weight:650}.nav button span:first-child{width:18px;text-align:center}.nav small{font-size:9px;color:inherit;margin-left:auto;opacity:.75}.nav button:disabled{opacity:.45}.nav button:focus-visible{outline-color:var(--gramlot-brand-yellow)}.librarynav{border-top:1px solid #ffffff30;padding-top:16px}.scopefoot{margin-top:auto;padding:12px 4px 0;border-top:1px solid #ffffff30;font-size:11px;line-height:1.7;opacity:.85}.scopefoot strong{color:var(--gramlot-navigation-text)!important;font-weight:450}
+main{padding:0;min-width:0;min-height:0;overflow:auto;background:var(--gramlot-background)}.page-tabs{position:sticky;top:0;z-index:2;display:flex;gap:3px;padding:4px 8px 0;background:var(--gramlot-surface-subtle);border-bottom:1px solid var(--gramlot-border)}.page-tabs button{border:1px solid var(--gramlot-border);border-bottom:0;border-radius:4px 4px 0 0;background:transparent;color:var(--gramlot-text-secondary);padding:4px 12px;min-height:28px;font-size:12px;font-weight:450}.page-tabs button.active{border-top:2px solid var(--gramlot-brand-blue);background:var(--gramlot-surface);color:var(--gramlot-action);font-weight:600}.page-content{padding:16px}.breadcrumb{color:var(--gramlot-text-secondary);font-size:12px;margin-bottom:14px}.breadcrumb span{padding:0 7px}.heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}h1{margin:0 0 6px}h2{margin:0 0 5px}.heading p,.detail>p{font-size:13px;color:var(--gramlot-text-secondary);margin:0}.badge{display:inline-block;border-radius:4px;background:var(--gramlot-success-background);color:var(--gramlot-success);font-size:11px;padding:3px 7px;white-space:nowrap}.neutral{background:var(--gramlot-surface-subtle);color:var(--gramlot-text-secondary)}.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:12px}.search{display:flex;align-items:center;gap:8px;flex:1;max-width:360px;margin:0;font-weight:400}.search input{min-height:34px;padding:6px 9px}.count{margin-left:auto;color:var(--gramlot-text-secondary);font-size:12px}.toolbar>button{min-height:34px;padding:5px 12px}.workspace{display:grid;grid-template-columns:minmax(260px,0.9fr) minmax(320px,1.2fr);border:1px solid var(--gramlot-border);background:var(--gramlot-surface);min-height:470px;border-radius:var(--gramlot-radius-sm);overflow:hidden}.list{border-right:1px solid var(--gramlot-border)}.listhead{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;font-size:11px;background:var(--gramlot-surface-subtle);border-bottom:1px solid var(--gramlot-border);color:var(--gramlot-text-secondary)}.row{display:block;width:100%;text-align:left;background:var(--gramlot-surface);color:var(--gramlot-ink);border:0;border-radius:0;border-bottom:1px solid var(--gramlot-border);padding:13px 14px;font-weight:400;min-height:74px}.row:hover:not(:disabled){background:var(--gramlot-surface-subtle);color:var(--gramlot-ink);border-color:var(--gramlot-border)}.row.selected{background:var(--gramlot-selected);box-shadow:inset 3px 0 0 var(--gramlot-brand-blue)}.row strong{display:block;font-size:14px;font-weight:600;margin-bottom:6px}.rowmeta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--gramlot-text-secondary)}.detail{padding:18px;min-width:0}.detailtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.eyebrow{font-size:12px;color:var(--gramlot-text-secondary)}.tabs{display:flex;gap:3px;border-bottom:1px solid var(--gramlot-border);margin:18px 0}.tabs button{font-size:12px;min-height:30px;border:1px solid transparent;border-radius:4px 4px 0 0;padding:4px 10px;background:transparent;color:var(--gramlot-text-secondary);font-weight:450}.tabs button.active{background:var(--gramlot-selected);border-color:var(--gramlot-border);border-bottom-color:var(--gramlot-brand-blue);color:var(--gramlot-action);font-weight:600}.tabs button:hover{background:var(--gramlot-selected);color:var(--gramlot-action)}dl{display:grid;grid-template-columns:110px 1fr;gap:10px 14px;font-size:12px;margin:0}dt{color:var(--gramlot-text-secondary)}dd{margin:0}.sectiontitle{margin:20px 0 10px;font-size:13px;font-weight:600}.variant{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--gramlot-border);margin:7px 0;font-size:12px;border-radius:var(--gramlot-radius-sm)}.lang{display:inline-block;background:var(--gramlot-surface-subtle);border:1px solid var(--gramlot-border);border-radius:3px;padding:0 4px;margin-right:6px;font-size:10px}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;background:var(--gramlot-success)}.note{font-size:11px;padding:10px;margin-top:18px;background:var(--gramlot-surface-subtle);color:var(--gramlot-text-secondary);border-radius:var(--gramlot-radius-sm)}.muted{color:var(--gramlot-text-secondary)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.history{display:grid;gap:15px}.history>div{padding-left:10px;border-left:2px solid var(--gramlot-brand-blue);font-size:12px}.history small{display:block;margin-top:4px}
+footer{height:30px;padding:5px 12px;display:flex;align-items:center;gap:20px;border-top:1px solid var(--gramlot-border);background:var(--gramlot-surface-subtle);color:var(--gramlot-text-secondary);font-size:10px}.footer-brand{font-size:11px;font-weight:600;color:var(--gramlot-ink)}#login{height:calc(100dvh - 74px);overflow:auto;display:grid;place-items:center;padding:24px}.loginbox{background:var(--gramlot-surface);border:1px solid var(--gramlot-border);border-radius:var(--gramlot-radius);padding:28px;max-width:390px;width:100%}.loginbox h1{margin-top:12px}.loginbox p{font-size:13px}.loginbox label{display:block;margin-top:18px}.loginbox button{width:100%;margin-top:22px}.loginbox input{width:100%}.nav-toggle{min-height:28px;padding:1px 8px}.nav-collapsed .app{grid-template-columns:0 minmax(0,1fr)}.nav-collapsed aside{visibility:hidden;padding:0}.nav-collapsed #app.hidden{display:none!important}
+@media(max-width:1050px){.app{grid-template-columns:210px minmax(0,1fr)}.workspace{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--gramlot-border)}.brand small{display:none}}@media(max-width:650px){.app{display:block;overflow:auto}.app>aside{padding:12px;gap:12px}.sitehint,.scopefoot{display:none}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap;font-size:13px}.nav small{display:none}.librarynav{padding-top:10px}.librarynav>.label{display:none}.brand>span:not(.mark){display:none}.brand small,.account>span{display:none}.page-content{padding:12px}.count{display:none}.heading>.badge{display:none}.workspace{display:block}.detail{padding:14px}.nav-collapsed aside{display:none}.nav-collapsed .app{display:block}footer{font-size:9px;gap:10px}footer .footer-brand{display:none}footer>span:nth-child(2){font-size:0}footer>span:nth-child(2)::after{content:"Mockup · dati dimostrativi";font-size:10px}.page-tabs{position:static}}
+
+</style></head><body>
+<header><button class="nav-toggle button--quiet" aria-label="Mostra o nascondi navigazione" onclick="document.body.classList.toggle('nav-collapsed')">☰</button><div class="brand"><span class="mark">k</span>kajenn<span style="font-weight:400;color:#7c8b8e">public site</span><small>Amministrazione</small></div><div class="account" id="account"><span class="avatar">GP</span><span style="font-size:12px">Giovanni</span><button class="button--quiet" onclick="showLogin()">Esci</button></div></header>
+<div class="app" id="app"><aside><div class="sitebox"><div class="label">Sito corrente</div><label for="site" class="hidden">Sito corrente</label><select id="site" onchange="changeSite()"><option>Kajenn</option><option>Gramlot</option></select><div class="sitehint">Italiano · Inglese</div></div><nav class="nav" aria-label="Sezioni del sito"><button class="active" id="contentNav" onclick="setScope('content')"><span>▤</span>Contenuti</button><button id="resourceNav" onclick="setScope('resource')"><span>◇</span>Risorse</button><button disabled title="Disponibile in seguito"><span>↗</span>Pubblicazione <small>IN SEGUITO</small></button></nav><div class="librarynav"><div class="label" style="padding-left:12px">Condiviso tra i siti</div><nav class="nav"><button id="libraryNav" onclick="setScope('library')"><span>▧</span>Libreria</button></nav></div><div class="scopefoot">Accesso al sito corrente<br><strong style="font-size:11px;color:#50645f">Lettura · Scrittura · Pubblicazione</strong></div></aside>
+<main><div class="page-tabs" aria-label="Pagine aperte"><button id="page-content" class="active" onclick="setScope('content')">Contenuti</button><button id="page-resource" onclick="setScope('resource')">Risorse</button><button id="page-library" onclick="setScope('library')">Libreria</button></div><div class="page-content"><div class="breadcrumb" id="breadcrumb">Siti <span>/</span> Kajenn <span>/</span> Contenuti</div><div class="heading"><div><h1 id="title">Contenuti</h1><p id="subtitle">Pagine e varianti linguistiche del sito Kajenn.</p></div><span class="badge neutral">Consultazione</span></div><div class="toolbar"><label class="search">⌕ <input id="search" placeholder="Cerca per titolo…" aria-label="Cerca per titolo" oninput="filterRows()"></label><span class="count" id="count">3 contenuti</span><button onclick="document.getElementById('search').value='';filterRows()">Aggiorna</button></div>
+<div class="workspace"><section class="list" aria-label="Elenco"><div class="listhead"><span id="listLabel">Titolo</span><span>Ultima revisione</span></div><div id="rows"></div></section><section class="detail" aria-label="Dettaglio selezionato"><div class="detailtop"><span class="eyebrow" id="kind">Contenuto</span><span class="badge neutral">Sola lettura</span></div><h2 id="detailTitle">Chi siamo</h2><p style="font-size:12px" id="detailSub">Una pagina, due varianti linguistiche.</p><div class="tabs"><button class="active" onclick="setTab('info',this)">Informazioni</button><button onclick="setTab('source',this)">Sorgente</button><button onclick="setTab('history',this)">Revisioni</button></div><div id="info"><dl><dt>Ambito</dt><dd id="scopeValue">Sito Kajenn</dd><dt>Identificativo</dt><dd id="keyValue">chi-siamo</dd><dt>Ultima modifica</dt><dd>22 ottobre 2026, 10:42</dd><dt>Autore</dt><dd>Giovanni</dd></dl><div class="sectiontitle" id="variantLabel">Varianti linguistiche</div><div id="variants"><div class="variant"><span><span class="lang">IT</span> Chi siamo</span><span class="muted"><span class="dot"></span>Revisione 4</span></div><div class="variant"><span><span class="lang">EN</span> About us</span><span class="muted"><span class="dot"></span>Revisione 2</span></div></div><div class="note">Questa vista mostra le revisioni salvate. Lo stato di pubblicazione sarà disponibile nella sezione dedicata.</div></div><div id="source" class="hidden"><p id="sourceLabel" style="font-size:12px;margin-bottom:12px">Sorgente della variante italiana · revisione 4</p><pre># Chi siamo
+
+Strumenti aperti per costruire applicazioni
+e pubblicare contenuti.
+
+&lt;div class="note"&gt;Condividere la conoscenza.&lt;/div&gt;</pre></div><div id="history" class="hidden"><div class="history"><div><strong>Revisione 4</strong> · Giovanni<small>22 ottobre 2026, 10:42 · Ultima revisione</small></div><div><strong>Revisione 3</strong> · Giovanni<small>21 ottobre 2026, 16:20</small></div><div><strong>Revisione 2</strong> · Team editoriale<small>20 ottobre 2026, 09:14</small></div></div></div></section></div></div></main></div>
+<section id="login" class="hidden"><div class="loginbox"><span class="eyebrow">Amministrazione</span><h1 style="margin-top:12px">Accedi ai tuoi siti</h1><p>Usa l’account del tuo team.</p><label for="user">Nome utente</label><input id="user" autocomplete="username" placeholder="Nome utente"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Password"><button class="primary" onclick="showApp()">Accedi — dimostrazione</button><p style="margin-top:18px;font-size:11px">Per l’accesso, contatta l’amministratore del team.</p></div></section><footer><span class="footer-brand">Kajenn public site</span><span>Proposta visiva · dati dimostrativi · non inserire credenziali reali</span><span style="margin-left:auto">Gramlot Base</span></footer>
+<script>
+const datasets={content:[['Chi siamo','IT · EN','Oggi, 10:42'],['La piattaforma','IT · EN','Ieri, 16:20'],['Contatti','IT','20 ott, 09:14']],resource:[['Pagina editoriale','Template · Gramlot','Oggi, 09:30'],['Stile del sito','CSS','Ieri, 15:10'],['Navigazione','JavaScript','20 ott, 11:00']],library:[['Pagina essenziale','Template · HtmlBuilder','21 ott, 14:00'],['Tipografia di base','CSS','20 ott, 10:00'],['Marchio Kajenn','Immagine · PNG','19 ott, 09:30']]};let scope='content';function setScope(next){scope=next;const site=document.getElementById('site').value,lib=scope==='library',name={content:'Contenuti',resource:'Risorse',library:'Libreria condivisa'}[scope];document.getElementById('title').textContent=name;document.getElementById('subtitle').textContent=lib?'Risorse comuni, disponibili per essere copiate nei siti.':scope==='content'?`Pagine e varianti linguistiche del sito ${site}.`:`Template, fogli di stile, script e media del sito ${site}.`;document.getElementById('breadcrumb').textContent=lib?'Libreria condivisa':`Siti / ${site} / ${name}`;for(const id of ['content','resource','library'])document.getElementById(id+'Nav').classList.toggle('active',id===scope);document.querySelectorAll('.page-tabs button').forEach(b=>b.classList.toggle('active',b.id==='page-'+scope));document.getElementById('search').value='';renderRows();selectRow(0)}function renderRows(){const query=document.getElementById('search').value.toLowerCase();document.getElementById('rows').innerHTML=datasets[scope].map((row,i)=>`<button class="row ${i===0?'selected':''}" onclick="selectRow(${i})" ${row[0].toLowerCase().includes(query)?'':'hidden'}><strong>${row[0]}</strong><span class="rowmeta"><span>${row[1]}</span><span>${row[2]}</span></span></button>`).join('');document.getElementById('count').textContent=datasets[scope].filter(r=>r[0].toLowerCase().includes(query)).length+(scope==='content'?' contenuti':' risorse')}function filterRows(){renderRows()}function selectRow(i){document.querySelectorAll('.row').forEach((e,n)=>e.classList.toggle('selected',n===i));const row=datasets[scope][i];document.getElementById('detailTitle').textContent=row[0];document.getElementById('kind').textContent=scope==='content'?'Contenuto':'Risorsa';document.getElementById('detailSub').textContent=scope==='content'?'Contenuto e relative varianti linguistiche.':row[1];document.getElementById('scopeValue').textContent=scope==='library'?'Libreria condivisa':'Sito '+document.getElementById('site').value;document.getElementById('keyValue').textContent=row[0].toLowerCase().replaceAll(' ','-');document.getElementById('variantLabel').textContent=scope==='content'?'Varianti linguistiche':'Riferimenti';document.getElementById('variants').innerHTML=scope==='content'?`<div class="variant"><span><span class="lang">IT</span> ${row[0]}</span><span class="muted">Revisione 4</span></div><div class="variant"><span><span class="lang">EN</span> ${i===0?'About us':'English version'}</span><span class="muted">Revisione 2</span></div>`:'<div class="variant"><span>Revisione selezionata</span><span class="muted">3</span></div><div class="variant"><span>Dipendenze</span><span class="muted">Nessuna</span></div>';document.getElementById('sourceLabel').textContent=scope==='content'?'Sorgente della variante italiana · revisione 4':'Sorgente della risorsa · revisione 3';document.querySelector('pre').textContent=scope==='content'?'# '+row[0]+'\n\nStrumenti aperti per costruire applicazioni e pubblicare contenuti.':row[1].includes('Template')?'def main(root, data):\n    root.h1(data.getItem("title"))':row[1]==='CSS'?'body {\n    font-family: system-ui, sans-serif;\n    color: #202b30;\n}':row[1]==='JavaScript'?'// Script del sito\nconsole.info("Sito pronto");':'File immagine · PNG\nIl contenuto binario non viene caricato nella lista.';setTab('info',document.querySelector('.tabs button'))}function changeSite(){setScope(scope)}function setTab(name,button){for(const id of ['info','source','history'])document.getElementById(id).classList.toggle('hidden',id!==name);document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b===button))}function showLogin(){document.getElementById('app').classList.add('hidden');document.getElementById('account').classList.add('hidden');document.getElementById('login').classList.remove('hidden')}function showApp(){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('account').classList.remove('hidden')}renderRows();
+</script></body></html>

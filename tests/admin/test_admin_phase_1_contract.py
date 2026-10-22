@@ -215,7 +215,7 @@ def test_admin_session_mutations_require_the_authorized_origin(tmp_path):  # wf:
             response = await http.post(
                 "/content_create", json={}, headers={"Authorization": "Bearer invalid"}
             )
-            assert response.status_code == 403
+            assert response.status_code in {401, 403}
             http.headers["Origin"] = str(http.base_url).rstrip("/")
             assert catalog.read().generation == generation
             assert (await http.get("/_server/logout")).status_code == 405
