@@ -11,7 +11,7 @@ from threading import RLock
 from ..catalog.errors import Conflict
 from ..catalog.filesystem import digest, encode
 from ..catalog.local import Change
-from ..domain import MUTATIONS, OPERATIONS, DomainError
+from ..domain import EDITORIAL_KINDS, MUTATIONS, OPERATIONS, DomainError
 from ..objects import ObjectRef
 
 NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,63}")
@@ -101,7 +101,11 @@ class EditorialService:
         try:
             head = snapshot.records[record_id]
             revision = snapshot.revisions[revision_id or head["revision_id"]]
-            if revision["record_id"] != record_id or revision["data"]["schema"] != 1:
+            if (
+                revision["record_id"] != record_id
+                or revision["data"]["schema"] != 1
+                or revision["data"].get("kind") not in EDITORIAL_KINDS
+            ):
                 raise KeyError(record_id)
             return revision
         except (KeyError, TypeError) as exc:
@@ -248,6 +252,11 @@ class EditorialService:
 
     def _unique(self, snapshot, scope, kind, attributes, record_id=None):
         for rid in snapshot.records:
+            if (
+                snapshot.revisions[snapshot.records[rid]["revision_id"]]["data"].get("kind")
+                not in EDITORIAL_KINDS
+            ):
+                continue
             rev = self._revision(snapshot, rid)
             if rid == record_id or rev["scope"] != scope or rev["data"]["kind"] != kind:
                 continue
@@ -281,9 +290,7 @@ class EditorialService:
             "database_required": False,
         }
 
-    def _site_create(
-        self, snapshot, identity, key, name, languages, review_required=False
-    ):
+    def _site_create(self, snapshot, identity, key, name, languages, review_required=False):
         attributes = self._site_attributes(name, languages, review_required)
         return self._change("installation", "site", attributes)
 
@@ -308,7 +315,8 @@ class EditorialService:
         return [
             self._view(snapshot, identity, rid)
             for rid in snapshot.records
-            if self._revision(snapshot, rid)["data"]["kind"] == "site"
+            if snapshot.revisions[snapshot.records[rid]["revision_id"]]["data"].get("kind")
+            == "site"
             and self.policy.allows(identity, "site:" + rid, "read")
         ]
 
@@ -328,6 +336,11 @@ class EditorialService:
             raise DomainError("invalid_input", "Expected a site", resource_id=site_id)
         attributes = self._site_attributes(name, languages, review_required)
         for rid in snapshot.records:
+            if (
+                snapshot.revisions[snapshot.records[rid]["revision_id"]]["data"].get("kind")
+                not in EDITORIAL_KINDS
+            ):
+                continue
             rev = self._revision(snapshot, rid)
             if (
                 rev["scope"] == "site:" + site_id
@@ -351,7 +364,9 @@ class EditorialService:
         return [
             self._view(snapshot, identity, rid)
             for rid in snapshot.records
-            if self._scope(self._revision(snapshot, rid)) == scope
+            if snapshot.revisions[snapshot.records[rid]["revision_id"]]["data"].get("kind")
+            in EDITORIAL_KINDS
+            and self._scope(self._revision(snapshot, rid)) == scope
             and (kind is None or self._revision(snapshot, rid)["data"]["kind"] == kind)
         ]
 
@@ -571,9 +586,7 @@ class EditorialService:
         self._unique(snapshot, scope, "media", attrs, record_id)
         return self._change(scope, "media", attrs, {"binary": raw}, record_id, expected_generation)
 
-    def _resource_copy(
-        self, snapshot, identity, source_revision, site_id, name, key
-    ):
+    def _resource_copy(self, snapshot, identity, source_revision, site_id, name, key):
         if self._revision(snapshot, site_id)["data"]["kind"] != "site":
             raise DomainError(
                 "invalid_input", "Copy destination must be a site", resource_id=site_id
@@ -601,14 +614,9 @@ class EditorialService:
             (r for r in snapshot.revisions.values() if r["record_id"] == record_id),
             key=lambda r: r["generation"],
         )
-        return [
-            self._view(snapshot, identity, record_id, revision["id"])
-            for revision in revisions
-        ]
+        return [self._view(snapshot, identity, record_id, revision["id"]) for revision in revisions]
 
-    def _revision_compare(
-        self, snapshot, identity, record_id, left_revision, right_revision
-    ):
+    def _revision_compare(self, snapshot, identity, record_id, left_revision, right_revision):
         left, right = [
             self._view(snapshot, identity, record_id, r) for r in (left_revision, right_revision)
         ]

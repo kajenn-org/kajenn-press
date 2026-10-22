@@ -319,3 +319,15 @@ and the same stable IDs survive close/reopen and replay. Backend read APIs remai
 trusted internal operations; Phase 2 supplies authenticated site/library grants
 for all external consumers. The JSON snapshot implementation is intentionally
 unoptimized; large-history scalability remains a limitation to measure.
+
+
+## Macro 2, fase 3: transizione di pubblicazione verificata
+
+Canale, attivazione immutabile, ricevuta, audit ed evento sono una singola
+transizione condizionale del catalogo. Il recupero da interruzioni prima e dopo
+il cambio del puntatore conserva il vecchio stato o il nuovo stato completo.
+Il retry con identica chiave non duplica la pubblicazione. Il rollback seleziona
+artefatti conservati, senza ricostruirli; ogni richiesta pubblica fissa una sola
+release e gli asset usano un namespace immutabile. Nessuna nuova dipendenza
+database o modifica al formato dei sorgenti. Contratto e limiti operativi in
+[Pubblicazione e rollback](12-publication-rollback.md).

@@ -1,7 +1,7 @@
 # kajenn-public-site
 
 Proposta di piattaforma editoriale e pubblicazione di siti della famiglia Genro.
-**Stato al 21 ottobre 2026: implementati persistenza locale e servizi editoriali REST/MCP autenticati; rendering, pubblicazione ed editor appartengono alle macro successive.**
+**Stato al 21 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. Gli editor restano alle macro successive.**
 
 La proposta separa identità dei contenuti, revisioni editoriali immutabili e
 release pubblicate. Si parte con un backend su filesystem per catalogo e stato
@@ -29,6 +29,9 @@ pubblicazione, attraverso gli stessi servizi usati dalla UI.
 | [07 · Capacità verificate](docs/07-capacita-verificate.md) | Evidenze locali, limiti e responsabilità delle estensioni |
 | [08 · Decisioni aperte](docs/08-decisioni.md) | Direzione acquisita e scelte strutturali ancora aperte |
 | [09 · Fonti e verifica](docs/09-fonti.md) | Sorgenti consultati, versioni, fonti esterne e limiti della verifica |
+| [10 · Rendering statico](docs/10-rendering-statico.md) | Contratto template/Data, filtro editoriale, worker e profilo opzionale verificato |
+| [11 · Build e anteprime](docs/11-build-anteprime.md) | Candidati, job persistenti, percorsi, grant privati e nove operazioni REST/MCP |
+| [12 · Pubblicazione e rollback](docs/12-publication-rollback.md) | Canali, attivazione condizionale, serving pubblico e ciclo completo |
 
 Per iniziare il confronto: leggere 01, 02 e 08. Il catalogo delle funzioni viene
 dopo il modello: nomi, schemi e raccomandazioni non sono API approvate.
@@ -58,7 +61,7 @@ same record/revision IDs: retrying an operation does not create extra history.
 Use a dedicated private directory; this example has fixed operation keys.
 
 ```sh
-python3 -m pytest -q --import-mode=importlib tests/contracts tests/catalog tests/services tests/api
+python3 -m pytest -q --import-mode=importlib tests/contracts/phase_1 tests/contracts/phase_2 tests/catalog tests/services tests/api
 ruff check src/kajenn_public_site tests examples
 python3 -m compileall -q src/kajenn_public_site
 ```
@@ -113,7 +116,8 @@ The runtime uses Genro Storage >=0.8.1,<0.9 and the **published Kajenn 0.5.0** w
 That release has no Gramlot dependency. The inspected local Kajenn checkout adds
 Gramlot in uncommitted server-interface changes; it is not the artifact used here.
 Do not replace the pinned release with that editable checkout and assume the same
-installation contract. This application imports no Asqueel/SQL driver or Gramlot.
+installation contract. The editorial-only application imports no Asqueel/SQL driver or Gramlot;
+the optional worker explicitly loads the qualified rendering packages.
 
 See the [implementation roadmap](.phased/roadmap.md) and
 [storage protocol](docs/06-storage-consistenza.md) for the full scope and limits.
@@ -159,7 +163,7 @@ curl -sS -H "Authorization: Bearer $KAJENN_PUBLIC_SITE_TOKEN" \
 ```
 
 OpenAPI is available at `/_meta/schema_json` with the same authorization header;
-MCP uses `/mcp`. The same 18 domain operations are discoverable on both faces.
+MCP uses `/mcp`. The 18 editorial operations, nine optional build/preview operations and six channel/release operations are discoverable on both faces (33 total); see [build and preview setup](docs/11-build-anteprime.md) and [publication and rollback](docs/12-publication-rollback.md).
 The [implemented API reference](docs/04-funzioni.md#phase-2-implemented-api) records
 actual names, payload conventions, scope grants, errors and remaining limits.
 
@@ -172,5 +176,4 @@ its exact `revision_id`. For a restart/retry use the original key and input.
 `readiness` currently checks named required blocks against the exact template
 revision. It does not execute a template, sanitize HTML, approve a release or
 publish anything. Lists/history are unpaginated, source/media payloads are limited
-to 8 MiB each, and media MIME declarations are explicitly unverified. Production
-volume limits, scanning, retention, delivery and publication remain separate work.
+to 8 MiB each, and editorial media MIME declarations remain unverified at save time. The build profile separately validates PNG before inline serving. Production volume limits, scanning and retention remain separate work.

@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+EDITORIAL_KINDS = {"site", "content", "variant", "template", "css", "javascript", "media"}
+
 OPERATIONS = {
     "capabilities",
     "site_create",
@@ -37,9 +39,7 @@ MUTATIONS = {
 
 
 class DomainError(Exception):
-    def __init__(
-        self, code, message, *, resource_id=None, block=None, details=None
-    ):
+    def __init__(self, code, message, *, resource_id=None, block=None, details=None):
         super().__init__(message)
         self.code = code
         self.resource_id = resource_id
@@ -60,7 +60,8 @@ class AccessPolicy:
     """Trusted deployment policy: identity -> scope -> permission names.
 
     Scopes are installation, library, site:<stable ID> or administrator wildcard *.
-    Permissions are read, write, use and create_site; write does not imply read/use.
+    Permissions include read, write, use, create_site, build, preview_grant and publish;
+    write does not imply read/use/build/preview_grant/publish.
     Configuration is private and supplied by the host, never by an API payload.
     """
 

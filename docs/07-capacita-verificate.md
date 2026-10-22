@@ -1,5 +1,27 @@
 # 07 · Capacità verificate e lacune
 
+## Aggiornamento runtime: Macro 2, fase 3
+
+La suite comprende **102 test superati**. Ai renderer, candidati congelati, job
+persistenti e anteprime della fase 2 si aggiungono attivazione condizionale,
+serving pubblico e rollback senza rendering, con sei ulteriori operazioni REST/MCP.
+
+Sono verificati attivatori concorrenti, interruzioni reali in cinque punti del
+commit, riapertura/retry, permessi e revisione correnti, compatibilità di sito e
+canale, isolamento delle origini e pinning di HTML/asset durante l'attivazione.
+Il ciclo Chromium sull'applicazione installata copre Gramlot e HtmlBuilder,
+anteprima, sito pubblico senza JS, aggiornamento della sola lingua italiana,
+asset precedenti, rollback agli stessi byte e riavvio con ID inalterati.
+Il profilo editoriale resta senza Gramlot, Markdown, nh3, SQLAlchemy e Asqueel.
+
+Versioni e confini sono nei contratti di [rendering](10-rendering-statico.md),
+[build/anteprima](11-build-anteprime.md) e [pubblicazione/rollback](12-publication-rollback.md).
+Restano da implementare UI/editor, approvazioni, scheduling e componenti
+interattivi. Questi esiti aggiornano le osservazioni storiche sotto riportate;
+non qualificano S3, CDN, cluster o Asqueel.
+
+## Ricognizione iniziale dei framework
+
 Verifica del 20 ottobre 2026, integrata il 21 ottobre per editor PoC e builder,
 mediante lettura di sorgenti, firme e test esistenti.
 **«Presente» significa implementazione osservata, non test eseguiti in questa

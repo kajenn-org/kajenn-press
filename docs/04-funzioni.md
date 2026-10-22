@@ -301,3 +301,15 @@ Asqueel backend is implemented by this phase. Review-required declarations are
 stored; publication enforcement belongs to the later release workflow. Source
 payloads/media are limited to 8 MiB each and listing/history returns all results;
 these are documented local-profile limits, not production capacity claims.
+
+## Macro 2: API build e anteprima implementate
+
+La fase 2 aggiunge nove operazioni REST/MCP autorizzate per impostazioni, percorsi,
+candidati, build e grant revocabili. Parametri, permessi, errori, limiti e demo
+sono nel [contratto build/anteprima](11-build-anteprime.md).
+
+La fase 3 aggiunge sei operazioni per canali, lettura/storia delle release,
+attivazione condizionale e rollback completo senza rendering. Il permesso
+`publish` è indipendente da `build`; la revisione obbligatoria blocca la
+transizione fino alla Macro 4. Parametri, permessi, errori e demo sono nel
+[contratto pubblicazione/rollback](12-publication-rollback.md).

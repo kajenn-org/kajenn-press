@@ -12,6 +12,8 @@ dependencies = ["genro-storage>=0.8.1,<0.9", "kajenn==0.5.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.14"]
+render = ["gramlot==0.3.8", "genro-builders==0.30.0", "genro-bag==0.28.0",
+          "markdown-it-py==4.2.0", "nh3==0.3.7"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kajenn_public_site"]

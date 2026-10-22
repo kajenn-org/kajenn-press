@@ -1,5 +1,6 @@
 """Authenticated Kajenn REST/MCP adapter; business rules live in services."""
 
+import asyncio
 from pathlib import Path
 from typing import ClassVar
 
@@ -11,6 +12,10 @@ from .catalog.errors import CommitUncertain
 from .catalog.filesystem import private_directory
 from .catalog.local import LocalCatalog
 from .domain import MUTATIONS, AccessPolicy, DomainError
+from .publication.gateway import PreviewGateway
+from .publication.service import OPERATIONS as PUBLICATION_OPERATIONS
+from .publication.service import READS, PublicationService
+from .rendering.process import RenderWorker
 from .services.editorial import EditorialService
 
 
@@ -22,21 +27,43 @@ class PublicSiteApplication(McpOpenApiApplication):
     }
     mcp_name = "kajenn-public-site"
 
-    def __init__(self, catalog_root, grants, **kwargs):
+    def __init__(self, catalog_root, grants, publication_config=None, **kwargs):
         self.catalog_root = Path(catalog_root)
         self.policy = AccessPolicy(grants)
         self.service = None
+        self.publication = None
+        self.publication_config = publication_config
         super().__init__(**kwargs)
 
-    def on_startup(self):
+    async def on_startup(self):
+        await asyncio.to_thread(self._open_services)
+
+    def _open_services(self):
         try:
             self.service = EditorialService(LocalCatalog(self.catalog_root), self.policy)
+            if self.publication_config is not None:
+                config = dict(self.publication_config)
+                worker = RenderWorker(
+                    config.pop("render_python"),
+                    timeout=config.pop("worker_timeout", 15),
+                    output_limit=config.pop("worker_output_limit", 8 * 1024 * 1024),
+                )
+                self.publication = PublicationService(
+                    self.service.catalog, self.policy, worker, **config
+                )
         except Exception as exc:
+            self._close_services()
             # Ordinary hook exceptions are only logged by Kajenn. Ownership or
             # integrity failure must prevent serving an uninitialized backend.
             raise FatalBootError("Cannot open the private editorial catalog") from exc
 
-    def on_shutdown(self):
+    async def on_shutdown(self):
+        await asyncio.to_thread(self._close_services)
+
+    def _close_services(self):
+        if self.publication is not None:
+            self.publication.close()
+            self.publication = None
         if self.service is not None:
             self.service.catalog.close()
             self.service = None
@@ -45,12 +72,27 @@ class PublicSiteApplication(McpOpenApiApplication):
         if request is None or request.avatar() is None:
             raise HTTPException(401, "Authentication required")
         is_rest = request.scope.get("kajenn.channel") != "mcp"
-        if is_rest and operation in MUTATIONS and request.scope["method"] != "POST":
+        if (
+            is_rest
+            and operation in (MUTATIONS | (PUBLICATION_OPERATIONS - READS))
+            and request.scope["method"] != "POST"
+        ):
             raise HTTPException(405, "Mutations require POST")
         if self.service is None:
             raise HTTPException(503, "Editorial service is not started")
         try:
-            result = self.service.execute(request.avatar().identity, operation, **arguments)
+            service = self.publication if operation in PUBLICATION_OPERATIONS else self.service
+            if service is None:
+                raise DomainError("unavailable", "Configure the optional publication worker first")
+            result = service.execute(request.avatar().identity, operation, **arguments)
+            if operation == "capabilities" and self.publication is not None:
+                result.update(
+                    rendering=True,
+                    preview=True,
+                    publication=True,
+                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS),
+                    permissions=result["permissions"] + ["build", "preview_grant", "publish"],
+                )
             return {"ok": True, "result": result}
         except DomainError as exc:
             if is_rest:
@@ -59,6 +101,7 @@ class PublicSiteApplication(McpOpenApiApplication):
                     "forbidden": 403,
                     "not_found": 404,
                     "conflict": 409,
+                    "unavailable": 503,
                 }.get(exc.code, 422)
             return {"ok": False, "error": exc.as_dict()}
         except CommitUncertain:
@@ -127,16 +170,12 @@ class PublicSiteApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def records_list(
-        self, scope: str, kind: str | None = None, _request=None
-    ) -> dict:
+    def records_list(self, scope: str, kind: str | None = None, _request=None) -> dict:
         """Records list. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(_request, "records_list", {"scope": scope, "kind": kind})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def content_create(
-        self, site_id: str, key: str, title: str, _request=None
-    ) -> dict:
+    def content_create(self, site_id: str, key: str, title: str, _request=None) -> dict:
         """Content create. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(
             _request, "content_create", {"site_id": site_id, "key": key, "title": title}
@@ -262,9 +301,7 @@ class PublicSiteApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def record_read(
-        self, record_id: str, revision_id: str | None = None, _request=None
-    ) -> dict:
+    def record_read(self, record_id: str, revision_id: str | None = None, _request=None) -> dict:
         """Record read. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(
             _request, "record_read", {"record_id": record_id, "revision_id": revision_id}
@@ -328,25 +365,196 @@ class PublicSiteApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def dependencies(
-        self, record_id: str, revision_id: str | None = None, _request=None
-    ) -> dict:
+    def dependencies(self, record_id: str, revision_id: str | None = None, _request=None) -> dict:
         """Dependencies. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(
             _request, "dependencies", {"record_id": record_id, "revision_id": revision_id}
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def readiness(
-        self, record_id: str, revision_id: str | None = None, _request=None
-    ) -> dict:
+    def readiness(self, record_id: str, revision_id: str | None = None, _request=None) -> dict:
         """Readiness. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(
             _request, "readiness", {"record_id": record_id, "revision_id": revision_id}
         )
 
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publication_settings_save(
+        self,
+        site_id: str,
+        channel: str,
+        public_origin: str,
+        primary_language: str,
+        landing_variant: str,
+        key: str,
+        record_id: str | None = None,
+        expected_generation: int = 0,
+        _request=None,
+    ) -> dict:
+        """Publication settings save. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "publication_settings_save",
+            {
+                "site_id": site_id,
+                "channel": channel,
+                "public_origin": public_origin,
+                "primary_language": primary_language,
+                "landing_variant": landing_variant,
+                "key": key,
+                "record_id": record_id,
+                "expected_generation": expected_generation,
+            },
+        )
 
-def create_server(catalog_root, *, auth, grants):
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publication_route_save(
+        self,
+        variant_id: str,
+        path: str,
+        title: str,
+        description: str,
+        key: str,
+        record_id: str | None = None,
+        expected_generation: int = 0,
+        _request=None,
+    ) -> dict:
+        """Publication route save. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "publication_route_save",
+            {
+                "variant_id": variant_id,
+                "path": path,
+                "title": title,
+                "description": description,
+                "key": key,
+                "record_id": record_id,
+                "expected_generation": expected_generation,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def candidate_create(
+        self,
+        settings_id: str,
+        variant_revisions: list[str],
+        key: str,
+        base_build_id: str | None = None,
+        _request=None,
+    ) -> dict:
+        """Candidate create. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "candidate_create",
+            {
+                "settings_id": settings_id,
+                "variant_revisions": variant_revisions,
+                "key": key,
+                "base_build_id": base_build_id,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def candidate_read(self, candidate_id: str, _request=None) -> dict:
+        """Candidate read. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(_request, "candidate_read", {"candidate_id": candidate_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def build_start(self, candidate_id: str, key: str, _request=None) -> dict:
+        """Build start. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(_request, "build_start", {"candidate_id": candidate_id, "key": key})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def build_retry(self, build_id: str, expected_generation: int, key: str, _request=None) -> dict:
+        """Build retry. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "build_retry",
+            {"build_id": build_id, "expected_generation": expected_generation, "key": key},
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def build_status(self, build_id: str, _request=None) -> dict:
+        """Build status. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(_request, "build_status", {"build_id": build_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def preview_grant_create(
+        self, build_id: str, lifetime_seconds: int, key: str, _request=None
+    ) -> dict:
+        """Preview grant create. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "preview_grant_create",
+            {"build_id": build_id, "lifetime_seconds": lifetime_seconds, "key": key},
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def preview_grant_revoke(
+        self, grant_id: str, expected_generation: int, key: str, _request=None
+    ) -> dict:
+        """Preview grant revoke. Exact revisions, explicit grants and idempotent mutation keys."""
+        return self._execute(
+            _request,
+            "preview_grant_revoke",
+            {"grant_id": grant_id, "expected_generation": expected_generation, "key": key},
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def channel_create(self, settings_id: str, key: str, _request=None) -> dict:
+        """Channel create. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(_request, "channel_create", {"settings_id": settings_id, "key": key})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def channel_read(self, settings_id: str, _request=None) -> dict:
+        """Channel read. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(_request, "channel_read", {"settings_id": settings_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_activate(
+        self, settings_id: str, build_id: str, expected_generation: int, key: str, _request=None
+    ) -> dict:
+        """Release activate. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(
+            _request,
+            "release_activate",
+            {
+                "settings_id": settings_id,
+                "build_id": build_id,
+                "expected_generation": expected_generation,
+                "key": key,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_rollback(
+        self, settings_id: str, build_id: str, expected_generation: int, key: str, _request=None
+    ) -> dict:
+        """Release rollback. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(
+            _request,
+            "release_rollback",
+            {
+                "settings_id": settings_id,
+                "build_id": build_id,
+                "expected_generation": expected_generation,
+                "key": key,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_read(self, build_id: str, _request=None) -> dict:
+        """Release read. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(_request, "release_read", {"build_id": build_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_history(self, settings_id: str, _request=None) -> dict:
+        """Release history. Conditional transitions, current publish policy and exact releases."""
+        return self._execute(_request, "release_history", {"settings_id": settings_id})
+
+
+def create_server(catalog_root, *, auth, grants, publication=None):
     """Build a host with explicit credentials/policy and private local storage.
 
     Authentication configuration belongs to the deployment; API clients cannot
@@ -355,11 +563,17 @@ def create_server(catalog_root, *, auth, grants):
     """
     root = private_directory(catalog_root)
     private_directory(root / "host")
-    return AsgiServer(
+    server = AsgiServer(
         applications=[
             (
                 PublicSiteApplication,
-                {"code": "public_site", "mount": "", "catalog_root": str(root), "grants": grants},
+                {
+                    "code": "public_site",
+                    "mount": "",
+                    "catalog_root": str(root),
+                    "grants": grants,
+                    "publication_config": publication,
+                },
             )
         ],
         auth=auth,
@@ -370,3 +584,9 @@ def create_server(catalog_root, *, auth, grants):
             {"name": "home", "protocol": "local", "base_path": str(root / "host")},
         ],
     )
+
+    if publication is not None:
+        return PreviewGateway(
+            server, publication["management_origin"], publication["preview_origin"]
+        )
+    return server

@@ -18,28 +18,28 @@ AUTH = {
 
 
 @asynccontextmanager
-async def client(root, grants=None, token="test-admin-token"):
-    server = create_server(root, auth=AUTH, grants=grants or ADMIN)
+async def client(root, grants=None, token="test-admin-token", publication=None):
+    server = create_server(root, auth=AUTH, grants=grants or ADMIN, publication=publication)
     incoming, outgoing = asyncio.Queue(), asyncio.Queue()
     task = asyncio.create_task(
         server({"type": "lifespan", "asgi": {"version": "3.0"}}, incoming.get, outgoing.put)
     )
     await incoming.put({"type": "lifespan.startup"})
-    started = await asyncio.wait_for(outgoing.get(), timeout=10)
+    started = await asyncio.wait_for(outgoing.get(), timeout=30)
     assert started["type"] == "lifespan.startup.complete", started
     try:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=server),
-            base_url="http://local",
+            base_url=publication["management_origin"] if publication else "http://local",
             headers={"Authorization": "Bearer " + token} if token else {},
         ) as http:
             yield http, server
     finally:
         await incoming.put({"type": "lifespan.shutdown"})
-        assert (await asyncio.wait_for(outgoing.get(), timeout=10))[
+        assert (await asyncio.wait_for(outgoing.get(), timeout=30))[
             "type"
         ] == "lifespan.shutdown.complete"
-        await asyncio.wait_for(task, timeout=10)
+        await asyncio.wait_for(task, timeout=30)
 
 
 async def call(http, channel, operation, **arguments):
