@@ -84,7 +84,7 @@ class AdminPage(GramlotPage):
             if not visible:
                 listing.p("Nessun elemento disponibile.", class_="empty")
             for record in visible:
-                button = listing.html_button(class_="record-row")
+                button = listing.button(class_="record-row")
                 literal_text(button, "strong", caption(record))
                 language = " · ".join(
                     r["attributes"]["language"]
@@ -148,7 +148,7 @@ class AdminPage(GramlotPage):
                         variant["kind"] == "variant"
                         and variant["attributes"]["content_id"] == record_id
                     ):
-                        info.html_button(
+                        info.button(
                             variant["attributes"]["language"], class_="button--secondary"
                         ).dataController(
                             "this.SET('admin.selected',record);this.SET('admin.revision','')",
@@ -174,7 +174,7 @@ class AdminPage(GramlotPage):
                 title="Revisioni", pageName="history", padding="12px", overflow="auto"
             )
             for item in history:
-                revisions.html_button(
+                revisions.button(
                     f"Revisione {item['generation']}", class_="button--secondary"
                 ).dataController(
                     "this.SET('admin.revision', revision)", revision=item["revision_id"]
@@ -195,7 +195,7 @@ class AdminPage(GramlotPage):
         box.input(
             id="password", type="password", value="^login.password", autocomplete="current-password"
         )
-        box.html_button("Accedi").dataRpc(
+        box.button("Accedi").dataRpc(
             "sign_in",
             username="=login.username",
             password="=login.password",
@@ -256,7 +256,7 @@ class WorkspacePage(AdminPage):
             type="search",
             live=True,
         )
-        toolbar.html_button("Aggiorna").dataController(
+        toolbar.button("Aggiorna").dataController(
             "this.SET('admin.refresh', (this.GET('admin.refresh')||0)+1)"
         )
         root.div(class_="workspace-host").remote(

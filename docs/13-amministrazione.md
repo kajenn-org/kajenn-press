@@ -100,7 +100,7 @@ non mantiene una cache locale dei contenuti o handle del filesystem.
 ```
 
 Aprire `http://127.0.0.1:8874/admin/`. Solo per questa demo: utente `demo`, password
-`kajenn-demo`. Vengono creati due siti e una Libreria in una directory temporanea.
+`demo`. Vengono creati due siti e una Libreria in una directory temporanea.
 Il server ascolta esclusivamente su loopback; il catalogo e gli utenti sono
 sacrificabili. Per vedere l'applicazione dopo un riavvio accedere nuovamente.
 

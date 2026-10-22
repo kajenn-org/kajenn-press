@@ -99,12 +99,12 @@ class Page(AdminPage, IndexPage):
             select.option("Nessun sito accessibile", value="")
         for item in self.sites:
             literal_text(select, "option", item["attributes"]["name"], value=item["record_id"])
-        bar.html_button(
+        bar.button(
             "Nuovo sito", disabled=not self.can_create, class_="button--secondary"
         ).dataController("this.SET('admin.new_site',true)")
         account = bar.div(class_="account")
         account.span(self.identity)
-        account.html_button("Esci", class_="button--quiet").dataRpc(
+        account.button("Esci", class_="button--quiet").dataRpc(
             "sign_out", _onResult="window.location.reload()"
         )
         # Native dialog uses a public Source attribute; no imperative DOM mutation.
@@ -118,7 +118,7 @@ class Page(AdminPage, IndexPage):
         dialog.html_label("Lingue (separate da virgola)", for_="new-site-languages")
         dialog.input(id="new-site-languages", value="^admin.languages", live=True)
         dialog.p("^admin.error", role="status")
-        dialog.html_button("Crea sito").dataRpc(
+        dialog.button("Crea sito").dataRpc(
             "create_site",
             name="=admin.name",
             languages="=admin.languages",
@@ -126,7 +126,7 @@ class Page(AdminPage, IndexPage):
             _onResult="if(result.ok){window.location.reload()}else{this.SET('admin.error',result.message)}",
             _onError="this.SET('admin.error','Risposta non disponibile. Riprova senza cambiare i dati.')",
         )
-        dialog.html_button("Annulla", class_="button--quiet").dataController(
+        dialog.button("Annulla", class_="button--quiet").dataController(
             "this.SET('admin.new_site',false)"
         )
 

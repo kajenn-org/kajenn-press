@@ -33,4 +33,8 @@ The owner performed login into the first implementation; session refresh, site/r
 
 The new shell requires another human login after the demo restart. **Authenticated Gallery screenshots, new-site UI flow, tree/tab/iframe navigation, narrow view, keyboard checks, logout/revocation browser flow and independent visual judge are pending.** Phase 1 remains in execution, not closed. No manual Verify or naming approval is claimed.
 
-Demo: `GRAMLOT_DEV=YES PYTHONPATH=src /tmp/kajenn-macro3-admin-env/bin/python examples/admin_demo.py`; loopback port 8874; demo / kajenn-demo. Credentials are disposable demo fixtures. Final screenshots must be captured from the new shell, not the superseded layout.
+Demo: `GRAMLOT_DEV=YES PYTHONPATH=src /tmp/kajenn-macro3-admin-env/bin/python examples/admin_demo.py`; loopback port 8874; demo / demo. Credentials are disposable demo fixtures. Final screenshots must be captured from the new shell, not the superseded layout.
+
+### Demo login correction
+
+The demo credentials are now `demo` / `demo`, as requested. Command controls use Gramlot `button`: native `html_button` does not execute nested dataRpc/dataController (Gramlot public guide 097). The restarted browser shows the actual Gramlot command button on the login form. Authenticated browser verification still requires the human login.

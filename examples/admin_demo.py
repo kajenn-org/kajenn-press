@@ -17,7 +17,7 @@ class DemoUsers(UserStore):
     def __init__(self, storage):  # wf:phase-1:new
         self.record = {
             "identity": "demo",
-            "password_hash": self.hash_password("kajenn-demo"),
+            "password_hash": self.hash_password("demo"),
             "tags": ["editor"],
             "enabled": True,
         }
@@ -103,7 +103,7 @@ def main():  # wf:phase-1:new
         },
     )
     print(
-        f"Demo locale: http://127.0.0.1:{args.port}/admin/ — utente demo, password kajenn-demo",
+        f"Demo locale: http://127.0.0.1:{args.port}/admin/ — utente demo, password demo",
         flush=True,
     )
     uvicorn.run(server, host="127.0.0.1", port=args.port, log_level="warning")

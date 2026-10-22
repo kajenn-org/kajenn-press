@@ -8,7 +8,7 @@
 
 - Implementation checkpoint: all nine copied contracts pass in the optional admin environment; original services/API checks pass (15 tests). The separate-origin test builds and opens a real private preview. Browser login is awaiting the human as required by execute-phase; screenshots and independent UI judge are still pending.
 - Configuration uses a public ShortcutConfiguration subclass with ConfigurationHandler over DefaultConfiguration: DefaultConfiguration itself does not accept constructor option kwargs. The subclass only adds request(body="raw") for the admin adapter.
-- A loopback-only disposable demo is in examples/admin_demo.py (demo / kajenn-demo); it is explicitly not a production UserStore. No real operator credentials were entered or retained.
+- A loopback-only disposable demo is in examples/admin_demo.py (demo / demo); it is explicitly not a production UserStore. No real operator credentials were entered or retained.
 
 - Browser screenshot from the owner exposed white application surfaces combined with automatic dark Base text. Fixed by using upstream theme tokens for all content surfaces, text, borders and focus; checked the login screenshot in actual dark mode. Do not force document theme through DOM manipulation.
 
