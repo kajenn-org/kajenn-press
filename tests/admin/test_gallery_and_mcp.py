@@ -18,7 +18,7 @@ def test_new_site_uses_shared_authority_and_mcp_creates_content(tmp_path):  # wf
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             main = await rpc(http, page, "main", "source")
-            assert "Nuovo sito" in main["value"] and "navigationSelection" in main["value"]
+            assert "New site" in main["value"] and "navigationSelection" in main["value"]
             created = await rpc(
                 http, page, "create_site", name="Da interfaccia", languages="it,en", key="ui-site"
             )

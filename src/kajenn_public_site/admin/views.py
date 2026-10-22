@@ -10,7 +10,7 @@ from gramlot import endpoint, source
 from kajenn_public_site.admin.host import CURRENT_REQUEST, execute_read
 from kajenn_public_site.domain import DomainError
 
-SECTIONS = {"content": "Contenuti", "resource": "Risorse", "library": "Libreria"}
+SECTIONS = {"content": "Content", "resource": "Resources", "library": "Library"}
 KINDS = {
     "content": {"content", "variant"},
     "resource": {"template", "css", "javascript", "media"},
@@ -35,7 +35,7 @@ class AdminPage(GramlotPage):
 
     async def scope_records(self, site, section):  # wf:phase-1:new
         if section not in KINDS:
-            raise DomainError("invalid_input", "Sezione non disponibile")
+            raise DomainError("invalid_input", "Section unavailable")
         scope = "library" if section == "library" else "site:" + site
         records = await execute_read("records_index", scope=scope)
         return scope, [r for r in records if r["kind"] in KINDS[section]]
@@ -46,17 +46,17 @@ class AdminPage(GramlotPage):
             scope = "library" if section == "library" else "site:" + site
             rights = await execute_read("scope_capabilities", scope=scope)
             labels = {
-                "read": "Lettura",
-                "write": "Scrittura",
-                "use": "Utilizzo",
+                "read": "Read",
+                "write": "Write",
+                "use": "Use",
                 "build": "Build",
-                "preview_grant": "Anteprima",
-                "publish": "Pubblicazione",
+                "preview_grant": "Preview",
+                "publish": "Publishing",
             }
-            pane.p("Permessi nell’ambito corrente")
+            pane.p("Permissions in the current scope")
             pane.span(" · ".join(labels[k] for k in rights["permissions"]))
         except DomainError:
-            pane.span("Ambito non accessibile")
+            pane.span("Scope not accessible")
 
     @source(auth="editor")
     async def workspace(
@@ -65,24 +65,24 @@ class AdminPage(GramlotPage):
         try:
             _scope, records = await self.scope_records(site, section)
             site_label = (
-                "Libreria condivisa"
+                "Shared library"
                 if section == "library"
                 else (await execute_read("record_read", record_id=site))["attributes"]["name"]
             )
             literal_text(pane, "p", site_label, class_="breadcrumb")
             heading = pane.div(class_="heading")
-            heading.h1("Libreria condivisa" if section == "library" else SECTIONS[section])
-            heading.span("Consultazione", class_="status")
+            heading.h1("Shared library" if section == "library" else SECTIONS[section])
+            heading.span("Browse mode", class_="status")
             visible = [
                 r
                 for r in records
                 if r["kind"] != "variant" and (search or "").casefold() in caption(r).casefold()
             ]
             layout = pane.div(class_="workspace")
-            listing = layout.section(class_="record-list", aria_label="Elenco")
-            listing.div("Titolo / ultima revisione", class_="list-heading")
+            listing = layout.section(class_="record-list", aria_label="Items")
+            listing.div("Title / latest revision", class_="list-heading")
             if not visible:
-                listing.p("Nessun elemento disponibile.", class_="empty")
+                listing.p("No items available.", class_="empty")
             for record in visible:
                 button = listing.button(class_="record-row")
                 literal_text(button, "strong", caption(record))
@@ -93,12 +93,12 @@ class AdminPage(GramlotPage):
                     and r["attributes"]["content_id"] == record["record_id"]
                 )
                 button.span(language or record["kind"], class_="muted")
-                button.small(f"Revisione {record['generation']}")
+                button.small(f"Revision {record['generation']}")
                 button.dataController(
                     "this.SET('admin.selected', record); this.SET('admin.revision','');",
                     record=record["record_id"],
                 )
-            layout.section(class_="record-detail", aria_label="Dettaglio selezionato").remote(
+            layout.section(class_="record-detail", aria_label="Selected item details").remote(
                 "detail",
                 site=site,
                 section=section,
@@ -108,7 +108,7 @@ class AdminPage(GramlotPage):
                 _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
             )
         except DomainError as error:
-            pane.h1("Ambito non disponibile")
+            pane.h1("Scope unavailable")
             pane.p(str(error), role="status")
 
     @source(auth="editor")
@@ -120,29 +120,29 @@ class AdminPage(GramlotPage):
             record_id = selected or fallback
             allowed = {r["record_id"] for r in records}
             if not record_id:
-                pane.p("Seleziona un elemento.")
+                pane.p("Select an item.")
                 return
             if record_id not in allowed:
-                raise DomainError("not_found", "Selezione non disponibile in questo ambito")
+                raise DomainError("not_found", "Selection unavailable in this scope")
             record = await execute_read(
                 "record_read", record_id=record_id, revision_id=revision or None
             )
             history = await execute_read("revision_index", record_id=record_id)
-            pane.span("Sola lettura", class_="status")
+            pane.span("Read-only", class_="status")
             literal_text(pane, "h2", caption(record))
             tabs = pane.tabContainer(selectedPage="^admin.tab", height="420px")
-            info = tabs.contentPane(title="Informazioni", pageName="info", padding="12px")
+            info = tabs.contentPane(title="Information", pageName="info", padding="12px")
             attributes = info.dl()
             for label, value in [
-                ("Ambito", "Libreria condivisa" if scope == "library" else "Sito corrente"),
-                ("Identificativo", record_id),
-                ("Revisione", record["revision_id"]),
-                ("Generazione", str(record["generation"])),
+                ("Scope", "Shared library" if scope == "library" else "Current site"),
+                ("Identifier", record_id),
+                ("Revision", record["revision_id"]),
+                ("Generation", str(record["generation"])),
             ]:
                 attributes.dt(label)
                 attributes.dd(value)
             if record["kind"] == "content":
-                info.h3("Varianti linguistiche")
+                info.h3("Language variants")
                 for variant in records:
                     if (
                         variant["kind"] == "variant"
@@ -157,25 +157,23 @@ class AdminPage(GramlotPage):
             else:
                 info.pre(json.dumps(record["attributes"], ensure_ascii=False, indent=2))
             source_pane = tabs.contentPane(
-                title="Sorgente", pageName="source", padding="12px", overflow="auto"
+                title="Source", pageName="source", padding="12px", overflow="auto"
             )
             if not record["sources"]:
-                source_pane.p(
-                    "Questo record non contiene sorgenti. Seleziona una variante linguistica."
-                )
+                source_pane.p("This record has no source files. Select a language variant.")
             for name, payload in record["sources"].items():
                 source_pane.h3(name)
                 literal_text(
                     source_pane,
                     "pre",
-                    payload.get("text", "Contenuto binario; originale conservato."),
+                    payload.get("text", "Binary content; original file preserved."),
                 )
             revisions = tabs.contentPane(
-                title="Revisioni", pageName="history", padding="12px", overflow="auto"
+                title="Revisions", pageName="history", padding="12px", overflow="auto"
             )
             for item in history:
                 revisions.button(
-                    f"Revisione {item['generation']}", class_="button--secondary"
+                    f"Revision {item['generation']}", class_="button--secondary"
                 ).dataController(
                     "this.SET('admin.revision', revision)", revision=item["revision_id"]
                 )
@@ -188,19 +186,19 @@ class AdminPage(GramlotPage):
         root.dataSetter("login.error", "")
         box = root.main(class_="login-shell").section(class_="login-card")
         box.p("kajenn public site", class_="muted")
-        box.h1("Accedi ai tuoi siti")
-        box.html_label("Nome utente", for_="username")
+        box.h1("Sign in to your sites")
+        box.html_label("Username", for_="username")
         box.input(id="username", value="^login.username", autocomplete="username")
         box.html_label("Password", for_="password")
         box.input(
             id="password", type="password", value="^login.password", autocomplete="current-password"
         )
-        box.button("Accedi").dataRpc(
+        box.button("Sign in").dataRpc(
             "sign_in",
             username="=login.username",
             password="=login.password",
             _onResult="this.SET('login.password',''); if(!result){window.location.reload();}else{this.SET('login.error',result)}",
-            _onError="this.SET('login.password','');this.SET('login.error','Accesso non disponibile')",
+            _onError="this.SET('login.password','');this.SET('login.error','Sign-in unavailable')",
         )
         box.p("^login.error", role="status")
 
@@ -211,7 +209,7 @@ class AdminPage(GramlotPage):
         result = await asyncio.to_thread(
             server_app.login, identity=username, password=password, _request=request
         )
-        return "Accesso non riuscito" if "error" in result else ""
+        return "Sign-in failed" if "error" in result else ""
 
     @endpoint(auth="editor")
     def sign_out(self):  # wf:phase-1:new
@@ -251,12 +249,12 @@ class WorkspacePage(AdminPage):
         toolbar = root.div(class_="toolbar")
         toolbar.input(
             value="^admin.search",
-            placeholder="Cerca per titolo…",
-            aria_label="Cerca per titolo",
+            placeholder="Search by title…",
+            aria_label="Search by title",
             type="search",
             live=True,
         )
-        toolbar.button("Aggiorna").dataController(
+        toolbar.button("Refresh").dataController(
             "this.SET('admin.refresh', (this.GET('admin.refresh')||0)+1)"
         )
         root.div(class_="workspace-host").remote(

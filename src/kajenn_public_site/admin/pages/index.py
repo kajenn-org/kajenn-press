@@ -45,8 +45,8 @@ class Page(AdminPage, IndexPage):
         navigation.set_item(
             "home",
             None,
-            title="Home · Come funziona",
-            label="Home · Come funziona",
+            title="Home · How it works",
+            label="Home · How it works",
             url="home",
             section="home",
         )
@@ -56,8 +56,8 @@ class Page(AdminPage, IndexPage):
             current.set_item(
                 "content",
                 None,
-                label="Contenuti",
-                title="Sito " + label + " · Contenuti",
+                label="Content",
+                title="Site " + label + " · Content",
                 url="content?site=" + site,
                 site=site,
                 section="content",
@@ -65,8 +65,8 @@ class Page(AdminPage, IndexPage):
             current.set_item(
                 "resource",
                 None,
-                label="Risorse",
-                title="Sito " + label + " · Risorse",
+                label="Resources",
+                title="Site " + label + " · Resources",
                 url="resources?site=" + site,
                 site=site,
                 section="resource",
@@ -74,26 +74,26 @@ class Page(AdminPage, IndexPage):
             current.set_item(
                 "publication",
                 None,
-                title="Pubblicazione · in seguito",
-                label="Pubblicazione · in seguito",
+                title="Publishing · coming soon",
+                label="Publishing · coming soon",
             )
         navigation.set_item(
             "site",
             current,
-            title=item["attributes"]["name"] if item else "Nessun sito",
-            label=item["attributes"]["name"] if item else "Nessun sito",
+            title=item["attributes"]["name"] if item else "No site",
+            label=item["attributes"]["name"] if item else "No site",
         )
         shared = Bag()
         shared.set_item(
             "resources",
             None,
-            title="Libreria condivisa",
-            label="Libreria condivisa",
+            title="Shared library",
+            label="Shared library",
             url="library",
             section="library",
         )
         navigation.set_item(
-            "shared", shared, title="Condiviso tra i siti", label="Condiviso tra i siti"
+            "shared", shared, title="Shared across sites", label="Shared across sites"
         )
         return navigation
 
@@ -101,46 +101,46 @@ class Page(AdminPage, IndexPage):
         pane.set_attr({"height": "54px", "class": "admin-top"})
         bar = pane.header(class_="admin-toolbar")
         bar.strong("kajenn public site")
-        bar.html_label("Sito corrente", for_="site")
+        bar.html_label("Current site", for_="site")
         select = bar.select(id="site", value="^admin.site")
         if not self.sites:
-            select.option("Nessun sito accessibile", value="")
+            select.option("No accessible sites", value="")
         for item in self.sites:
             literal_text(select, "option", item["attributes"]["name"], value=item["record_id"])
         bar.button(
-            "Nuovo sito", disabled=not self.can_create, class_="button--secondary"
+            "New site", disabled=not self.can_create, class_="button--secondary"
         ).dataController("this.SET('admin.new_site',true)")
         account = bar.div(class_="account")
         account.span(self.identity)
-        account.button("Esci", class_="button--quiet").dataRpc(
+        account.button("Sign out", class_="button--quiet").dataRpc(
             "sign_out", _onResult="window.location.reload()"
         )
         # Native dialog uses a public Source attribute; no imperative DOM mutation.
         pane.dataFormula("admin.dialog_open", "visible", visible="^admin.new_site")
         dialog = pane.dialog(
-            open="^admin.dialog_open", class_="new-site-dialog", aria_label="Nuovo sito"
+            open="^admin.dialog_open", class_="new-site-dialog", aria_label="New site"
         )
-        dialog.h2("Nuovo sito")
-        dialog.html_label("Nome", for_="new-site-name")
+        dialog.h2("New site")
+        dialog.html_label("Name", for_="new-site-name")
         dialog.input(id="new-site-name", value="^admin.name", live=True)
-        dialog.html_label("Lingue (separate da virgola)", for_="new-site-languages")
+        dialog.html_label("Languages (comma-separated)", for_="new-site-languages")
         dialog.input(id="new-site-languages", value="^admin.languages", live=True)
         dialog.p("^admin.error", role="status")
-        dialog.button("Crea sito").dataRpc(
+        dialog.button("Create site").dataRpc(
             "create_site",
             name="=admin.name",
             languages="=admin.languages",
             key="=admin.key",
             _onResult="if(result.ok){window.location.reload()}else{this.SET('admin.error',result.message)}",
-            _onError="this.SET('admin.error','Risposta non disponibile. Riprova senza cambiare i dati.')",
+            _onError="this.SET('admin.error','No response received. Retry without changing your input.')",
         )
-        dialog.button("Annulla", class_="button--quiet").dataController(
+        dialog.button("Cancel", class_="button--quiet").dataController(
             "this.SET('admin.new_site',false)"
         )
 
     def left(self, pane):  # wf:phase-1:new
         IndexPage.left(self, pane)
-        pane.set_attr({"class": "index-sidebar", "drawer_label": "Navigazione", "width": "225px"})
+        pane.set_attr({"class": "index-sidebar", "drawer_label": "Navigation", "width": "225px"})
         pane.value.get_node("tree").set_attr(
             {"autoCollapse": False, "class": "admin-tree", "labelAttribute": "label"}
         )
@@ -157,7 +157,7 @@ class Page(AdminPage, IndexPage):
 
     def bottom(self, pane):  # wf:phase-1:new
         pane.set_attr({"height": "28px", "class": "admin-footer"})
-        pane.span("Kajenn public site · Consultazione · Le schede mantengono il proprio sito")
+        pane.span("Kajenn public site · Browse mode · Each tab keeps its own site")
 
     def behavior(self, shell):  # wf:phase-1:new
         IndexPage.behavior(self, shell)
@@ -173,7 +173,7 @@ class Page(AdminPage, IndexPage):
     async def navigation_for_site(self, site):  # wf:phase-1:new
         sites = await execute_read("sites_list")
         if site and not any(item["record_id"] == site for item in sites):
-            raise DomainError("forbidden", "Sito non accessibile")
+            raise DomainError("forbidden", "Site not accessible")
         return self.navigation_bag(site, sites)
 
     @source(auth="editor")
@@ -182,23 +182,23 @@ class Page(AdminPage, IndexPage):
         node = selection.get_node("#0")
         section, site = node.attr.get("section"), node.attr.get("site", "")
         if section == "home":
-            url, title = "home", "Home · Come funziona"
+            url, title = "home", "Home · How it works"
         elif section == "library":
             await execute_read("records_index", scope="library")
-            url, title = "library", "Libreria condivisa"
+            url, title = "library", "Shared library"
         elif section in {"content", "resource"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
-                raise DomainError("forbidden", "Sito non accessibile")
+                raise DomainError("forbidden", "Site not accessible")
             url = ("content" if section == "content" else "resources") + "?site=" + site
             title = (
                 item["attributes"]["name"]
                 + " · "
-                + ("Contenuti" if section == "content" else "Risorse")
+                + ("Content" if section == "content" else "Resources")
             )
         else:
-            raise DomainError("invalid_input", "Pagina non disponibile")
+            raise DomainError("invalid_input", "Page unavailable")
         pane.iframe(src=url, title=title, width="100%", height="100%", border=0)
 
     @endpoint(auth="editor")

@@ -136,4 +136,8 @@ ciò che l’identità del LLM può eseguire.
 
 ### Home di orientamento
 
-Dopo l’accesso si apre **Home · Come funziona**, sempre raggiungibile dall’albero di navigazione. La guida presenta i primi passi, il rapporto tra siti, contenuti, varianti, template e blocchi Data, la Libreria condivisa e le revisioni. Un esempio bilingue illustra il percorso fino alla pubblicazione. La Home distingue le funzioni già disponibili da editor e comandi di pubblicazione previsti nelle prossime fasi, e spiega l’utilizzo di un assistente autorizzato tramite MCP/OpenAPI.
+Dopo l’accesso si apre **Home · How it works**, sempre raggiungibile dall’albero di navigazione. La guida presenta i primi passi, il rapporto tra siti, contenuti, varianti, template e blocchi Data, la Libreria condivisa e le revisioni. Un esempio bilingue illustra il percorso fino alla pubblicazione. La Home distingue le funzioni già disponibili da editor e comandi di pubblicazione previsti nelle prossime fasi, e spiega l’utilizzo di un assistente autorizzato tramite MCP/OpenAPI.
+
+### Interface language
+
+All administration UI is in English, including the orientation Home, authentication, navigation, forms, permissions and feedback. The disposable demo also uses English sample titles and text. Editorial language variants remain independent of the administration language.

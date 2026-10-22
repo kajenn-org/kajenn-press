@@ -2,5 +2,5 @@ from kajenn_public_site.admin.views import WorkspacePage
 
 
 class Page(WorkspacePage):
-    title = "Libreria condivisa"
+    title = "Shared library"
     section = "library"

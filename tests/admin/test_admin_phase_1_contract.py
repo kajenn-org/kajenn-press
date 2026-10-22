@@ -255,8 +255,8 @@ def test_site_and_library_navigation_has_explicit_record_boundaries(tmp_path):  
             site, other, _template, content, _variant = await seed_http(http)
             for section, expected, excluded in (
                 ("content", "Article", "source only"),
-                ("resource", "Nessun elemento", "Article"),
-                ("library", "Libreria condivisa", "Article"),
+                ("resource", "No items", "Article"),
+                ("library", "Shared library", "Article"),
             ):
                 view = await rpc(
                     http, page, "workspace", "source", site=site["record_id"], section=section
@@ -270,7 +270,7 @@ def test_site_and_library_navigation_has_explicit_record_boundaries(tmp_path):  
                 site=other["record_id"],
                 selected=content["record_id"],
             )
-            assert "Selezione non disponibile" in view["value"] and "Article" not in view["value"]
+            assert "Selection unavailable" in view["value"] and "Article" not in view["value"]
             service = server.applications["public_site"].service
             from kajenn_public_site.catalog.local import Change
 
@@ -440,7 +440,7 @@ def test_workspace_refresh_restores_context_from_authorized_services(tmp_path): 
             for _ in range(2):
                 page = await open_page(http)
                 main = await rpc(http, page, "main", "source")
-                assert "Sito corrente" in main["value"] and site["record_id"] in main["value"]
+                assert "Current site" in main["value"] and site["record_id"] in main["value"]
                 for section, selected in (
                     ("content", content["record_id"]),
                     ("library", template["record_id"]),
@@ -454,7 +454,7 @@ def test_workspace_refresh_restores_context_from_authorized_services(tmp_path): 
                         section=section,
                         selected=selected,
                     )
-                    assert selected in view["value"] and "Sola lettura" in view["value"]
+                    assert selected in view["value"] and "Read-only" in view["value"]
                 for params in (
                     {"site": other["record_id"], "selected": content["record_id"]},
                     {"site": site["record_id"], "selected": "missing"},

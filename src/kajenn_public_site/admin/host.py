@@ -40,7 +40,7 @@ async def execute_service(operation, arguments):  # wf:phase-1:new
     request = CURRENT_REQUEST.get()
     avatar = request.avatar()
     if avatar is None or "editor" not in avatar.tags:
-        raise DomainError("unauthenticated", "Accedi per continuare")
+        raise DomainError("unauthenticated", "Sign in to continue")
     application = request.server.applications["public_site"]
     result = await asyncio.to_thread(application._execute, request, operation, arguments)
     if not result["ok"]:

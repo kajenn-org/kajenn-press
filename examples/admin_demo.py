@@ -51,7 +51,7 @@ def main():  # wf:phase-1:new
         key="template",
         scope="library",
         kind="template",
-        name="Pagina istituzionale",
+        name="Standard page",
         source="def build(source, data):\n    source.h1('^page.title')\n",
         engine="gramlot",
         blocks={"body": {"format": "markdown", "required": True}},
@@ -60,7 +60,7 @@ def main():  # wf:phase-1:new
         site = service.execute(
             "demo", "site_create", key=f"site-{index}", name=name, languages=["it", "en"]
         )["records"][0]
-        for title in ("Chi siamo", "Il progetto", "Contatti"):
+        for title in ("About us", "The project", "Contact"):
             content = service.execute(
                 "demo",
                 "content_create",
@@ -79,7 +79,7 @@ def main():  # wf:phase-1:new
                     blocks={
                         "body": {
                             "format": "markdown",
-                            "source": f"# {title}\n\nContenuto dimostrativo.",
+                            "source": f"# {title}\n\nSample content.",
                         }
                     },
                 )
@@ -89,7 +89,7 @@ def main():  # wf:phase-1:new
             key=f"css-{index}",
             scope="site:" + site["record_id"],
             kind="css",
-            name="Stile del sito",
+            name="Site styles",
             source="h1 { color: #192e42; }\n",
         )
     service.catalog.close()
@@ -103,7 +103,7 @@ def main():  # wf:phase-1:new
         },
     )
     print(
-        f"Demo locale: http://127.0.0.1:{args.port}/admin/ — utente demo, password demo",
+        f"Local demo: http://127.0.0.1:{args.port}/admin/ — username demo, password demo",
         flush=True,
     )
     uvicorn.run(server, host="127.0.0.1", port=args.port, log_level="warning")

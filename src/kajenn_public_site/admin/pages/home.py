@@ -5,7 +5,7 @@ from kajenn_public_site.admin.views import AdminPage
 
 
 class Page(AdminPage):
-    title = "Home · Come funziona"
+    title = "Home · How it works"
 
     async def main(self, root):  # wf:phase-1:new
         avatar = CURRENT_REQUEST.get().avatar()
@@ -14,45 +14,44 @@ class Page(AdminPage):
             return
         home = root.main(class_="guide")
         hero = home.header(class_="guide-hero")
-        hero.p("LA TUA REDAZIONE MULTISITO", class_="guide-eyebrow")
-        hero.h1("Più siti, un unico spazio di lavoro.")
+        hero.p("YOUR MULTISITE WORKSPACE", class_="guide-eyebrow")
+        hero.h1("Multiple sites. One place to work.")
         hero.p(
-            "Kajenn public site ti aiuta a organizzare pagine, lingue e risorse dei tuoi siti. "
-            "Il team prepara i contenuti nell’amministrazione; il sito pubblico mostra "
-            "le pagine HTML generate dall’ultima pubblicazione.",
+            "Kajenn public site helps you organize pages, languages and resources across your sites. "
+            "Your team prepares content here; visitors see the static HTML pages generated "
+            "from the latest published release.",
             class_="guide-lead",
         )
-        status = home.aside(class_="guide-status", aria_label="Stato dell’amministrazione")
-        status.strong("Cosa puoi fare oggi")
+        status = home.aside(class_="guide-status", aria_label="Available features")
+        status.strong("What you can do today")
         status.p(
-            "Creare un sito, consultare contenuti e varianti linguistiche, esplorare risorse, "
-            "sorgenti e revisioni. Gli editor e i comandi di pubblicazione nell’interfaccia "
-            "arriveranno nelle prossime fasi: le schede attuali sono in consultazione."
+            "Create a site, browse content and language variants, and inspect resources, "
+            "source files and revisions. Editing and publishing controls will arrive in later "
+            "phases. The current content and resource views are read-only."
         )
         start = home.section(class_="guide-section")
-        start.h2("Da dove cominciare")
+        start.h2("Getting started")
         steps = start.ol(class_="guide-steps")
         for title, text in (
             (
-                "Scegli un sito",
+                "Choose a site",
                 (
-                    "Usa il selettore nella barra superiore. Se devi iniziare "
-                    "un nuovo progetto, scegli «Nuovo sito» e indica nome e lingue. Il comando "
-                    "è disponibile con i permessi necessari."
+                    "Use the selector in the top toolbar. To start a project, choose “New site” "
+                    "and enter its name and languages. This action requires permission to create sites."
                 ),
             ),
             (
-                "Apri Contenuti",
+                "Open Content",
                 (
-                    "Nell’albero a sinistra, apri Contenuti sotto il nome del sito. "
-                    "Seleziona una pagina nell’elenco, poi una lingua per consultarne i blocchi."
+                    "In the navigation tree on the left, open Content under the site name. "
+                    "Select a page from the list, then choose a language to inspect its blocks."
                 ),
             ),
             (
-                "Esplora Risorse e Libreria",
+                "Explore Resources and the library",
                 (
-                    "Risorse raccoglie gli elementi del sito scelto; "
-                    "la Libreria condivisa raccoglie quelli riutilizzabili tra più siti."
+                    "Resources contains items belonging to the selected site. The Shared library "
+                    "contains reusable resources for multiple sites."
                 ),
             ),
         ):
@@ -60,60 +59,59 @@ class Page(AdminPage):
             item.h3(title)
             item.p(text)
         start.p(
-            "Ogni voce apre una scheda. Puoi tenere aperti più siti: cambiare il selettore "
-            "aggiorna l’albero, mentre le schede già aperte restano legate al loro sito. "
-            "Il titolo della scheda indica sempre a quale sito appartiene.",
+            "Each page opens in a tab. You can work with several sites at once: changing the "
+            "site selector updates the navigation tree, while existing tabs keep their original "
+            "site. Check the tab title to see which site you are viewing.",
             class_="guide-tip",
         )
         concepts = home.section(class_="guide-section")
-        concepts.h2("Come sono organizzate le pagine")
+        concepts.h2("How pages fit together")
         grid = concepts.div(class_="guide-grid")
         for title, text in (
             (
-                "Sito",
+                "Site",
                 (
-                    "È il progetto che contiene le sue pagine, lingue e risorse. "
-                    "Uno stesso amministratore o team può gestirne più di uno."
+                    "A project with its own pages, languages and resources. "
+                    "One administrator or team can manage several sites."
                 ),
             ),
             (
-                "Contenuto e lingue",
+                "Content and languages",
                 (
-                    "Un contenuto identifica una pagina, per esempio «Chi siamo». "
-                    "Le varianti italiana e inglese hanno testi e percorsi propri. "
-                    "Ogni lingua può essere pubblicata quando è pronta."
+                    "A content item represents a page, such as “About us”. Its English and Italian "
+                    "variants have their own text and URL paths. Each language can be published "
+                    "when it is ready."
                 ),
             ),
             (
                 "Template",
                 (
-                    "Definisce la struttura della pagina e i blocchi richiesti, "
-                    "per esempio introduzione e corpo. Può essere realizzato con Gramlot "
-                    "o HtmlBuilder e viene renderizzato in HTML statico."
+                    "Defines the page structure and its named blocks, such as introduction and body. "
+                    "Templates can use Gramlot or HtmlBuilder and are rendered as static HTML."
                 ),
             ),
             (
-                "Blocchi in Data",
+                "Blocks in Data",
                 (
-                    "I testi restano separati dal template: ogni variante "
-                    "riempie i blocchi nominati con HTML o Markdown. Il Markdown può includere HTML; "
-                    "il markup viene filtrato per la pagina senza cambiare il sorgente salvato."
+                    "Content stays separate from the template. Each language variant fills named "
+                    "blocks with HTML or Markdown. Markdown can include HTML; the rendered markup "
+                    "is filtered without changing the saved source."
                 ),
             ),
             (
-                "Risorse e Libreria",
+                "Resources and the library",
                 (
-                    "Template, CSS, JavaScript e media possono appartenere "
-                    "a un sito oppure alla Libreria condivisa. Una copia nel sito è indipendente "
-                    "dall’originale: modificarla non cambia gli altri siti."
+                    "Templates, CSS, JavaScript and media can belong to a site or to the Shared "
+                    "library. A copy made for a site is independent of the original: changing it "
+                    "does not change other sites."
                 ),
             ),
             (
-                "Revisioni",
+                "Revisions",
                 (
-                    "I salvataggi conservano la storia delle modifiche. "
-                    "Il dettaglio permette di consultare informazioni, sorgente e revisioni. "
-                    "Una build usa revisioni precise, così il risultato è riproducibile."
+                    "Saving preserves a history of changes. The detail view lets you inspect "
+                    "information, source files and revisions. A build uses specific revisions "
+                    "so its output can be reproduced."
                 ),
             ),
         ):
@@ -121,32 +119,30 @@ class Page(AdminPage):
             card.h3(title)
             card.p(text)
         example = home.section(class_="guide-example")
-        example.h2("Un esempio: la pagina «Chi siamo»")
+        example.h2("Example: an “About us” page")
         example.p(
-            "Il template «Pagina istituzionale» definisce due blocchi: introduzione e corpo. "
-            "La variante italiana contiene i testi per /it/chi-siamo/; quella inglese "
-            "contiene i testi per /en/about/. Usano la stessa struttura, ma mantengono "
-            "contenuti indipendenti. Puoi pubblicare l’italiano e completare l’inglese più tardi."
+            "A “Standard page” template defines two blocks: introduction and body. "
+            "The English variant supplies the text for /en/about/ and the Italian variant "
+            "supplies the text for /it/chi-siamo/. Both share the same structure, while "
+            "keeping their content independent. You can publish English first and finish "
+            "Italian later."
         )
         publication = home.section(class_="guide-section")
-        publication.h2("Dal contenuto al sito pubblico")
+        publication.h2("From content to the public site")
         publication.p(
-            "Questo è il percorso previsto. I servizi di build e pubblicazione esistono già; "
-            "i relativi comandi saranno aggiunti all’amministrazione nella fase dedicata."
+            "This is the intended workflow. Build and publishing services already exist; "
+            "their administration controls will be added in the publishing phase."
         )
         flow = publication.ol(class_="guide-flow")
         for title, text in (
-            ("Salva", "Conserva una nuova revisione. Salvare non modifica il sito pubblico."),
+            ("Save", "Keep a new revision. Saving does not change the public site."),
+            ("Build", "Combine templates, content blocks and resources into static pages."),
+            ("Preview", "Review the build through a temporary link that can be revoked."),
             (
-                "Genera",
-                "La build combina template, blocchi e risorse per creare le pagine statiche.",
-            ),
-            ("Controlla", "L’anteprima mostra la build tramite un link temporaneo e revocabile."),
-            (
-                "Pubblica",
+                "Publish",
                 (
-                    "L’attivazione rende visibile la release. Il rollback riattiva "
-                    "una release precedente, se necessario."
+                    "Activate a release to make it public. Rollback reactivates a previous "
+                    "release when needed."
                 ),
             ),
         ):
@@ -154,20 +150,20 @@ class Page(AdminPage):
             item.h3(title)
             item.p(text)
         llm = home.section(class_="guide-section guide-llm")
-        llm.h2("Puoi lavorare anche con un assistente AI")
+        llm.h2("Work with an AI assistant")
         llm.p(
-            "Un LLM collegato alle API MCP/OpenAPI di Kajenn può ricevere comandi per creare "
-            "siti, contenuti e varianti linguistiche, usando gli stessi servizi "
-            "dell’amministrazione. Per usarlo occorre un collegamento autorizzato: "
-            "l’assistente agisce con i permessi assegnati alla sua identità."
+            "An LLM connected to Kajenn’s MCP/OpenAPI interfaces can create sites, content "
+            "and language variants through the same services used by this administration. "
+            "It requires an authorized connection and acts within the permissions "
+            "assigned to its identity."
         )
         llm.blockquote(
-            "«Nel sito Kajenn crea la pagina Chi siamo in italiano, usando il template "
-            "Pagina istituzionale, e prepara i blocchi introduzione e corpo.»"
+            "“In the Kajenn site, create an About us page in English using the Standard page "
+            "template, and prepare the introduction and body blocks.”"
         )
         llm.p(
-            "Se un riferimento è ambiguo, l’assistente deve prima individuare il sito "
-            "e la revisione del template corretti. Creare o modificare un contenuto "
-            "tramite MCP non lo pubblica automaticamente.",
+            "If a reference is ambiguous, the assistant must first identify the correct site "
+            "and template revision. Creating or updating content through MCP does not "
+            "automatically publish it.",
             class_="muted",
         )

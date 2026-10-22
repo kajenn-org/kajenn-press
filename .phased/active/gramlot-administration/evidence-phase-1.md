@@ -42,3 +42,7 @@ The demo credentials are now `demo` / `demo`, as requested. Command controls use
 ### Orientation Home
 
 At the owner’s request, Home now opens automatically in a retained iframe tab and remains the first tree entry. The authenticated guide explains the editorial model, first actions, current capabilities, the planned publication UI and LLM commands, with a bilingual page example. Browser verification confirmed automatic opening and readable stacked sections at the current 820px viewport. Screenshot: `mockups/phase-1-home.png`. Admin suite: 11 passed (8.24s); the existing iframe route check now includes Home. Full phase visual/UX verification remains pending.
+
+### English interface (owner correction)
+
+Translated all administration labels, Home prose, login, scope/error messages, dialogs, navigation, accessibility labels and disposable demo content into English. Updated only translated UI expectations in tests; contract comments and behavior are unchanged. Admin suite: 11 passed (8.75s); Ruff and diff checks pass. Demo restarted to load shared modules; the human must sign in again with demo/demo. Earlier Italian screenshots document superseded copy; the owner’s English requirement supersedes the mockup labels.
