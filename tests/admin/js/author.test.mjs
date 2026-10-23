@@ -16,10 +16,16 @@ function fixture(call) { // wf:phase-1:new
         'draft.variant_generation': 0, 'draft.title': 'Page', 'draft.language': 'en',
         'draft.body': '<p>Original</p>', 'author.refresh': 0, 'author.busy': false
     }));
-    const node = {GET: key => values.get(key), SET: (key, value) => values.set(key, value)};
+    // Like the Gramlot renderer, only the rendered pane accepts dispose callbacks.
+    const pane = {};
+    const node = {GET: key => values.get(key), SET: (key, value) => values.set(key, value), parentNode: pane};
     const logic = new Logic();
     let dispose;
-    logic.page = {rpc: {call}, src: {renderer: {onDispose: (_node, fn) => { dispose = fn; }}}};
+    const onDispose = (target, fn) => {
+        if (target !== pane) throw new Error('Source node is not mounted');
+        dispose = fn;
+    };
+    logic.page = {rpc: {call}, src: {renderer: {onDispose}}};
     logic.initialize(node, {});
     return {logic, node, dispose: () => dispose()};
 }
@@ -76,4 +82,15 @@ test('typing during save remains dirty; disposed editors reject late results', a
     resolve(saved({record_id: 't', revision_id: 'tr2', generation: 2}));
     await last;
     assert.equal(node.GET('draft.template_revision'), 'tr');
+});
+
+test('a new untouched draft is clean until the first edit', () => {
+    const {logic, node} = fixture(async () => { throw new Error('no call expected'); });
+    assert.equal(node.GET('author.dirty'), false);
+    node.SET('draft.body', '<p>Edited</p>');
+    logic.changed(node, {});
+    assert.equal(node.GET('author.dirty'), true);
+    node.SET('draft.body', '<p>Original</p>');
+    logic.changed(node, {});
+    assert.equal(node.GET('author.dirty'), false);
 });

@@ -60,3 +60,41 @@ Browser qualification remains pending human sign-in. The user reported signing i
 ### Login focus report
 
 The owner reported losing focus in Username/Password. A separate browser tab with synthetic text did not reproduce it in native fields; the precise original trigger remains unconfirmed. Replaced both native inputs with the documented Gramlot textbox/passwordbox controls, using their integrated labels and live Data binding. Browser checks on both replacement fields retained focus while typing and inserting mid-text; Username caret/value matched the expected synthetic edit, Password caret/focus were verified without reading credentials. No login was automated. Closed the probe tab and reloaded the owner’s tab. All 12 admin tests passed (29.46s); Ruff/diff checks pass. Human sign-in and the authoring browser flow remain pending.
+
+### Authenticated browser verification (2026-10-23)
+
+Cause of the earlier "still shows login" report: the owner signed in outside the controlled browser tab, and later the demo process had stopped with the previous session. With the demo restarted (`GRAMLOT_DEV=YES PYTHONPATH=src KAJENN_RENDER_PYTHON=/tmp/kajenn-macro2-render-env/bin/python /tmp/kajenn-macro3-admin-env/bin/python examples/admin_demo.py`), the owner signed in as demo in the controlled tab. No credentials were typed by the agent; the agent clicked Sign in once with empty fields, which returned "Sign-in failed" and confirmed the login RPC.
+
+Observed in the real browser, at 1400x900 unless noted:
+- Authenticated shell: toolbar site selector, New site, user and Sign out; tree with Home, site sections and Shared across sites; Create page opened by default.
+- Create page: typed into the template name and CodeMirror; the CodeMirror Data value read back exactly as typed. Save template stored the revision and moved to Content. Typed title and paragraph in Jodit and applied Bold. Save page reported "Saved". Render saved page rendered the saved revisions through the separate worker; output shows the added template line, title and the bold text. Screenshots: `mockups/phase-1-jodit.jpg`, `mockups/phase-1-render.jpg`.
+- Content and Resources tabs list the saved page, template revision and existing records; tabs are retained side by side. Screenshot: `mockups/phase-1-content.jpg`.
+- Site switch to Kajenn changes the tree; already open Gramlot tabs keep their site; Kajenn content is distinct. Shared library node expands. Screenshot: `mockups/phase-1-site-switch.jpg`.
+- New site created "Verification site" (en) and opened its Create page. Screenshot of the dialog: `mockups/phase-1-new-site.jpg`.
+- Keyboard: Tab order is site selector, New site, Sign out, tree; arrow keys move in the tree and Enter opens the selected workspace tab.
+- Narrow 390x844: all elements readable; the navigation panel keeps about half the width and the content column wraps heavily. Screenshot: `mockups/phase-1-narrow.jpg`.
+- Sign out returns to the login form; opening a workspace URL directly afterwards shows the login form.
+
+Defects found, not yet fixed (no code change authorized in this step):
+- New site reloads the whole administration shell (`src/kajenn_public_site/admin/pages/index.py:143`, `window.location.reload()`), closing every open tab. Unsaved buffers in other tabs depend on the browser exit warning.
+- Each load of Create page logs `Uncaught (in promise) Error: div 'div_0': remote 'editor' failed: Source node is not mounted` from `gramlot.js`. The editor works afterwards. The cause is not isolated yet; the remote at `src/kajenn_public_site/admin/pages/author.py:40` depends on three Data paths set in one `_onStart` controller.
+
+Independent visual judge (2026-10-23), against `mockups/phase-1.html` and `notes.md`: no blocking finding.
+- Should-fix: content/resource list rows render as bordered inline buttons instead of full-width stacked rows (title, languages, revision); login and Home screenshots predate the English UI and must be recaptured; at 390px the open tree leaves about 165px to the content, which needs a narrow-width rule.
+- Minor: Language select wider than Page title and "Content block" line without top margin; language variant buttons without gap; primary actions not distinguished from secondary ones in the dark Base theme; New site dialog without backdrop; "Publishing · coming soon" wraps; language order in rows not uniform; two tree rows highlighted at once in the site-switch capture.
+
+Still open for closure: the owner's decision on the two defects and the judge findings, recaptured English login/Home screenshots, and the two human Verify checks.
+
+### Corrections after the visual judge (2026-10-23)
+
+- New site no longer reloads the shell. The site selector is a `site_selector` remote refreshed by `admin.sites_version`; after creation the new site is selected and its Create page opens. Browser check: two Gramlot tabs stayed open, no page reload (`performance` navigation type `navigate`), third tab opened for the new site. Screenshot: `mockups/phase-1-new-site-tabs.jpg`.
+- `Source node is not mounted`: `initialize` in `author.js` registered `onDispose` on its own dataController node, which the renderer never mounts, and ran from `_onStart` before the parent pane was mounted. It now runs `_onBuilt` and registers on `node.parentNode`, the pattern of Gramlot's `fileSystemTree`. The throw had also skipped the initial `changed()` call and the listener cleanup. Browser check: no error after reload and after opening a second Create page. The Node test mock now rejects unmounted nodes like the renderer; it fails without the fix and passes with it.
+- Content/resource rows: `gramlot-button` styles its native button in shadow DOM; rows now use its public tokens (`--gramlot-button-background`, `--gramlot-border-control`, `--gramlot-radius-sm`, `--gramlot-button-padding`, `--gramlot-button-hover`) and `--gramlot-touch-target:100%` for full width, with a stacked `record-row-text` grid. Screenshot: `mockups/phase-1-content-rows.jpg`.
+- Narrow viewport: below 700px the navigation drawer starts closed (`drawer` bound to `admin.nav_drawer`, set from `matchMedia` at start). Checked in the narrow Browser pane; the drawer opens from its handle.
+- English captures: `mockups/phase-1-login-en.jpg`, `mockups/phase-1-home-en.jpg`.
+- Test body change: `test_workspace_refresh_restores_context_from_authorized_services` now reads site IDs from the `site_selector` source instead of `main`; contract comments unchanged.
+- Checks: 12 admin tests passed; 3 Node tests passed; `ruff check src tests examples` passed.
+
+Behavior change surfaced by the dispose fix: `initialize` now completes, so a new untouched Create page computes `author.dirty = true` (no saved template or page yet) and shows "Unsaved changes"; leaving it triggers the exit warning. Before the fix the throw kept it false until the first edit.
+
+Owner decision (2026-10-23): a new draft becomes dirty only after an edit. `initialize` keeps the opening snapshots in `authorState.initial`; `changed` compares an unsaved template/page with them, and a saved one with its saved snapshot. The saved snapshots still drive the skip of identical saves. Node test `a new untouched draft is clean until the first edit` added (4 Node tests pass). Browser: fresh Create page `author.dirty` false; editing the title sets it true, restoring the title sets it false; leaving the untouched page shows no exit warning. 12 admin tests and ruff pass.

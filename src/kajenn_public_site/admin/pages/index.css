@@ -27,8 +27,13 @@ body { margin:0; }
 .record-detail { padding:18px; }
 .record-detail h2 { margin:12px 0 16px; font-size:21px; }
 .list-heading { padding:12px 16px; border-bottom:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); font-size:12px; }
-.record-row { display:grid; gap:4px; width:100%; text-align:left; border:0; border-radius:0; background:transparent; color:var(--gramlot-ink); padding:15px 16px; border-bottom:1px solid var(--gramlot-border); }
-.record-row:hover { background:var(--gramlot-selected); }
+/* gramlot-button draws its native button in shadow DOM; style it through its public tokens.
+   --gramlot-touch-target is its min-width, so 100% makes the row button full width. */
+.record-row { display:block; width:100%; border-bottom:1px solid var(--gramlot-border);
+  --gramlot-button-background:transparent; --gramlot-button-hover:var(--gramlot-selected);
+  --gramlot-border-control:transparent; --gramlot-radius-sm:0; --gramlot-button-padding:15px 16px;
+  --gramlot-touch-target:100%; }
+.record-row-text { display:grid; gap:4px; width:100%; text-align:left; color:var(--gramlot-ink); }
 .record-row small,.muted { color:var(--gramlot-text-secondary); }
 .status { display:inline-block; border:1px solid var(--gramlot-border); border-radius:20px; padding:3px 9px; font-size:12px; color:var(--gramlot-text-secondary); background:var(--gramlot-surface-subtle); }
 .record-detail dt { font-size:12px; color:var(--gramlot-text-secondary); margin-top:12px; }

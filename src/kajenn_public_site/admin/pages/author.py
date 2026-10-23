@@ -129,7 +129,8 @@ class Page(AdminPage):
                 "refresh": 0,
             }.items():
                 pane.dataSetter("author." + name, value)
-            pane.dataController(func="initialize", _onStart=True)
+            # _onBuilt: the parent pane is mounted, so initialize can register its dispose.
+            pane.dataController(func="initialize", _onBuilt=True)
             pane.dataController(
                 func="changed",
                 template_name="^draft.template_name",

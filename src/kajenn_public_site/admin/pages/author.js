@@ -10,7 +10,9 @@ function equal(a, b) { return JSON.stringify(a) === JSON.stringify(b); } // wf:p
 export class Logic {
     initialize(node, _args) { // wf:phase-1:new
         this.authorState = {template: node.GET('draft.template_id') ? templateSnapshot(node) : null,
-            page: node.GET('draft.variant_id') ? pageSnapshot(node) : null, pending: {}, disposed: false};
+            page: node.GET('draft.variant_id') ? pageSnapshot(node) : null, pending: {}, disposed: false,
+            // Dirty compares unsaved drafts with their opening state, not with "never saved".
+            initial: {template: templateSnapshot(node), page: pageSnapshot(node)}};
         const state = this.authorState;
         const guard = event => { // wf:phase-1:new
             if (node.GET('author.dirty') || node.GET('author.busy')) {
@@ -20,7 +22,8 @@ export class Logic {
         window.addEventListener('beforeunload', guard);
         // The same-origin administration shell owns retained iframes.
         window.parent.addEventListener('beforeunload', guard);
-        this.page.src.renderer.onDispose(node, () => { // wf:phase-1:new
+        // A dataController is not rendered: dispose with its rendered parent pane.
+        this.page.src.renderer.onDispose(node.parentNode, () => { // wf:phase-1:new
             state.disposed = true;
             window.removeEventListener('beforeunload', guard);
             window.parent.removeEventListener('beforeunload', guard);
@@ -30,8 +33,8 @@ export class Logic {
     changed(node, _args) { // wf:phase-1:new
         const state = this.authorState;
         if (!state || state.disposed) return;
-        node.SET('author.dirty', !equal(state.template, templateSnapshot(node)) ||
-            !equal(state.page, pageSnapshot(node)));
+        node.SET('author.dirty', !equal(state.template ?? state.initial.template, templateSnapshot(node)) ||
+            !equal(state.page ?? state.initial.page, pageSnapshot(node)));
     }
     async callCommand(operation, arguments_) { // wf:phase-1:new
         const reply = await this.page.rpc.call('data', 'command', {operation, arguments: arguments_});

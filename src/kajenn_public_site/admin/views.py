@@ -85,15 +85,16 @@ class AdminPage(GramlotPage):
                 listing.p("No items available.", class_="empty")
             for record in visible:
                 button = listing.button(class_="record-row")
-                literal_text(button, "strong", caption(record))
+                text = button.div(class_="record-row-text")
+                literal_text(text, "strong", caption(record))
                 language = " · ".join(
                     r["attributes"]["language"]
                     for r in records
                     if r["kind"] == "variant"
                     and r["attributes"]["content_id"] == record["record_id"]
                 )
-                button.span(language or record["kind"], class_="muted")
-                button.small(f"Revision {record['generation']}")
+                text.span(language or record["kind"], class_="muted")
+                text.small(f"Revision {record['generation']}")
                 button.dataController(
                     "this.SET('admin.selected', record); this.SET('admin.revision','');",
                     record=record["record_id"],

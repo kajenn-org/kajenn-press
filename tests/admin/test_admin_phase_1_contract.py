@@ -440,7 +440,9 @@ def test_workspace_refresh_restores_context_from_authorized_services(tmp_path): 
             for _ in range(2):
                 page = await open_page(http)
                 main = await rpc(http, page, "main", "source")
-                assert "Current site" in main["value"] and site["record_id"] in main["value"]
+                assert "Current site" in main["value"] and "site_selector" in main["value"]
+                selector = await rpc(http, page, "site_selector", "source")
+                assert site["record_id"] in selector["value"]
                 for section, selected in (
                     ("content", content["record_id"]),
                     ("library", template["record_id"]),

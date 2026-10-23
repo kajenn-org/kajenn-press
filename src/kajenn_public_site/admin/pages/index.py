@@ -29,6 +29,9 @@ class Page(AdminPage, IndexPage):
         site = self.sites[0]["record_id"] if self.sites else ""
         for name, value in {
             "site": site,
+            "sites_version": 0,
+            "open_author": False,
+            "nav_drawer": True,
             "new_site": False,
             "name": "",
             "languages": "it,en",
@@ -111,11 +114,7 @@ class Page(AdminPage, IndexPage):
         bar = pane.header(class_="admin-toolbar")
         bar.strong("kajenn public site")
         bar.html_label("Current site", for_="site")
-        select = bar.select(id="site", value="^admin.site")
-        if not self.sites:
-            select.option("No accessible sites", value="")
-        for item in self.sites:
-            literal_text(select, "option", item["attributes"]["name"], value=item["record_id"])
+        bar.div(class_="site-selector").remote("site_selector", version="^admin.sites_version")
         bar.button(
             "New site", disabled=not self.can_create, class_="button--secondary"
         ).dataController("this.SET('admin.new_site',true)")
@@ -140,16 +139,37 @@ class Page(AdminPage, IndexPage):
             name="=admin.name",
             languages="=admin.languages",
             key="=admin.key",
-            _onResult="if(result.ok){window.location.reload()}else{this.SET('admin.error',result.message)}",
+            # Keep the shell and its open tabs: refresh the selector, then open the new site.
+            _onResult="if(result.ok){this.SET('admin.new_site',false);this.SET('admin.name','');"
+            "this.SET('admin.error','');this.SET('admin.key',crypto.randomUUID());"
+            "this.SET('admin.open_author',true);"
+            "this.SET('admin.sites_version',this.GET('admin.sites_version')+1);"
+            "this.SET('admin.site',result.site_id)}else{this.SET('admin.error',result.message)}",
             _onError="this.SET('admin.error','No response received. Retry without changing your input.')",
         )
         dialog.button("Cancel", class_="button--quiet").dataController(
             "this.SET('admin.new_site',false)"
         )
 
+    @source(auth="editor")
+    async def site_selector(self, pane, version=0):  # wf:phase-1:new
+        sites = await execute_read("sites_list")
+        select = pane.select(id="site", value="^admin.site")
+        if not sites:
+            select.option("No accessible sites", value="")
+        for item in sites:
+            literal_text(select, "option", item["attributes"]["name"], value=item["record_id"])
+
     def left(self, pane):  # wf:phase-1:new
         IndexPage.left(self, pane)
-        pane.set_attr({"class": "index-sidebar", "drawer_label": "Navigation", "width": "225px"})
+        pane.set_attr(
+            {
+                "class": "index-sidebar",
+                "drawer": "^admin.nav_drawer",
+                "drawer_label": "Navigation",
+                "width": "225px",
+            }
+        )
         pane.value.get_node("tree").set_attr(
             {"autoCollapse": False, "class": "admin-tree", "labelAttribute": "label"}
         )
@@ -171,14 +191,18 @@ class Page(AdminPage, IndexPage):
     def behavior(self, shell):  # wf:phase-1:new
         IndexPage.behavior(self, shell)
         shell.dataController(
-            "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.author' : 'home')",
+            "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.author' : 'home');"
+            # Narrow viewports start with the navigation drawer closed.
+            "if(window.matchMedia('(max-width: 700px)').matches){this.SET('admin.nav_drawer','close')}",
             _onStart=True,
         )
         shell.dataRpc(
             "navigation_for_site",
             site="^admin.site",
             _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
-            _onResult="var nav=this.GET('index.navigation');var branch=result.getNode('site');nav.setItem('site',branch.value,branch.attr);this.SET('index.navigationSelection',null)",
+            _onResult="var nav=this.GET('index.navigation');var branch=result.getNode('site');nav.setItem('site',branch.value,branch.attr);"
+            "this.SET('index.navigationSelection',this.GET('admin.open_author') ? 'site.author' : null);"
+            "this.SET('admin.open_author',false)",
         )
 
     @endpoint(auth="editor")
