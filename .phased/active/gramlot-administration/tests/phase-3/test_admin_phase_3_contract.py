@@ -22,7 +22,7 @@ def test_publication_reads_are_scope_filtered_and_transport_equivalent():
 
 def test_candidate_selection_preserves_exact_revisions_and_languages():
     # wf:contract: The workspace selects exact revisions and languages, preserves other active
-    # wf:contract: languages according to Macro 2 rules, and includes per-variant media.
+    # wf:contract: languages according to Macro 2 rules, and includes template PNG resources.
     # wf:contract: Client manipulation of selected identifiers cannot bypass reference
     # wf:contract: authorization or required-block readiness.
     pytest.fail("phase 3 pending")
@@ -53,7 +53,7 @@ def test_activation_and_rollback_are_conditional_and_reauthorize():
 
 
 def test_browser_release_cycle_works_with_both_template_engines():
-    # wf:contract: For Gramlot and HtmlBuilder, the browser completes edit/save with media, build,
+    # wf:contract: For Gramlot and HtmlBuilder, the browser completes edit/save with a PNG resource, build,
     # wf:contract: private preview, activation, independent-language update, refresh/history and
     # wf:contract: rollback.
     # wf:contract: Published output matches the selected build artifacts and old releases remain
@@ -65,7 +65,7 @@ def test_new_application_operations_remain_llm_accessible():
     # wf:contract: The final coverage matrix accounts for implemented application operations and
     # wf:contract: their UI, REST and MCP exposure; framework-only presentation events are
     # wf:contract: distinguished.
-    # wf:contract: An authenticated REST/MCP client can perform the new media-reference and
+    # wf:contract: An authenticated REST/MCP client can perform the new page/route and
     # wf:contract: publication-discovery operations without browser automation.
     pytest.fail("phase 3 pending")
 

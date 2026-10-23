@@ -3,6 +3,39 @@
 import pytest
 
 
+def test_template_data_lists_site_pages_for_navigation():
+    # wf:contract: Both template engines receive the site's pages in Data with path, title and
+    # wf:contract: language, in a deterministic order, from the same catalog generation.
+    # wf:contract: A build takes the list from the candidate route map; a saved-page render takes
+    # wf:contract: it from saved routes. Templates that ignore the list render unchanged and
+    # wf:contract: existing releases stay verifiable.
+    pytest.fail("phase 2 pending")
+
+
+def test_pages_workspace_creates_pages_and_edits_routes():
+    # wf:contract: The Pages workspace lists the selected site's content identities with their
+    # wf:contract: language variants and creates a page with content, variant and exact template.
+    # wf:contract: Route path, title and description are saved through the existing route
+    # wf:contract: operation; collisions and invalid paths are refused with the service error.
+    # wf:contract: Every new operation is available through REST and MCP with the same grants.
+    pytest.fail("phase 2 pending")
+
+
+def test_conflicting_save_is_refused_and_keeps_the_local_buffer():
+    # wf:contract: A save against a stale record generation is refused with a conflict; the UI
+    # wf:contract: reports it, keeps the whole local buffer dirty and never overwrites the newer
+    # wf:contract: revision.
+    pytest.fail("phase 2 pending")
+
+
+def test_png_resource_upload_is_usable_by_templates():
+    # wf:contract: A PNG uploaded through the UI becomes a site or library resource revision with
+    # wf:contract: its original bytes; a template that declares it receives its exact URL in Data.
+    # wf:contract: Payloads that fail the existing bounded PNG verification are refused before
+    # wf:contract: they enter a build.
+    pytest.fail("phase 2 pending")
+
+
 def test_editor_views_share_source_and_enable_filtered_markdown_html():
     # wf:contract: Rich, Code and Quick preview use one canonical Data string; opening and
     # wf:contract: switching views without edits preserve the exact original source.
@@ -44,14 +77,6 @@ def test_save_retry_is_idempotent_and_does_not_duplicate_revisions():
     pytest.fail("phase 2 pending")
 
 
-def test_conflict_resolution_preserves_base_local_and_current():
-    # wf:contract: Concurrent saves expose base, unsaved local and current server versions without
-    # wf:contract: overwriting or discarding any of them.
-    # wf:contract: An explicitly resolved result saves conditionally against the newly read
-    # wf:contract: generation and can itself report a new conflict.
-    pytest.fail("phase 2 pending")
-
-
 def test_named_block_contract_and_template_changes_are_explicit():
     # wf:contract: The editor derives block names, formats and required flags from the exact
     # wf:contract: referenced template revision.
@@ -66,49 +91,6 @@ def test_source_resources_copy_and_data_inspection_preserve_references():
     # wf:contract: provenance.
     # wf:contract: Data inspection does not create a second editable copy of derived values and
     # wf:contract: identifies their source records.
-    pytest.fail("phase 2 pending")
-
-
-def test_revision_comparison_restore_and_local_comparison_use_shared_rules():
-    # wf:contract: History and comparison show exact revisions; restore creates a new conditional
-    # wf:contract: revision instead of rewriting history.
-    # wf:contract: Any new application comparison needed for unsaved-local conflict handling is
-    # wf:contract: authorized and exposed consistently through UI, REST and MCP.
-    pytest.fail("phase 2 pending")
-
-
-def test_variant_media_and_source_commit_atomically():
-    # wf:contract: A variant saves named-block source and exact media revision references
-    # wf:contract: atomically; a refused reference leaves no partial update.
-    # wf:contract: Existing variants without media references remain readable and renderable;
-    # wf:contract: site/library use permissions and revision scopes are checked.
-    pytest.fail("phase 2 pending")
-
-
-def test_media_picker_inserts_revision_reference_without_private_engines():
-    # wf:contract: The catalog picker inserts an explicit image fragment and usage alt text at the
-    # wf:contract: end of the selected named block in the canonical Data draft.
-    # wf:contract: Insertion remains unsaved until Save, can be reverted, and does not use a
-    # wf:contract: private editor engine or embed an uploaded image as a base64 HTML payload.
-    pytest.fail("phase 2 pending")
-
-
-def test_image_verification_preserves_valid_png_jpeg_webp_bytes():
-    # wf:contract: The qualified image verifier recognizes actual PNG, JPEG and WebP data, checks
-    # wf:contract: declared MIME, decoding completeness and bounded image/frame resources, and
-    # wf:contract: rejects malformed, truncated, mismatched or unsupported payloads.
-    # wf:contract: Accepted original bytes are preserved in stored sources and published artifacts;
-    # wf:contract: unavailable WebP decoding is a qualification failure rather than silent
-    # wf:contract: acceptance.
-    pytest.fail("phase 2 pending")
-
-
-def test_variant_media_closure_is_complete_and_old_releases_still_work():
-    # wf:contract: Both renderers include the exact authorized per-variant media revisions in
-    # wf:contract: candidate closure, artifact manifests and public serving with verified MIME
-    # wf:contract: types.
-    # wf:contract: Missing or undeclared media references fail clearly; existing PNG releases
-    # wf:contract: remain verifiable and rollback-compatible.
     pytest.fail("phase 2 pending")
 
 
