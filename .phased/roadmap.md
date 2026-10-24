@@ -1,6 +1,6 @@
 # kajenn-public-site implementation roadmap
 
-Status: updated 2026-10-23. Macros 1 and 2 are finalized on main. Macro 3 has an approved four-phase plan whose acceptance target is kajenn.org built through the administration UI; Phase 1 is in execution on `codex/gramlot-administration`. Later macros retain entry/exit contracts and explicit scoping questions.
+Status: updated 2026-10-24. Macros 1 and 2 are finalized on main. Macro 3 is suspended after its Phase 1 work; its plan is kept in `.phased/suspended/gramlot-administration/`. The active plan is Macro 3b, websites and release serving from Genro Storage, on `codex/websites-release-serving`.
 
 The full product scope remains `docs/01-visione.md` through `docs/08-decisioni.md`. Filesystem/Genro Storage is the initial implementation; Asqueel is a future catalog backend. This roadmap does not require a database, shrink the product to a file server, or claim an upstream integration is already ready.
 
@@ -26,18 +26,28 @@ The full product scope remains `docs/01-visione.md` through `docs/08-decisioni.m
 
 - Implementation evidence: Macro 2 phases 1–3 implement rendering, private previews, conditional activation and rollback. All three phases are closed. Extended quality-check completed at 7b65ffd, with two corrections verified at b7d4195, 102 passing tests and a repeated installed two-engine browser cycle. Finalized and pushed to main as `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. Archived plan and phase-3 evidence remain on `codex/rendering-publication` under `.phased/done/rendering-publication/`.
 
-## Macro 3: Gramlot administration and restored editors
+## Macro 3 (suspended after Phase 1): Gramlot administration and restored editors
 
 - Objective: Make the services usable through a coherent multi-site editorial and source-authoring UI, proven by building kajenn.org with it.
 - Starts from: Macro 2's complete preview/publication service cycle and Macro 1's service contracts.
 - Ends at: A team can select a site, manage its pages and routes, edit named HTML/Markdown blocks and template/CSS/JS sources, upload PNG resources, inspect a preview and publish/rollback through Gramlot without UI-only business rules. kajenn.org, the third sibling of gramlot.org and asqueel.org with Kajenn colors and logo, is built entirely through the administration UI; its deployment and DNS are not part of this macro.
 - Delivers: Site/page/resource workspaces, the site page list in template Data for navigation, source tabs, Data inspection, editor integration, save/conflict feedback and publication views; the kajenn.org catalog with library template and CSS; browser and visual acceptance evidence.
 - Consumes: Macro 1/2 schemas, exact sources, diagnostics, grants, previews and release operations; the upstream Gramlot editor-control and PoC restoration work.
-- Approved detailed plan: [gramlot-administration](active/gramlot-administration/plan.md), four phases (rewritten by the owner on 2026-10-23): authenticated multisite administration; site pages, navigation Data and editors; publication workspace; kajenn.org built through the UI. Explicit Save with dirty-exit protection; per-site navigation and separate library; PNG resources referenced by exact revision. Each phase has plan-owned contract skeletons, a mockup and browser/human acceptance checks.
+- Approved detailed plan: [gramlot-administration](suspended/gramlot-administration/plan.md), four phases (rewritten by the owner on 2026-10-23): authenticated multisite administration; site pages, navigation Data and editors; publication workspace; kajenn.org built through the UI. Explicit Save with dirty-exit protection; per-site navigation and separate library; PNG resources referenced by exact revision. Each phase has plan-owned contract skeletons, a mockup and browser/human acceptance checks.
 - Upstream evidence (2026-10-22): CodeMirror, Jodit and ProseMirror already exist; 27 focused editor tests passed. Embedded Markdown HTML is supported via `markdownPreview.allowHtml` in source, Python grammar and shipped bundle, filtered with DOMPurify without changing source. Newer Gramlot/adapter release branches contain per-request identity support; the combined new-editor/adapter artifact still requires application qualification. The static nh3 render profile remains separate. No upstream port or private API workaround is authorized.
 - Requires of earlier work: Public common services, exact source/revision/generation contracts, discoverable template block declarations, current-grant enforcement and private artifact separation. Add authorized read projections where UI discovery is absent; expose new application functions through REST/MCP as well.
 - Scope boundary: Source/Data-native administration and generic editors. Deferred from this macro on 2026-10-23, with their contracts kept verbatim in the plan's `tests/deferred/`: conflict comparison/resolution UI, revision diff/restore UI, per-variant media references, the media picker and block insertion, JPEG/WebP verification with Pillow. Cursor-aware rich insertion, Typst, component authoring, advanced editorial organization (menus as records, taxonomies) and automatic image derivatives are not added implicitly. Existing later-macro contracts remain in force.
 - Open decisions: No unresolved product choice is delegated to execution. Visual presentation is negotiated through each phase's mockup. A missing compatible public framework capability is a qualification stop with a reproducible upstream dependency, not permission to weaken contracts or edit sibling repositories.
+
+## Macro 3b (active): websites and release serving from Genro Storage
+
+- Objective: Separate where a site is edited and built from where it is served, so that websites can manage installations inside itself and children deployed elsewhere.
+- Starts from: Macro 2's immutable releases and conditional activation; Macro 3 Phase 1 administration (authenticated multisite shell, Create page, fixes of 2026-10-23); kajenn.org built through MCP only.
+- Ends at: Activated releases and their active pointer are exported to a configurable Genro Storage mount; a lightweight child application serves a site's active release from that mount without catalog, Gramlot or render worker; websites keeps a registry of children and shows which release each serves; a local Docker composition serves kajenn.org from a child, first from a shared volume and then from MinIO with configuration changes only.
+- Owner decisions (2026-10-24): websites.genro.com is the manager's target address; websites manages installations (a catalog with one or more sites and their shared library); installations inside websites and with their own deployment coexist; shared resources stay shared inside an installation and are copied with provenance across installations; release storage goes through Genro Storage, configured per deployment.
+- Detailed plan: [websites-release-serving](active/websites-release-serving/plan.md), five phases: release export; child serving; websites registry and deployment view; Docker composition with shared volume; MinIO configuration.
+- Outside this macro: production DNS and deployment, TLS, CDN, the per-site management application of a deployed installation, cross-installation library copy.
+- Suspended Macro 3 phases (pages and navigation Data, editors, publication workspace, kajenn.org through the UI) keep their contracts and resume after this macro.
 
 ## Macro 4: Editorial organization and configurable review
 
