@@ -13,14 +13,45 @@ PUBLIC_HEADERS = {
 }
 
 
+def method_response(method):
+    """405 for anything but GET/HEAD; None when the method is served."""
+    if method in {"GET", "HEAD"}:
+        return None
+    return Response(
+        "Method not allowed",
+        status_code=405,
+        headers={**PUBLIC_HEADERS, "allow": "GET, HEAD"},
+    )
+
+
+def release_response(manifest, path, read):
+    """One sealed manifest answers a public path; `read(item)` returns verified bytes."""
+    if path in manifest["redirects"]:
+        return Response(
+            status_code=307,
+            headers={
+                **PUBLIC_HEADERS,
+                "location": quote(manifest["redirects"][path], safe="/"),
+            },
+        )
+    item = manifest["artifacts"]["public"].get(path)
+    if item is None:
+        raise DomainError("not_found", "Artifact absent from sealed manifest")
+    raw = read(item)
+    headers = dict(PUBLIC_HEADERS)
+    if path.startswith("/_releases/"):
+        headers["cache-control"] = "public, max-age=31536000, immutable"
+    headers["content-security-policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    )
+    return Response(raw, media_type=item["media_type"], headers=headers)
+
+
 class PublicServing:
     def public_response(self, binding, path, method):
-        if method not in {"GET", "HEAD"}:
-            return Response(
-                "Method not allowed",
-                status_code=405,
-                headers={**PUBLIC_HEADERS, "allow": "GET, HEAD"},
-            )
+        refused = method_response(method)
+        if refused is not None:
+            return refused
         if self._closed:
             raise DomainError("unavailable", "Publication service is closed")
         snapshot = self.catalog.read()
@@ -45,23 +76,11 @@ class PublicServing:
                 raise DomainError("not_found", "Asset was never publicly eligible here")
         elif self.release_origin(snapshot, revision) != binding:
             raise DomainError("not_found", "Release targets another origin")
-        manifest = self.sealed_manifest(revision)
-        if path in manifest["redirects"]:
-            return Response(
-                status_code=307,
-                headers={
-                    **PUBLIC_HEADERS,
-                    "location": quote(manifest["redirects"][path], safe="/"),
-                },
-            )
-        raw, mime = self.artifact(revision, "public", path)
-        headers = dict(PUBLIC_HEADERS)
-        if path.startswith("/_releases/"):
-            headers["cache-control"] = "public, max-age=31536000, immutable"
-        headers["content-security-policy"] = (
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+        return release_response(
+            self.sealed_manifest(revision),
+            path,
+            lambda item: self.artifact(revision, "public", path)[0],
         )
-        return Response(raw, media_type=mime, headers=headers)
 
     def release_origin(self, snapshot, job):
         candidate = snapshot.revisions[job["data"]["attributes"]["candidate_revision"]]

@@ -77,3 +77,50 @@ docker run -d --name kajenn-rustfs-dev -p 127.0.0.1:19000:9000 -e RUSTFS_ACCESS_
 I test dello storage leggono endpoint e credenziali da un file JSON privato
 indicato da `KAJENN_RELEASE_S3` (`endpoint_url`, `access_key`, `secret_key`) e
 creano un bucket nuovo per ogni test.
+
+## Il figlio: StaticSiteServerApplication
+
+Macro 3b, fase 2. `StaticSiteServerApplication` (`kajenn_public_site/child.py`)
+è un'applicazione kajenn montata sulla radice del server figlio (`mount = ""`):
+riceve ogni path che nessun altro mount reclama e serve le pagine pubbliche
+leggendo lo storage delle release. Non importa il catalogo, Gramlot, il
+rendering né i servizi editoriali, e non scrive mai nello storage: le sue
+credenziali devono essere di sola lettura.
+
+```python
+from kajenn_public_site.child import create_static_site_server
+
+server = create_static_site_server(
+    bindings={"https://www.example.org": settings_id},
+    release_storage={"protocol": "s3", "bucket": "releases", ...},
+    cache_seconds=5,
+)
+```
+
+- `create_static_site_server` costruisce un `AsgiServer` con due applicazioni:
+  `StaticSiteServerApplication` sulla radice e `StaticSiteHealth` su
+  `/_health/` (route `/_health/health`).
+- L'host della richiesta sceglie il canale (`bindings`); un host non configurato
+  riceve 404.
+- Il figlio rilegge il puntatore al massimo ogni `cache_seconds`. Una nuova
+  attivazione o un rollback diventano visibili entro quell'intervallo.
+- Prima di servire verifica il digest di ogni manifest e lo SHA256 e la
+  dimensione di ogni oggetto. Serve solo i path elencati nel manifest: un
+  oggetto presente nello storage ma non elencato non è raggiungibile.
+- Puntatore o manifest mancanti o non validi: risposta 503. Se una release era
+  già stata validata, il figlio continua a servire quella.
+- Le risposte sono costruite dalla stessa funzione del serving dell'installazione
+  (`publication/serving.py`, `release_response`): stesso corpo, stato, header,
+  redirect della radice, 404 e 405.
+- Gli asset `/_releases/...` delle release elencate in `history` restano
+  raggiungibili. Il controllo dell'origine usa l'origine del puntatore corrente
+  per tutta la storia del canale.
+
+Avvio locale con un file di configurazione privato:
+
+```bash
+PYTHONPATH=src .venv/bin/python examples/child_serve.py /percorso/child-config.json --port 8876
+```
+
+Profilo di installazione del figlio: `kajenn-public-site` con l'extra
+`release-s3` per S3. Non servono gli extra `render` né `admin`.
