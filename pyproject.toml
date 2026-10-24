@@ -13,6 +13,7 @@ dependencies = ["genro-storage>=0.8.1,<0.9", "kajenn==0.5.0"]
 [project.optional-dependencies]
 admin = ["gramlot==0.3.9", "gramlot-py-server==0.2.12"]
 dev = ["pytest>=8", "ruff>=0.14"]
+release-s3 = ["genro-storage[s3]>=0.8.1,<0.9"]
 render = ["gramlot==0.3.8", "genro-builders==0.30.0", "genro-bag==0.28.0",
           "markdown-it-py==4.2.0", "nh3==0.3.7"]
 

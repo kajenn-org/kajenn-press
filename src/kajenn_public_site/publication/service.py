@@ -7,19 +7,24 @@ from threading import RLock
 from urllib.parse import urlsplit
 from uuid import uuid4
 
+from genro_storage.exceptions import StorageError
+
 from ..catalog.errors import Conflict
 from ..catalog.filesystem import digest, encode
 from ..catalog.local import Change
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
 from ..rendering.inputs import RenderInputs
+from .export import ReleaseStorage
 from .grants import PreviewGrants
 from .jobs import BuildJobs
 from .releases import RELEASE_MUTATIONS, RELEASE_READS, Releases
 from .routes import localized_path, origin, route_map
 from .serving import PublicServing
 
-READS = {"candidate_read", "build_status"} | RELEASE_READS
+# Export writes release storage, never the catalog: no key, receipt or catalog commit.
+EXPORTS = {"release_export"}
+READS = {"candidate_read", "build_status"} | RELEASE_READS | EXPORTS
 OPERATIONS = (
     {
         "publication_settings_save",
@@ -34,6 +39,7 @@ OPERATIONS = (
     }
     | RELEASE_READS
     | RELEASE_MUTATIONS
+    | EXPORTS
 )
 
 
@@ -49,6 +55,7 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
         preview_secret,
         preview_max_age=3600,
         public_origins=None,
+        release_storage=None,
     ):
         self.catalog, self.policy, self.worker = catalog, policy, worker
         self.management_origin, self.preview_origin = (
@@ -83,6 +90,9 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
             self.record(catalog.read(), settings_id, "publication_settings")
             self.public_origins[binding] = settings_id
         self.inputs = RenderInputs(catalog, policy)
+        self.release_storage = (
+            None if release_storage is None else ReleaseStorage(self, release_storage)
+        )
         self._lock = RLock()
         self._closed = False
         self.start_jobs()
@@ -129,7 +139,7 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
             site_id = self.record(snapshot, arguments[key], kind)["data"]["attributes"]["site_id"]
         permission = (
             "publish"
-            if operation in RELEASE_READS | RELEASE_MUTATIONS
+            if operation in RELEASE_READS | RELEASE_MUTATIONS | EXPORTS
             else "write"
             if operation.startswith("publication_")
             else "preview_grant"
@@ -183,6 +193,10 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
                         self.record(snapshot, params["settings_id"], "publication_settings"),
                         self.record(snapshot, params["build_id"], "publication_job"),
                     )
+                    if self.release_storage is not None:
+                        result = self._result(snapshot, identity, revision)
+                        result["export"] = self.export_status(snapshot, params["settings_id"])
+                        return result
                 return self._result(snapshot, identity, revision)
             change = handler(snapshot, identity, **params)
             changes = change if isinstance(change, list) else [change]
@@ -208,7 +222,35 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
             revision = current.revisions[receipt["results"][0]["revision_id"]]
             if operation in {"build_start", "build_retry"}:
                 self._schedule(revision["record_id"])
-            return self._result(current, identity, revision)
+            result = self._result(current, identity, revision)
+            if (
+                operation in {"release_activate", "release_rollback"}
+                and self.release_storage is not None
+            ):
+                # The activation is committed; an export failure only leaves it pending.
+                result["export"] = self.export_after_commit(current, params["settings_id"])
+            return result
+
+    def export_after_commit(self, snapshot, settings_id):
+        try:
+            return {"state": "exported", "pointer": self.release_storage.export(snapshot, settings_id)}
+        except (OSError, StorageError, DomainError) as exc:
+            return {"state": "pending", "error": getattr(exc, "code", type(exc).__name__)}
+
+    def export_status(self, snapshot, settings_id):
+        try:
+            return self.release_storage.status(snapshot, settings_id)
+        except (OSError, StorageError, DomainError) as exc:
+            return {"state": "unavailable", "error": getattr(exc, "code", type(exc).__name__)}
+
+    def _release_export(self, snapshot, identity, settings_id):
+        if self.release_storage is None:
+            raise DomainError("unavailable", "Release storage is not configured")
+        try:
+            pointer = self.release_storage.export(snapshot, settings_id)
+        except (OSError, StorageError) as exc:
+            raise DomainError("export_failed", "Release storage write failed") from exc
+        return {"state": "exported", "pointer": pointer}
 
     def _result(self, snapshot, identity, revision):
         if revision["data"]["kind"] == "publication_candidate":

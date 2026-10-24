@@ -9,9 +9,9 @@ Must not break: Filesystem/Genro Storage remains the only catalog backend; no As
 
 ## Objective
 
-Separate where a site is edited and built from where it is served. An installation (catalog with one or more sites and their shared library, served by the existing application) exports each activated release and its active pointer to a configurable Genro Storage mount. A lightweight child application serves the active release of a site from that mount, without catalog, Gramlot or render worker. The existing server becomes websites: administration, internal installation and a registry of children. A local Docker composition proves the cycle with kajenn.org: built in websites, served by a child on `kajenn.localhost`. The same composition with MinIO proves that changing the Genro Storage configuration changes the backend without code changes.
+Separate where a site is edited and built from where it is served. An installation (catalog with one or more sites and their shared library, served by the existing application) exports each activated release and its active pointer to a configurable Genro Storage mount. A lightweight child application serves the active release of a site from that mount, without catalog, Gramlot or render worker. The existing server becomes websites: administration, internal installation and a registry of children. A local Docker composition proves the cycle with kajenn.org: built in websites, served by a child on `kajenn.localhost`, with RustFS as S3-compatible release storage. The same composition with a shared Docker volume (`local` backend) proves that changing the Genro Storage configuration changes the backend without code changes, once the `local` backend replaces files atomically.
 
-Owner decisions (2026-10-24): websites.genro.com is the target address of the manager; the unit managed by websites is the installation; installations inside websites and installations with their own deployment coexist; shared resources stay shared inside one installation and are copied with provenance across installations; release storage goes through Genro Storage, configured per deployment (Docker volume locally, S3 or similar when hosts differ). Production DNS, real deployment and the per-site management application of a deployed installation are outside this plan.
+Owner decisions (2026-10-24): websites.genro.com is the target address of the manager; the unit managed by websites is the installation; installations inside websites and installations with their own deployment coexist; shared resources stay shared inside one installation and are copied with provenance across installations; release storage goes through Genro Storage, configured per deployment; locally RustFS in Docker as S3-compatible storage (owner decision 2026-10-24, after genro-org/genro-storage#83). Production DNS, real deployment and the per-site management application of a deployed installation are outside this plan.
 
 Main baseline: `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. This branch starts from `codex/gramlot-administration` at `68d1042`, whose plan is suspended in `.phased/suspended/gramlot-administration/` after its Phase 1 work.
 
@@ -19,7 +19,7 @@ Main baseline: `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. This branch starts fr
 
 - Release storage layout: one Genro Storage mount per deployment. Immutable files are written once with exclusive create under a content-addressed path; the manifest is written after its files; the active pointer per site channel is written last. A reader never needs a file that is not yet written.
 - Pointer: a small JSON document (site, channel, build, manifest digest, catalog channel generation, export time). The catalog stays authoritative; the storage pointer is rewritten after every activation and rollback and on explicit re-export. Genro Storage 0.8.1 has no conditional writes: the single writer is the installation process that owns the catalog lock.
-- Atomicity: a reader must see either the old or the new complete pointer. The local backend declares atomic writes but the project has not verified it; Phase 1 qualifies it with a concurrent reader test before any consumer relies on it. A backend that fails qualification is refused, not worked around.
+- Atomicity: a reader must see either the old or the new complete pointer. S3-compatible stores expose a new object only when its upload completes. The `local` backend declares atomic writes but truncates and rewrites (verified: 41 invalid reads of 374, reported as genro-org/genro-storage#83); the startup qualification refuses it until a fixed release passes the concurrent reader check. A backend that fails qualification is refused, not worked around.
 - Child serving: the child rereads the pointer with a short cache (default 5 seconds) and serves only files listed in the manifest it validated. Public headers, 404 and redirect behavior match the current in-process public serving. Previews stay in websites.
 - Configuration: mounts, host-to-site bindings and cache interval come from deployment configuration. No credentials in release storage, pointer or manifest.
 - Naming: the child application name is decided in Phase 2 with the owner; `GramlotWebsiteApplication` remains reserved for the per-site management application, outside this plan.
@@ -27,13 +27,16 @@ Main baseline: `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. This branch starts fr
 
 ## Work Plan
 
-- [ ] **Phase 1**: Release export to a configurable Genro Storage mount
+- [x] **Phase 1**: Release export to a configurable Genro Storage mount
+  > Done: Activated and rolled-back releases are exported to a Genro Storage mount (artifacts and manifests write-once, pointer last); release_export on REST/MCP; export state on channel_read; startup qualification accepts RustFS (s3) and refuses the local backend (genro-org/genro-storage#83). 4 contracts pass on RustFS 1.0.3; full suite 106 passed, 3 skipped; ruff clean.
+  > Files: src/kajenn_public_site/publication/export.py, src/kajenn_public_site/publication/service.py, src/kajenn_public_site/publication/releases.py, src/kajenn_public_site/application.py, pyproject.toml, docs/14-release-storage.md, README.md, tests/publication/storage_support.py, tests/publication/test_release_export_contract.py, .phased/active/websites-release-serving/evidence-phase-1.md, .phased/active/websites-release-serving/notes.md, .phased/active/websites-release-serving/plan.md, .phased/active/websites-release-serving/tests/phase-4/test_docker_composition_contract.py, .phased/active/websites-release-serving/tests/phase-5/test_local_volume_configuration_contract.py, .phased/roadmap.md
+  > Review: The admin artifact check fails in the admin environment because the qualified Gramlot 0.3.9 prerelease wheel was lost from /tmp; the PyPI wheel has a different hash. Requalify before resuming the suspended administration plan.
   - Run: opus / high
   - Pattern: `src/kajenn_public_site/objects.py:ObjectStore.qualify` (Genro Storage mount configuration and exclusive-create qualification); `src/kajenn_public_site/publication/releases.py:Releases._release_activate` (conditional activation the export follows).
-  - Files: existing `src/kajenn_public_site/publication/releases.py`, `src/kajenn_public_site/publication/service.py`, `src/kajenn_public_site/application.py`, `docs/12-publication-rollback.md`; new `src/kajenn_public_site/publication/export.py`, tests under `tests/publication/`, `docs/14-release-storage.md`.
+  - Files: existing `src/kajenn_public_site/publication/releases.py`, `src/kajenn_public_site/publication/service.py`, `src/kajenn_public_site/application.py`, `pyproject.toml` (optional `release-s3` extra with `genro-storage[s3]`), `docs/12-publication-rollback.md`; new `src/kajenn_public_site/publication/export.py`, tests under `tests/publication/`, `docs/14-release-storage.md`.
   - Decisions: Export runs after the catalog commit of activation and rollback, with the same idempotency key; an export failure leaves the catalog activation committed and reports the export as pending, retriable through a REST/MCP operation. Re-export of an already exported release writes no immutable file twice and rewrites only the pointer.
   - Details: Configure the export mount through `create_server(..., publication={..., "release_storage": ...})` using Genro Storage configuration. Write files, manifest and pointer in that order. Add a qualification of the configured backend at startup: exclusive create, read-back digest, and pointer replacement observed by a concurrent reader. Expose export status on channel reads and a `release_export` operation on REST and MCP.
-  - Done: The plan's tests for this phase, copied into `tests/publication/`, pass. The full existing suite and lint pass. An activation, an update and a rollback produce matching pointers in a local mount; a concurrent reader never observes a partial pointer; a simulated export failure leaves the activation committed and a retry completes it.
+  - Done: The plan's tests for this phase, copied into `tests/publication/`, pass against RustFS in Docker (`rustfs/rustfs:1.0.3`). The full existing suite and lint pass. An activation, an update and a rollback produce matching pointers in the S3 mount; a concurrent reader never observes a partial pointer; the `local` backend is refused at startup by the qualification; a simulated export failure leaves the activation committed and a retry completes it.
 
 - [ ] **Phase 2**: Lightweight child application serving from release storage
   - Run: opus / high
@@ -52,21 +55,21 @@ Main baseline: `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. This branch starts fr
   - Done: The plan's tests for this phase, copied into `tests/admin/`, pass. Lint and the full suite pass. A real browser shows a registered child, its exported release and a deliberate mismatch; re-export resolves it. Compare the view with its approved mockup.
   - Verify: now — The deployment view makes clear which release each child serves and whether it matches the catalog.
 
-- [ ] **Phase 4**: Local Docker composition with a shared release volume
+- [ ] **Phase 4**: Local Docker composition with RustFS release storage
   - Run: opus / medium
   - Pattern: `examples/admin_demo.py:main` (loopback administration server composition); `/Users/gporcari/Sviluppo/kajenn/kajenn-org-site-data/tools/build_site.py:main` (kajenn.org built through MCP only; read-only reference outside the repository).
   - Files: new `deploy/docker/` with Dockerfiles for websites and child, `compose.yaml`, configuration files and a README; `examples/` script that builds kajenn.org through MCP inside the composition; `docs/14-release-storage.md`.
-  - Decisions: Images install pinned published artifacts with recorded hashes; the render worker profile stays a separate environment inside the websites image. The release volume is mounted read-write in websites and read-only in the child. Local credentials are generated at startup and never committed.
-  - Details: Compose websites (admin, internal installation, render worker) and one child bound to `kajenn.localhost`. Build kajenn.org through MCP, activate, and serve it from the child. Document start, stop, rebuild and reset of volumes.
-  - Done: `docker compose up` from a clean checkout serves kajenn.org from the child; the child container has no write access to the release volume; an update and a rollback in websites become visible in the child within the cache interval. Record exact image digests and commands in the phase evidence.
+  - Decisions: Images install pinned published artifacts with recorded hashes; the render worker profile stays a separate environment inside the websites image. RustFS holds the release bucket; websites uses read-write credentials and the child read-only credentials. Local credentials are generated at startup and never committed.
+  - Details: Compose RustFS, websites (admin, internal installation, render worker) and one child bound to `kajenn.localhost`. Build kajenn.org through MCP, activate, and serve it from the child. Document start, stop, rebuild and reset of volumes.
+  - Done: `docker compose up` from a clean checkout serves kajenn.org from the child; the child's credentials cannot write the release bucket; an update and a rollback in websites become visible in the child within the cache interval. Record exact image digests and commands in the phase evidence.
 
-- [ ] **Phase 5**: Same composition with MinIO as S3 release storage
+- [ ] **Phase 5**: Same composition with a shared Docker volume (`local` backend)
   - Run: opus / medium
-  - Pattern: Phase 4 composition; Genro Storage `s3` mount configuration in `genro_storage.storage_grammar.StorageGrammar.s3`.
-  - Files: `deploy/docker/` compose override and configuration for MinIO; `docs/14-release-storage.md`.
-  - Decisions: Only configuration changes between Phase 4 and Phase 5. If the S3 backend fails the Phase 1 qualification, the phase stops with a reproducible report for Genro Storage instead of adding a workaround.
-  - Details: Add MinIO, configure the release storage mount as `s3` in websites and child, repeat the Phase 4 cycle.
-  - Done: The Phase 4 cycle passes against MinIO with no code change; the startup qualification result for the S3 mount is recorded.
+  - Pattern: Phase 4 composition; Genro Storage `local` mount configuration in `genro_storage.storage_grammar.StorageGrammar.local`.
+  - Files: `deploy/docker/` compose override and configuration for a shared volume; `docs/14-release-storage.md`.
+  - Decisions: Only configuration changes between Phase 4 and Phase 5. The phase starts only after a Genro Storage release fixing genro-org/genro-storage#83 passes the Phase 1 qualification; until then it stays blocked instead of adding a workaround.
+  - Details: Replace RustFS with a shared volume mounted read-write in websites and read-only in the child, configure the release storage mount as `local`, repeat the Phase 4 cycle.
+  - Done: The Phase 4 cycle passes on the shared volume with no code change; the startup qualification result for the `local` mount is recorded.
 
 ## Contract tests and execution
 
@@ -79,7 +82,8 @@ Commands at plan creation: `.venv/bin/python -m ruff check .phased/active/websit
 ## Planning evidence and dependency boundaries
 
 - Genro Storage 0.8.1 (installed in `.venv`) exposes mounts `local`, `s3`, `gcs`, `azure`, `sftp`, `webdav` and others; `StorageNode.write` writes whole objects; exclusive create (`open("xb")`) is already qualified by `ObjectStore.qualify`. No conditional write parameter exists in `StorageNode.write`.
-- Backend capability flags declare `atomic_operations` for `local` and for S3 PUT; the project has not verified either. Phase 1 qualifies them before use.
+- Backend capability flags declare `atomic_operations` for `local` and for S3 PUT. The `local` declaration is false in 0.8.1 (`main` `df695894d7`): `write_bytes` uses `Path.write_bytes`; a concurrent reader saw 41 invalid reads of 374 and 21 of 393. Reported as genro-org/genro-storage#83. The `s3` backend needs the `genro-storage[s3]` extra (s3fs), not installed in the base profile.
+- RustFS: S3-compatible object storage, Apache 2.0, Docker image `rustfs/rustfs` (1.0.3, updated 2026-10-17); Docker 29.8.2 is installed on the development machine.
 - Public serving today reads the active release from the catalog snapshot (`PublicServing.public_response`); host binding happens in `PreviewGateway` before kajenn routing.
 - kajenn routes by first path segment, not by host (`kajenn/docs/concepts.md`, "The one demux rule").
 - `kajenn-orchestra` (process pool) and `kajenn-hub` (instance links, design status) do not provide deployment, DNS or release distribution.

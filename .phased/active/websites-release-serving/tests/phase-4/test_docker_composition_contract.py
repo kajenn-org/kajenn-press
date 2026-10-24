@@ -10,6 +10,6 @@ def test_composition_serves_kajenn_org_from_the_child():
 
 
 def test_child_container_cannot_write_release_storage():
-    # wf:contract: The release volume is read-only in the child container; websites is its only
-    # wf:contract: writer, and no credential is committed or written to the volume.
+    # wf:contract: The child's storage credentials cannot write the release bucket; websites is
+    # wf:contract: its only writer, and no credential is committed or written to release storage.
     pytest.fail("phase 4 pending")

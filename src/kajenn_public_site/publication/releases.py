@@ -42,7 +42,10 @@ class Releases:
         channel = self.find(snapshot, "publication_channel", settings_id=settings_id)
         if channel is None:
             return {"settings_id": settings_id, "generation": 0, "active_build": None}
-        return self._result(snapshot, identity, channel)
+        result = self._result(snapshot, identity, channel)
+        if self.release_storage is not None:
+            result["export"] = self.export_status(snapshot, settings_id)
+        return result
 
     def _release_read(self, snapshot, identity, build_id):
         job = self.record(snapshot, build_id, "publication_job")

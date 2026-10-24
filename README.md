@@ -33,6 +33,7 @@ pubblicazione, attraverso gli stessi servizi usati dalla UI.
 | [11 · Build e anteprime](docs/11-build-anteprime.md) | Candidati, job persistenti, percorsi, grant privati e nove operazioni REST/MCP |
 | [12 · Pubblicazione e rollback](docs/12-publication-rollback.md) | Canali, attivazione condizionale, serving pubblico e ciclo completo |
 | [13 · Amministrazione Gramlot](docs/13-amministrazione.md) | Consultazione multisito, sessioni, profili opzionali e dipendenze qualificate |
+| [14 · Storage delle release](docs/14-release-storage.md) | Export delle release attive su Genro Storage, qualifica del backend, RustFS in locale |
 
 Per iniziare il confronto: leggere 01, 02 e 08. Il catalogo delle funzioni viene
 dopo il modello: nomi, schemi e raccomandazioni non sono API approvate.

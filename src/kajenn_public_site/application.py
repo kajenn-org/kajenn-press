@@ -13,8 +13,8 @@ from .catalog.filesystem import private_directory
 from .catalog.local import LocalCatalog
 from .domain import MUTATIONS, AccessPolicy, DomainError
 from .publication.gateway import PreviewGateway
+from .publication.service import EXPORTS, READS, PublicationService
 from .publication.service import OPERATIONS as PUBLICATION_OPERATIONS
-from .publication.service import READS, PublicationService
 from .rendering.contract import RenderProblem
 from .rendering.process import RenderWorker
 from .rendering.service import RenderService
@@ -76,7 +76,8 @@ class PublicSiteApplication(McpOpenApiApplication):
         is_rest = request.scope.get("kajenn.channel") != "mcp"
         if (
             is_rest
-            and operation in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | {"render_preview"})
+            and operation
+            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | {"render_preview"})
             and request.scope["method"] != "POST"
         ):
             raise HTTPException(405, "Mutations require POST")
@@ -589,6 +590,11 @@ class PublicSiteApplication(McpOpenApiApplication):
     def release_history(self, settings_id: str, _request=None) -> dict:
         """Release history. Conditional transitions, current publish policy and exact releases."""
         return self._execute(_request, "release_history", {"settings_id": settings_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_export(self, settings_id: str, _request=None) -> dict:
+        """Release export. Copy the active release and its pointer to release storage."""
+        return self._execute(_request, "release_export", {"settings_id": settings_id})
 
 
 def create_server(catalog_root, *, auth, grants, publication=None, administration=None):
