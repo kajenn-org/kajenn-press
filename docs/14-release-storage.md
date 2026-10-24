@@ -46,13 +46,15 @@ ordine. Bozze, anteprime e credenziali non vengono mai scritte.
 ## Qualifica del backend all'avvio
 
 All'avvio l'installazione verifica il mount: scrive e rilegge un oggetto, poi
-lo riscrive 40 volte mentre un lettore concorrente lo legge. Un lettore deve
+lo riscrive di continuo mentre un lettore concorrente lo legge, per almeno 0,5
+secondi e finché il lettore non ha completato 200 letture (limite 20 secondi;
+se il limite scade il backend è rifiutato). Un lettore deve
 vedere sempre un contenuto intero, vecchio o nuovo. Se vede un contenuto
 parziale, il backend viene rifiutato e il server non parte.
 
 | Backend | Esito (2026-10-24) |
 |---|---|
-| `s3` su RustFS 1.0.3 | Accettato. Una lettura può fallire con `OSError` se l'oggetto cambia durante la lettura: il lettore ritenta. Nessun contenuto parziale. |
+| `s3` su RustFS 1.0.3 | Accettato (circa 2,4 secondi). Una lettura può fallire con `OSError` se l'oggetto cambia durante la lettura: il lettore ritenta. Nessun contenuto parziale. |
 | `local` (Genro Storage 0.8.1) | Rifiutato. `write_bytes` svuota e riscrive il file; un lettore vede contenuti parziali. Segnalato come [genro-org/genro-storage#83](https://github.com/genro-org/genro-storage/issues/83). |
 
 ## Esito dell'export

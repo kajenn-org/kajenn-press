@@ -15,6 +15,7 @@ from ..catalog.local import Change
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
 from ..rendering.inputs import RenderInputs
+from .deployments import DEPLOYMENT_MUTATIONS, DEPLOYMENT_READS, Deployments
 from .export import ReleaseStorage
 from .grants import PreviewGrants
 from .jobs import BuildJobs
@@ -24,7 +25,7 @@ from .serving import PublicServing
 
 # Export writes release storage, never the catalog: no key, receipt or catalog commit.
 EXPORTS = {"release_export"}
-READS = {"candidate_read", "build_status"} | RELEASE_READS | EXPORTS
+READS = {"candidate_read", "build_status"} | RELEASE_READS | EXPORTS | DEPLOYMENT_READS
 OPERATIONS = (
     {
         "publication_settings_save",
@@ -40,10 +41,12 @@ OPERATIONS = (
     | RELEASE_READS
     | RELEASE_MUTATIONS
     | EXPORTS
+    | DEPLOYMENT_READS
+    | DEPLOYMENT_MUTATIONS
 )
 
 
-class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
+class PublicationService(BuildJobs, PreviewGrants, Releases, Deployments, PublicServing):
     def __init__(
         self,
         catalog,
@@ -121,6 +124,9 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
         return matches[0] if matches else None
 
     def _authorize(self, snapshot, identity, operation, arguments):
+        if operation in {"child_list", "child_channels"}:
+            # Filtered per site by the handler: each child needs read on its own site.
+            return None
         if operation == "publication_settings_save":
             site_id = self.record(snapshot, arguments["site_id"], "site")["record_id"]
         elif operation == "publication_route_save":
@@ -133,13 +139,16 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, PublicServing):
                     ("candidate_id", "publication_candidate"),
                     ("build_id", "publication_job"),
                     ("grant_id", "publication_grant"),
+                    ("record_id", "deployment_child"),
                 )
                 if k in arguments
             )
             site_id = self.record(snapshot, arguments[key], kind)["data"]["attributes"]["site_id"]
         permission = (
-            "publish"
-            if operation in RELEASE_READS | RELEASE_MUTATIONS | EXPORTS
+            "read"
+            if operation in DEPLOYMENT_READS
+            else "publish"
+            if operation in RELEASE_READS | RELEASE_MUTATIONS | EXPORTS | DEPLOYMENT_MUTATIONS
             else "write"
             if operation.startswith("publication_")
             else "preview_grant"

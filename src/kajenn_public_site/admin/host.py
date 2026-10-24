@@ -22,6 +22,8 @@ READ_OPERATIONS = frozenset(
         "revision_index",
         "scope_capabilities",
         "record_read",
+        "child_list",
+        "child_channels",
     }
 )
 

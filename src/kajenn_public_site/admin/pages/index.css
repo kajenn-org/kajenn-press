@@ -90,3 +90,23 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .author-page input { width:min(100%,480px); }
 .author-page select { min-width:120px; }
 .author-page a { color:var(--gramlot-action); }
+
+/* Deployments: catalog release beside the release read back from storage. */
+.deploy-page .lead { max-width:900px; color:var(--gramlot-text-secondary); margin:0 0 14px; }
+.deploy-table { width:100%; border-collapse:collapse; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:6px; }
+.deploy-table th,.deploy-table td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--gramlot-border); vertical-align:top; }
+.deploy-table th { font-size:12px; color:var(--gramlot-text-secondary); background:var(--gramlot-surface-subtle); }
+.deploy-table tr.selected td { background:var(--gramlot-selected); }
+.deploy-table small,.deploy-compare p { display:block; color:var(--gramlot-text-secondary); font-size:12px; margin:2px 0 0; }
+.deploy-table code,.deploy-compare code { font-size:12px; }
+.badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; font-weight:600; }
+.badge--ok { background:var(--gramlot-success-background); color:var(--gramlot-success); }
+.badge--warn { background:var(--gramlot-warning-background); color:var(--gramlot-warning); }
+.badge--error { background:var(--gramlot-error-background); color:var(--gramlot-error); }
+.deploy-cards { display:grid; grid-template-columns:minmax(300px,1.2fr) minmax(260px,1fr); gap:18px; margin-top:18px; align-items:start; }
+.deploy-compare { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+.deploy-compare div { border:1px solid var(--gramlot-border); border-radius:6px; padding:10px 12px; background:var(--gramlot-surface-subtle); }
+.deploy-compare h3 { margin:0 0 6px; font-size:12px; color:var(--gramlot-text-secondary); text-transform:uppercase; }
+.deploy-note { border-left:3px solid var(--gramlot-warning); padding:10px 14px; background:var(--gramlot-warning-background); color:var(--gramlot-warning); font-size:13px; }
+.deploy-page label,.deploy-page input,.deploy-page select { display:block; width:100%; margin-bottom:8px; }
+@media(max-width:850px) { .deploy-cards,.deploy-compare { grid-template-columns:1fr; } .deploy-table { display:block; overflow-x:auto; } }

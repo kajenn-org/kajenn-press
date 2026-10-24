@@ -107,6 +107,14 @@ class Page(AdminPage, IndexPage):
         navigation.set_item(
             "shared", shared, title="Shared across sites", label="Shared across sites"
         )
+        navigation.set_item(
+            "deployments",
+            None,
+            title="Deployments",
+            label="Deployments",
+            url="deployments",
+            section="deployments",
+        )
         return navigation
 
     def top(self, pane):  # wf:phase-1:new
@@ -222,6 +230,8 @@ class Page(AdminPage, IndexPage):
         elif section == "library":
             await execute_read("records_index", scope="library")
             url, title = "library", "Shared library"
+        elif section == "deployments":
+            url, title = "deployments", "Deployments"
         elif section in {"author", "content", "resource"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)

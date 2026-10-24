@@ -596,6 +596,50 @@ class PublicSiteApplication(McpOpenApiApplication):
         """Release export. Copy the active release and its pointer to release storage."""
         return self._execute(_request, "release_export", {"settings_id": settings_id})
 
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_save(
+        self,
+        settings_id: str,
+        name: str,
+        public_origin: str,
+        serving_address: str,
+        key: str,
+        mount: str = "releases",
+        record_id: str | None = None,
+        expected_generation: int = 0,
+        _request=None,
+    ) -> dict:
+        """Child save. Register or update a server that serves a channel from release storage."""
+        return self._execute(
+            _request,
+            "child_save",
+            {
+                "settings_id": settings_id,
+                "name": name,
+                "public_origin": public_origin,
+                "serving_address": serving_address,
+                "key": key,
+                "mount": mount,
+                "record_id": record_id,
+                "expected_generation": expected_generation,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_read(self, record_id: str, _request=None) -> dict:
+        """Child read. Registry record with catalog and storage releases side by side."""
+        return self._execute(_request, "child_read", {"record_id": record_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_list(self, _request=None) -> dict:
+        """Child list. Every registered child readable by the caller, with its releases."""
+        return self._execute(_request, "child_list", {})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_channels(self, _request=None) -> dict:
+        """Child channels. Channel settings a child can be registered for."""
+        return self._execute(_request, "child_channels", {})
+
 
 def create_server(catalog_root, *, auth, grants, publication=None, administration=None):
     """Build a host with explicit credentials/policy and private local storage.

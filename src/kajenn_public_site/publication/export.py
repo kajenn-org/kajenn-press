@@ -30,16 +30,21 @@ class ReleaseStorage:
     def node(self, path):
         return self.storage.node(f"{MOUNT}:{path}")
 
-    def qualify(self, writes=40, size=262144):
-        """Refuse a backend that loses bytes or exposes a partially replaced object."""
+    def qualify(self, size=262144, min_reads=200, min_seconds=0.5, budget=20.0):
+        """Refuse a backend that loses bytes or exposes a partially replaced object.
+
+        Replacements continue for at least `min_seconds` and until the reader has
+        completed `min_reads` reads during them: a short or fixed run let the reader
+        miss every replacement window.
+        """
         probe = f"qualification/{uuid4().hex}"
         raw = uuid4().bytes * (size // 16)
         self.node(probe).write_bytes(raw)
         if digest(self.node(probe).read_bytes()) != digest(raw):
             raise ValueError("Release storage returned different bytes")
-        versions = [json.dumps({"n": n, "pad": "x" * size}).encode() for n in range(writes)]
+        versions = [json.dumps({"n": n, "pad": "x" * size}).encode() for n in range(2)]
         self.node(probe).write_bytes(versions[0])
-        stop, partial = threading.Event(), []
+        stop, partial, reads = threading.Event(), [], [0]
 
         def reader():
             while not stop.is_set():
@@ -48,14 +53,21 @@ class ReleaseStorage:
                 except OSError:
                     # S3-compatible stores abort a read when the object changes; retry.
                     continue
+                reads[0] += 1
                 if body not in versions:
                     partial.append(len(body))
 
         thread = threading.Thread(target=reader, daemon=True)
         thread.start()
+        started, writes = time.monotonic(), 0
         try:
-            for body in versions[1:]:
-                self.node(probe).write_bytes(body)
+            while not partial and (
+                reads[0] < min_reads or time.monotonic() - started < min_seconds
+            ):
+                if time.monotonic() - started > budget:
+                    raise ValueError("Release storage too slow to observe concurrent reads")
+                writes += 1
+                self.node(probe).write_bytes(versions[writes % 2])
         finally:
             stop.set()
             thread.join()
