@@ -52,3 +52,23 @@
 - Qualification record: websites started on the local mount, which happens only after `ReleaseStorage.qualify` accepted it (genro-storage 0.8.4); a refused mount stops the installation at startup.
 - `update_and_rollback()` was extracted from the Phase 4 Docker test so that both compositions run the same cycle.
 - Contract coverage: the Phase 5 fields and contract skeleton (renamed to `test_local_volume_configuration_contract.py`) differ from the plan commit by the owner's RustFS decision of 2026-10-24 (MinIO → shared volume once genro-storage#83 is fixed), recorded under Phase 1; the release fixing #83 (0.8.4) was adopted under Phase 4.
+
+## Final touch
+
+Quality check Extended, code review at effort high over `11bff67..5efad83`: 10 findings plus 1 structural finding. Owner decision of 2026-10-25: the recommended choices, rows C and F deferred.
+
+| Row | Finding | Outcome |
+|---|---|---|
+| A | `deployments.py:111`, `export.py:96`, `deployments.py:109`: unreadable storage, a malformed pointer or an inactive channel made `channel_read` and the deployment view fail | Fixed: `export_status` reports `unavailable` with no pointer; the view state `storage_unavailable` ("Storage unreadable") |
+| B | `child.py:47`: a pointer that is valid JSON but not an object gave 500 | Fixed: `TypeError` handled; the loaded release keeps being served, otherwise 503 |
+| C | `deployments.py:54`: an internal `http` serving address is refused | Deferred by the owner |
+| D | `export.py:113`: every export re-read and re-verified the whole history | Fixed: releases whose manifest is in storage are skipped |
+| E | `child.py:67`: immutable objects read from storage on every request | Deferred: a new capability (object cache) |
+| F | `export.py:33`: startup qualification tuned on local RustFS only | Deferred by the owner: to be measured on a real S3 |
+| G | `storage-init.sh:9`: `|| true` on policy attach | Fixed: removed; RustFS 1.0.3 returns 0 on a repeated attach (checked with `mc`) |
+| H | `build.py:183`: `KeyError` without release storage | Fixed: explicit error |
+| I | 16 commits of the suspended gramlot-administration plan carry 98 `wf:phase-1:new` markers | Naming review: all names accepted by the owner; markers removed. The admin code reaches `main` with this branch; its Phase 1 human checks stay open in the suspended plan |
+
+New tests: `tests/publication/test_release_storage_faults.py`, `tests/child/test_child_pointer_faults.py`. Re-check Light over the touched files: `docs/13-amministrazione.md` listed the view states without the new one; corrected in the same commit.
+
+Checks after the final touch: ruff passed; base suite 112 passed, 8 skipped; admin 13 passed plus the known Gramlot wheel hash failure; Node 4 passed; Docker 4 passed (before the marker removal, which touches no Docker file).

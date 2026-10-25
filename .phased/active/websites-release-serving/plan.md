@@ -101,3 +101,7 @@ Commands at plan creation: `.venv/bin/python -m ruff check .phased/active/websit
 ## Notes
 
 No implementation, sibling-repository change, external deployment, merge or push is authorized by saving this plan. The suspended plan keeps its contracts for a later macro.
+
+## Quality check
+
+> Quality check: 2026-10-25T15:34:06+01:00 — commit 76b623e — review extended, QA declined, findings 11 confirmed, 0 dismissed, final touch 6 corrections
