@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: updated 2026-10-24. Macros 1 and 2 are finalized on main. Macro 3 is suspended after its Phase 1 work; its plan is kept in `.phased/suspended/gramlot-administration/`. The active plan is Macro 3b, websites and release serving from Genro Storage, on `codex/websites-release-serving`.
+Status: updated 2026-10-25. Macros 1, 2 and 3b are finalized on main. Macro 3 is suspended after its Phase 1 work; its plan is kept in `.phased/suspended/gramlot-administration/`. No plan is active.
 
 The full product scope remains `docs/01-visione.md` through `docs/08-decisioni.md`. Filesystem/Genro Storage is the initial implementation; Asqueel is a future catalog backend. This roadmap does not require a database, shrink the product to a file server, or claim an upstream integration is already ready.
 
@@ -39,13 +39,14 @@ The full product scope remains `docs/01-visione.md` through `docs/08-decisioni.m
 - Scope boundary: Source/Data-native administration and generic editors. Deferred from this macro on 2026-10-23, with their contracts kept verbatim in the plan's `tests/deferred/`: conflict comparison/resolution UI, revision diff/restore UI, per-variant media references, the media picker and block insertion, JPEG/WebP verification with Pillow. Cursor-aware rich insertion, Typst, component authoring, advanced editorial organization (menus as records, taxonomies) and automatic image derivatives are not added implicitly. Existing later-macro contracts remain in force.
 - Open decisions: No unresolved product choice is delegated to execution. Visual presentation is negotiated through each phase's mockup. A missing compatible public framework capability is a qualification stop with a reproducible upstream dependency, not permission to weaken contracts or edit sibling repositories.
 
-## Macro 3b (active): websites and release serving from Genro Storage
+## Macro 3b (completed): websites and release serving from Genro Storage
 
 - Objective: Separate where a site is edited and built from where it is served, so that websites can manage installations inside itself and children deployed elsewhere.
 - Starts from: Macro 2's immutable releases and conditional activation; Macro 3 Phase 1 administration (authenticated multisite shell, Create page, fixes of 2026-10-23); kajenn.org built through MCP only.
 - Ends at: Activated releases and their active pointer are exported to a configurable Genro Storage mount; a lightweight child application serves a site's active release from that mount without catalog, Gramlot or render worker; websites keeps a registry of children and shows which release each serves; a local Docker composition serves kajenn.org from a child with RustFS as S3-compatible release storage, and then from a shared volume with configuration changes only once genro-org/genro-storage#83 is fixed.
 - Owner decisions (2026-10-24): websites.genro.com is the manager's target address; websites manages installations (a catalog with one or more sites and their shared library); installations inside websites and with their own deployment coexist; shared resources stay shared inside an installation and are copied with provenance across installations; release storage goes through Genro Storage, configured per deployment.
-- Detailed plan: [websites-release-serving](active/websites-release-serving/plan.md), five phases: release export; child serving; websites registry and deployment view; Docker composition with RustFS; shared-volume configuration.
+- Detailed plan: [websites-release-serving](done/websites-release-serving/plan.md), five phases: release export; child serving; websites registry and deployment view; Docker composition with RustFS; shared-volume configuration.
+- Implementation evidence: all five phases closed; extended quality check and final touch recorded in the plan's notes. Finalized on main through kajenn-org/kajenn-press#1 as `64fcad67a41a32961ee3e62b36cbced24bb2a86a`; the squash also carries the Macro 3 Phase 1 administration code. Archived plan and evidence remain on the local branch `codex/websites-release-serving` under `.phased/done/websites-release-serving/`. Deferred findings C (internal `http` serving address), E (child object cache) and F (storage qualification on a real S3) stay open.
 - Outside this macro: production DNS and deployment, TLS, CDN, the per-site management application of a deployed installation, cross-installation library copy.
 - Suspended Macro 3 phases (pages and navigation Data, editors, publication workspace, kajenn.org through the UI) keep their contracts and resume after this macro.
 

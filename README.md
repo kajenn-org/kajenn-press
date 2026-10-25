@@ -1,7 +1,7 @@
 # kajenn-press
 
 Proposta di piattaforma editoriale e pubblicazione di siti della famiglia Genro.
-**Stato al 22 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. È in verifica l’amministrazione Gramlot per consultazione multisito, risorse, Libreria e revisioni; gli editor restano alla fase successiva.**
+**Stato al 25 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. Le release attivate sono esportate su Genro Storage e servite da un’applicazione figlia `StaticSiteServerApplication`; websites tiene il registro dei figli e una composizione Docker locale con RustFS o volume condiviso. L’amministrazione Gramlot multisito ha i controlli umani della prima fase ancora aperti; gli editor restano alla fase successiva.**
 
 La proposta separa identità dei contenuti, revisioni editoriali immutabili e
 release pubblicate. Si parte con un backend su filesystem per catalogo e stato
