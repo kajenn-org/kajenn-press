@@ -40,7 +40,7 @@ dopo il modello: nomi, schemi e raccomandazioni non sono API approvate.
 
 Il [prompt di progettazione](PROMPT-PROGETTAZIONE.md) è corretto nella nomenclatura; le successive
 indicazioni del proprietario sono registrate in [08](docs/08-decisioni.md).
-Il nome del progetto è `kajenn-press` (fino al 25 ottobre 2026 `kajenn-public-site`); il repository GitHub è ancora `kajenn-org/kajenn-public-site`.
+Il nome del progetto è `kajenn-press` (fino al 25 ottobre 2026 `kajenn-public-site`); il repository GitHub è `kajenn-org/kajenn-press`.
 
 ## Run the local persistence example
 
