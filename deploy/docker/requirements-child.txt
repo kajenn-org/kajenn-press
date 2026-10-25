@@ -531,7 +531,7 @@ genro-storage==0.8.4 \
     --hash=sha256:351f169356d7e45a6cb8b2c09eb75874269a02f50601bdd014aace208bc10217 \
     --hash=sha256:445eadf71961808d4fef3c41637111c59d3fdd187bda8967189d8607f0ac6194
     # via
-    #   kajenn-public-site (pyproject.toml)
+    #   kajenn-press (pyproject.toml)
     #   kajenn
 genro-toolbox==0.18.0 \
     --hash=sha256:0b8203cfed4b7dde27463dcd4af11ea6947190256eaf06c9b4b094a41cc6e94b \
@@ -581,7 +581,7 @@ jmespath==1.1.0 \
 kajenn==0.5.0 \
     --hash=sha256:0bcf39ffece2445dee2ab8318ded4709babd81891fe866f04c6fe74216dc4544 \
     --hash=sha256:937cf31db4644369792a6396bb148f404b9ee2d81d9bc7772e883b3b52f3f58b
-    # via kajenn-public-site (pyproject.toml)
+    # via kajenn-press (pyproject.toml)
 kajenn-kbus==0.1.2 \
     --hash=sha256:435c42b22b6027ae471e04243d0fea3889aad4b213a9601e113a9375772431bd \
     --hash=sha256:7b0ddeef384faf2bf812e2bed526347fde769934674c318d90d1f5725649f86a

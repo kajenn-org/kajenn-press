@@ -10,7 +10,7 @@ from pathlib import Path
 import uvicorn
 from private_preview import PERMISSIONS, prepare
 
-from kajenn_public_site.application import create_server
+from kajenn_press.application import create_server
 
 
 def save_config(root, config):

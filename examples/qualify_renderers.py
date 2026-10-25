@@ -3,8 +3,8 @@
 import importlib.util
 import json
 
-from kajenn_public_site.rendering.contract import PreparedHTML, RenderProblem
-from kajenn_public_site.rendering.engines import installed_profile, render_template
+from kajenn_press.rendering.contract import PreparedHTML, RenderProblem
+from kajenn_press.rendering.engines import installed_profile, render_template
 
 SOURCE = """def build(source, data):
     doc = source.html(lang="^language")

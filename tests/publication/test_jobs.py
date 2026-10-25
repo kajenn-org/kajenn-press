@@ -4,8 +4,8 @@ from copy import deepcopy
 import pytest
 from publication.support import built, candidate, services, site_fixture
 
-from kajenn_public_site.domain import DomainError
-from kajenn_public_site.publication.artifacts import verify_bundle
+from kajenn_press.domain import DomainError
+from kajenn_press.publication.artifacts import verify_bundle
 
 
 def test_complete_build_and_integrity(tmp_path):

@@ -1,7 +1,7 @@
 """Operator orientation, shown on entry and retained in the Gallery navigation."""
 
-from kajenn_public_site.admin.host import CURRENT_REQUEST
-from kajenn_public_site.admin.views import AdminPage
+from kajenn_press.admin.host import CURRENT_REQUEST
+from kajenn_press.admin.views import AdminPage
 
 
 class Page(AdminPage):

@@ -2,8 +2,8 @@ from dataclasses import asdict
 
 import pytest
 
-from kajenn_public_site.catalog.errors import IntegrityError, UnsupportedProfile
-from kajenn_public_site.objects import ObjectRef, ObjectStore
+from kajenn_press.catalog.errors import IntegrityError, UnsupportedProfile
+from kajenn_press.objects import ObjectRef, ObjectStore
 
 
 def test_public_storage_preserves_bytes_and_rejects_overwrite(tmp_path):
@@ -41,6 +41,6 @@ def test_unsupported_flush_fails_closed(tmp_path, monkeypatch):
     def unavailable(stream):
         raise OSError("no durable primitive")
 
-    monkeypatch.setattr("kajenn_public_site.objects.sync_file", unavailable)
+    monkeypatch.setattr("kajenn_press.objects.sync_file", unavailable)
     with pytest.raises(UnsupportedProfile, match="durable flush"):
         ObjectStore(tmp_path)

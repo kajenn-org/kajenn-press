@@ -2,7 +2,7 @@ import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {webcrypto} from 'node:crypto';
-const text = await readFile(new URL('../../../src/kajenn_public_site/admin/pages/author.js', import.meta.url), 'utf8');
+const text = await readFile(new URL('../../../src/kajenn_press/admin/pages/author.js', import.meta.url), 'utf8');
 const {Logic} = await import('data:text/javascript;base64,' + Buffer.from(text).toString('base64'));
 globalThis.crypto ??= webcrypto;
 globalThis.window = {addEventListener() {}, removeEventListener() {}};

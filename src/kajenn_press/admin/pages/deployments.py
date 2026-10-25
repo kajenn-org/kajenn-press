@@ -4,9 +4,9 @@ from uuid import uuid4
 
 from gramlot import endpoint, source
 
-from kajenn_public_site.admin.host import CURRENT_REQUEST, execute_read, execute_service
-from kajenn_public_site.admin.views import AdminPage, literal_text
-from kajenn_public_site.domain import DomainError
+from kajenn_press.admin.host import CURRENT_REQUEST, execute_read, execute_service
+from kajenn_press.admin.views import AdminPage, literal_text
+from kajenn_press.domain import DomainError
 
 STATES = {
     "up_to_date": ("Up to date", "badge badge--ok"),

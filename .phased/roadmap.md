@@ -1,4 +1,4 @@
-# kajenn-public-site implementation roadmap
+# kajenn-press implementation roadmap
 
 Status: updated 2026-10-24. Macros 1 and 2 are finalized on main. Macro 3 is suspended after its Phase 1 work; its plan is kept in `.phased/suspended/gramlot-administration/`. The active plan is Macro 3b, websites and release serving from Genro Storage, on `codex/websites-release-serving`.
 

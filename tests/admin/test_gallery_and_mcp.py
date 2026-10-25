@@ -79,7 +79,7 @@ def test_new_site_uses_shared_authority_and_mcp_creates_content(tmp_path):  # wf
             )
             rest = (await call(http, "rest", "record_read", record_id=variant["record_id"]))[1]
             assert ui["value"] == rest["result"] == variant
-            service = server.applications["public_site"].service
+            service = server.applications["press"].service
             service.policy.grants["admin"] = {"*": ["read"]}
             caps = (await call(http, "mcp", "scope_capabilities", scope="installation"))[1]
             assert caps["result"]["permissions"] == []

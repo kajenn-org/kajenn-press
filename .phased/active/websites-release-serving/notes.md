@@ -38,3 +38,9 @@
 - The Docker contract tests run only with `KAJENN_DOCKER=1`, remove the composition's volumes, and pass storage credentials to `mc` through the environment, never in command arguments.
 - Contract coverage: the Phase 4 `Decisions:` and `Done:` fields and the second contract skeleton's two `wf:contract:` lines differ from the plan commit because of the owner's RustFS decision of 2026-10-24 (shared volume → RustFS bucket, read-only volume → read-only credentials), recorded under Phase 1 and committed with it.
 - New functions in `deploy/docker/` and `examples/kajenn_org/build.py` were written without `wf:phase-4:new` markers; the naming review lists them explicitly.
+
+## Rename to kajenn-press (2026-10-25, between Phase 4 and Phase 5)
+
+- Owner decision: the project is named `kajenn-press`. Package `kajenn_public_site` → `kajenn_press`, distribution and MCP name `kajenn-public-site` → `kajenn-press`, `PublicSiteApplication` → `PressApplication`, Kajenn application code `public_site` → `press`. Historical records keep the old name: evidence files, notes, the design prompt, the qualified admin freeze. The GitHub repository and the local folder are not renamed yet.
+- The render profile records third-party versions only, so builds frozen before the rename stay compatible.
+- Checks after the rename: ruff passed; Node 4 passed; base suite 109 passed, 7 skipped; admin 13 passed plus the known Gramlot wheel hash failure; Docker 3 passed. The Docker secret check now searches every tracked file for generated credentials instead of listing file extensions under `deploy/`, which flagged the Dockerfiles once they were tracked.

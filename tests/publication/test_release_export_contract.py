@@ -15,7 +15,7 @@ from publication.storage_support import bucket_objects, filesystem, release_buck
 from publication.support import CONFIG, services
 from publication.test_release_api import RELEASE_GRANTS
 
-from kajenn_public_site.publication.export import ReleaseStorage
+from kajenn_press.publication.export import ReleaseStorage
 
 
 def exporting_publisher(root, storage):

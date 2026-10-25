@@ -30,7 +30,7 @@ certificano da soli una capacità. Revisioni e hash in [09](09-fonti.md).
 
 ## Mappa
 
-| Area | Evidenza e stato osservato | Conseguenza per kajenn-public-site |
+| Area | Evidenza e stato osservato | Conseguenza per kajenn-press |
 |---|---|---|
 | kajenn: applicazioni | Presente: `BaseApplication`, code/instance/mount e configurazione; [K1](09-fonti.md#k1) | Applicazione separata coerente con l'host; sito editoriale e istanza restano concetti distinti |
 | kajenn: mount | Presente: dispatch per primo segmento, root per percorsi non rivendicati; [K1](09-fonti.md#k1) | Riservare mount; virtual hosting per dominio non dimostrato da questo dispatch |
@@ -100,7 +100,7 @@ stati eseguiti**, e nessun servizio S3/Telegram è stato avviato.
 | Gramlot core / componenti | Ripristino degli editor PoC HTML, Markdown, CSS/JS; binding/lifecycle, contratto per regioni interattive e relazione con HTML statico |
 | Genro Builders / Gramlot | Qualifica dei template e del rendering Data → HTML, inserimento dei frammenti e diagnostica dei binding |
 | gramlot-py-server / kajenn / Asqueel | Futuro contratto condiviso di integrazione da definire: runtime e connessioni, richieste/job, transazioni e identità; collegamento dei servizi alla Data Gramlot, composizione autenticata del pannello e mount |
-| kajenn-public-site | Contratto di catalogo, backend filesystem e futura migrazione Asqueel; modello editoriale, sorgenti/template e mapping Data, profili HTML/Markdown, servizi completi REST/MCP per LLM, policy, build, release, outbox, idempotenza e riconciliazione |
+| kajenn-press | Contratto di catalogo, backend filesystem e futura migrazione Asqueel; modello editoriale, sorgenti/template e mapping Data, profili HTML/Markdown, servizi completi REST/MCP per LLM, policy, build, release, outbox, idempotenza e riconciliazione |
 | Asqueel | Contratti di runtime, connessioni e transazioni necessari all’integrazione; qualifica del DML scelto, senza attribuirgli un CMS o una transazione S3 |
 | Deployment | Domini, TLS, bucket/versioning, retention fisica, credenziali, cache/CDN, backup e risorse worker |
 | Applicazioni di integrazione | Traduzione degli eventi, mapping degli utenti e consegna esterna; il nucleo resta indipendente dai provider |

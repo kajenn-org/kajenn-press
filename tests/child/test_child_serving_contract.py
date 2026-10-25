@@ -15,8 +15,8 @@ from publication.support import CONFIG
 from publication.test_release_api import RELEASE_GRANTS
 from publication.test_release_export_contract import exporting_publisher
 
-from kajenn_public_site.application import create_server
-from kajenn_public_site.child import create_static_site_server
+from kajenn_press.application import create_server
+from kajenn_press.child import create_static_site_server
 
 PUBLIC = "https://one.test"
 
@@ -45,10 +45,10 @@ def test_child_serves_the_active_release_without_catalog_or_renderers(tmp_path):
             sys.executable,
             "-c",
             (
-                "import sys, kajenn_public_site.child; "
+                "import sys, kajenn_press.child; "
                 "assert not [m for m in sys.modules if m.startswith(('gramlot', "
-                "'kajenn_public_site.catalog', 'kajenn_public_site.rendering', "
-                "'kajenn_public_site.services', 'kajenn_public_site.publication.service'))]"
+                "'kajenn_press.catalog', 'kajenn_press.rendering', "
+                "'kajenn_press.services', 'kajenn_press.publication.service'))]"
             ),
         ],
         capture_output=True,

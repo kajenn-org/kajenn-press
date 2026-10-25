@@ -10,9 +10,9 @@ import pytest
 from catalog.support import baseline, commit, crash_changes, worker, workspace
 from genro_storage import StorageNode
 
-from kajenn_public_site.catalog.errors import Conflict, UnsupportedProfile
-from kajenn_public_site.catalog.local import Change, LocalCatalog
-from kajenn_public_site.objects import ObjectStore
+from kajenn_press.catalog.errors import Conflict, UnsupportedProfile
+from kajenn_press.catalog.local import Change, LocalCatalog
+from kajenn_press.objects import ObjectStore
 
 
 def test_committed_catalog_survives_restart():
@@ -258,10 +258,10 @@ def test_payload_access_uses_public_storage_api():
         def no_flush(stream):
             raise OSError("unsupported durable flush")
 
-        patch.setattr("kajenn_public_site.objects.sync_file", no_flush)
+        patch.setattr("kajenn_press.objects.sync_file", no_flush)
         with pytest.raises(UnsupportedProfile, match="durable flush"):
             ObjectStore(root / "unsupported")
-        source = Path(__file__).resolve().parents[3] / "src/kajenn_public_site"
+        source = Path(__file__).resolve().parents[3] / "src/kajenn_press"
         for path in source.rglob("*.py"):
             assert "._backend" not in path.read_text()
             assert ".move_to(" not in path.read_text()

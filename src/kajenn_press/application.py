@@ -21,13 +21,13 @@ from .rendering.service import RenderService
 from .services.editorial import EditorialService
 
 
-class PublicSiteApplication(McpOpenApiApplication):
+class PressApplication(McpOpenApiApplication):
     openapi_info: ClassVar[dict] = {
-        "title": "kajenn-public-site",
+        "title": "kajenn-press",
         "version": "0.1.0",
         "description": "Private editorial services; exact revisions and named sources",
     }
-    mcp_name = "kajenn-public-site"
+    mcp_name = "kajenn-press"
 
     def __init__(self, catalog_root, grants, publication_config=None, **kwargs):
         self.catalog_root = Path(catalog_root)
@@ -652,9 +652,9 @@ def create_server(catalog_root, *, auth, grants, publication=None, administratio
     private_directory(root / "host")
     applications = [
             (
-                PublicSiteApplication,
+                PressApplication,
                 {
-                    "code": "public_site",
+                    "code": "press",
                     "mount": "",
                     "catalog_root": str(root),
                     "grants": grants,

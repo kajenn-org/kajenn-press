@@ -3,8 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from catalog.support import commit
-from kajenn_public_site.catalog.errors import Conflict, IntegrityError, OwnershipError
-from kajenn_public_site.catalog.local import Change, LocalCatalog
+from kajenn_press.catalog.errors import Conflict, IntegrityError, OwnershipError
+from kajenn_press.catalog.local import Change, LocalCatalog
 
 
 def test_atomic_changes_history_and_reopen(tmp_path):
@@ -122,7 +122,7 @@ def test_authorization_cannot_mutate_or_release_ownership(tmp_path, operation):
 def test_manifest_schema_and_references_fail_closed(tmp_path, damage):
     import json
 
-    from kajenn_public_site.catalog.filesystem import digest, encode
+    from kajenn_press.catalog.filesystem import digest, encode
 
     with LocalCatalog(tmp_path) as c:
         first = commit(c, "create", Change("library", payloads={"body": b"data"}))["results"][0]
@@ -148,7 +148,7 @@ def test_manifest_schema_and_references_fail_closed(tmp_path, damage):
 
 
 def test_invalid_intent_is_reported_as_integrity_failure(tmp_path):
-    from kajenn_public_site.catalog.filesystem import encode
+    from kajenn_press.catalog.filesystem import encode
 
     with LocalCatalog(tmp_path) as c:
         commit(c, "create", Change("library"))
@@ -159,7 +159,7 @@ def test_invalid_intent_is_reported_as_integrity_failure(tmp_path):
 
 
 def test_catalog_symlink_and_path_containment(tmp_path):
-    from kajenn_public_site.catalog.filesystem import contained_file
+    from kajenn_press.catalog.filesystem import contained_file
 
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -176,7 +176,7 @@ def test_catalog_symlink_and_path_containment(tmp_path):
 
 
 def test_committed_reference_reuse_and_reject_orphan(tmp_path):
-    from kajenn_public_site.objects import ObjectRef
+    from kajenn_press.objects import ObjectRef
 
     with LocalCatalog(tmp_path) as c:
         original = commit(c, "original", Change("library", payloads={"source": b"exact"}))[
@@ -219,8 +219,8 @@ def test_independent_records_and_receipt_scopes(tmp_path):
 def test_io_error_requires_reopen_and_receipt_reconciliation(
     tmp_path, monkeypatch
 ):
-    from kajenn_public_site.catalog import local
-    from kajenn_public_site.catalog.errors import CommitUncertain
+    from kajenn_press.catalog import local
+    from kajenn_press.catalog.errors import CommitUncertain
 
     original = local.publish_json
 

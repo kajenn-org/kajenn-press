@@ -9,11 +9,11 @@ import tempfile
 import uvicorn
 from kajenn.auth.user_store import UserStore
 
-from kajenn_public_site.admin.pages.author import BLOCKS, TEMPLATE
-from kajenn_public_site.application import create_server
-from kajenn_public_site.catalog.local import LocalCatalog
-from kajenn_public_site.domain import AccessPolicy
-from kajenn_public_site.services.editorial import EditorialService
+from kajenn_press.admin.pages.author import BLOCKS, TEMPLATE
+from kajenn_press.application import create_server
+from kajenn_press.catalog.local import LocalCatalog
+from kajenn_press.domain import AccessPolicy
+from kajenn_press.services.editorial import EditorialService
 
 
 class DemoUsers(UserStore):

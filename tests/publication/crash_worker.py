@@ -5,7 +5,7 @@ from pathlib import Path
 
 from publication.release_support import publisher
 
-from kajenn_public_site.catalog import local
+from kajenn_press.catalog import local
 
 
 def interrupt_activation(root, settings_id, build_id, generation, stage):

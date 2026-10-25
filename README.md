@@ -1,4 +1,4 @@
-# kajenn-public-site
+# kajenn-press
 
 Proposta di piattaforma editoriale e pubblicazione di siti della famiglia Genro.
 **Stato al 22 ottobre 2026: implementati persistenza locale, servizi editoriali REST/MCP autenticati e rendering statico Gramlot/HtmlBuilder in worker separato. Sono disponibili build persistenti, anteprime private revocabili, attivazione pubblica e rollback di release complete. È in verifica l’amministrazione Gramlot per consultazione multisito, risorse, Libreria e revisioni; gli editor restano alla fase successiva.**
@@ -40,7 +40,7 @@ dopo il modello: nomi, schemi e raccomandazioni non sono API approvate.
 
 Il [prompt di progettazione](PROMPT-PROGETTAZIONE.md) è corretto nella nomenclatura; le successive
 indicazioni del proprietario sono registrate in [08](docs/08-decisioni.md).
-Il nome del progetto e del repository è `kajenn-public-site`.
+Il nome del progetto è `kajenn-press` (fino al 25 ottobre 2026 `kajenn-public-site`); il repository GitHub è ancora `kajenn-org/kajenn-public-site`.
 
 ## Run the local persistence example
 
@@ -53,8 +53,8 @@ Windows, NFS and multiple hosts are not supported profiles in this phase.
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -e '.[dev]'
-python3 examples/persistence.py /tmp/kajenn-public-site-demo
-python3 examples/persistence.py /tmp/kajenn-public-site-demo
+python3 examples/persistence.py /tmp/kajenn-press-demo
+python3 examples/persistence.py /tmp/kajenn-press-demo
 ```
 
 The example creates a record, updates its exact source bytes, closes/reopens the
@@ -64,13 +64,13 @@ Use a dedicated private directory; this example has fixed operation keys.
 
 ```sh
 python3 -m pytest -q --import-mode=importlib tests/contracts/phase_1 tests/contracts/phase_2 tests/catalog tests/services tests/api
-ruff check src/kajenn_public_site tests examples
-python3 -m compileall -q src/kajenn_public_site
+ruff check src/kajenn_press tests examples
+python3 -m compileall -q src/kajenn_press
 ```
 
 ## Implemented persistence API
 
-`LocalCatalog` and `Change` live in `kajenn_public_site.catalog.local`.
+`LocalCatalog` and `Change` live in `kajenn_press.catalog.local`.
 Use the catalog as a context manager; one process owns its lock until close.
 Concurrent request threads are serialized. All changes in a command succeed
 or conflict together; each existing record requires `expected_generation`.
@@ -88,7 +88,7 @@ New record and revision IDs are generated internally.
   incomplete payloads and reports leftover staging files. It never publishes or
   deletes data automatically.
 
-`ObjectRef` in `kajenn_public_site.objects` can reuse an already committed payload
+`ObjectRef` in `kajenn_press.objects` can reuse an already committed payload
 in a new revision; raw `bytes` create a new immutable object. Metadata is JSON and
 editorial content remains exact bytes. The editorial service now validates named-block contracts, resource scopes and exact dependencies.
 
@@ -130,7 +130,7 @@ See the [implementation roadmap](.phased/roadmap.md) and
 After the virtual-environment installation above, exercise the full local scenario:
 
 ```sh
-python3 examples/editorial.py /tmp/kajenn-public-site-editorial-demo
+python3 examples/editorial.py /tmp/kajenn-press-editorial-demo
 ```
 
 It drives real Kajenn REST/MCP transports in-process, without opening a listening
@@ -144,7 +144,7 @@ Start a loopback server with a private token when needed:
 
 ```sh
 export KAJENN_PUBLIC_SITE_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
-python3 examples/serve.py /tmp/kajenn-public-site-server --port 8080
+python3 examples/serve.py /tmp/kajenn-press-server --port 8080
 ```
 
 Keep the token private. The example admits one configured `local-admin`, with the

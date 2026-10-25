@@ -1,4 +1,4 @@
-from kajenn_public_site.admin.views import WorkspacePage
+from kajenn_press.admin.views import WorkspacePage
 
 
 class Page(WorkspacePage):

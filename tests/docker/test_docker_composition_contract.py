@@ -97,16 +97,18 @@ def test_child_container_cannot_write_release_storage(composition, tmp_path):
     assert copied.returncode == 0, copied.stderr
     stored = [path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()]
     assert stored and not any(path.name == "intruder.txt" for path in tmp_path.rglob("*"))
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.split("\0")
+    committed = [(ROOT / path).read_bytes() for path in tracked if path and (ROOT / path).is_file()]
     for service, names in (
         ("websites", ("storage_access", "storage_secret", "token", "operator_password")),
         ("child", ("storage_access", "storage_secret")),
     ):
         for name in names:
-            assert not any(secret(service, name).encode() in raw for raw in stored)
-    tracked = subprocess.run(
-        ["git", "ls-files", "deploy"], cwd=ROOT, capture_output=True, text=True, check=True
-    ).stdout.split()
-    assert not [path for path in tracked if Path(path).suffix not in {".py", ".sh", ".txt", ".yaml", ".md", ""}]
+            value = secret(service, name).encode()
+            assert not any(value in raw for raw in stored)
+            assert not any(value in raw for raw in committed)
 
 
 def mc(hosts, *arguments, stdin=None, mount=None):

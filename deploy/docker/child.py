@@ -9,7 +9,7 @@ from pathlib import Path
 
 import uvicorn
 
-from kajenn_public_site.child import create_static_site_server
+from kajenn_press.child import create_static_site_server
 
 
 def secret(name):

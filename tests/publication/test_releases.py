@@ -5,7 +5,7 @@ from publication.release_support import activate, initial_release, publisher, up
 from publication.support import built, candidate, site_fixture
 from services.scenarios import record
 
-from kajenn_public_site.domain import DomainError
+from kajenn_press.domain import DomainError
 
 
 def test_atomic_activation_race_and_stale_base(tmp_path):

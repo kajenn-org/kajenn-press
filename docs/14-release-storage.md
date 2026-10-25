@@ -83,7 +83,7 @@ creano un bucket nuovo per ogni test.
 
 ## Il figlio: StaticSiteServerApplication
 
-Macro 3b, fase 2. `StaticSiteServerApplication` (`kajenn_public_site/child.py`)
+Macro 3b, fase 2. `StaticSiteServerApplication` (`kajenn_press/child.py`)
 è un'applicazione kajenn montata sulla radice del server figlio (`mount = ""`):
 riceve ogni path che nessun altro mount reclama e serve le pagine pubbliche
 leggendo lo storage delle release. Non importa il catalogo, Gramlot, il
@@ -91,7 +91,7 @@ rendering né i servizi editoriali, e non scrive mai nello storage: le sue
 credenziali devono essere di sola lettura.
 
 ```python
-from kajenn_public_site.child import create_static_site_server
+from kajenn_press.child import create_static_site_server
 
 server = create_static_site_server(
     bindings={"https://www.example.org": settings_id},
@@ -125,7 +125,7 @@ Avvio locale con un file di configurazione privato:
 PYTHONPATH=src .venv/bin/python examples/child_serve.py /percorso/child-config.json --port 8876
 ```
 
-Profilo di installazione del figlio: `kajenn-public-site` con l'extra
+Profilo di installazione del figlio: `kajenn-press` con l'extra
 `release-s3` per S3. Non servono gli extra `render` né `admin`.
 
 ## Composizione Docker locale

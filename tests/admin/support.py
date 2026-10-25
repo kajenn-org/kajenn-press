@@ -9,7 +9,7 @@ from api.support import AUTH
 from kajenn.auth.user_store import UserStore
 from services.scenarios import ADMIN
 
-from kajenn_public_site.application import create_server
+from kajenn_press.application import create_server
 
 
 class FixtureUsers(UserStore):

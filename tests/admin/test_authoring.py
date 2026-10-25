@@ -11,7 +11,7 @@ from api.support import call, record
 from publication.support import CONFIG
 
 from admin.support import admin_client, login, rpc
-from kajenn_public_site.admin.pages.author import BLOCKS, TEMPLATE
+from kajenn_press.admin.pages.author import BLOCKS, TEMPLATE
 
 
 def test_create_reopen_render_retry_and_revoke(tmp_path):  # wf:phase-1:new
@@ -146,7 +146,7 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):  # wf:phase-1:new
                     revision_id=variant["revision_id"],
                 )
             )["html"] == rendered["html"]
-            server.applications["public_site"].service.policy.grants["admin"] = {"*": ["read"]}
+            server.applications["press"].service.policy.grants["admin"] = {"*": ["read"]}
             denied = await rpc(
                 http,
                 page,

@@ -7,8 +7,8 @@ from uuid import uuid4
 from gramlot import Page as GramlotPage
 from gramlot import endpoint, source
 
-from kajenn_public_site.admin.host import CURRENT_REQUEST, execute_read
-from kajenn_public_site.domain import DomainError
+from kajenn_press.admin.host import CURRENT_REQUEST, execute_read
+from kajenn_press.domain import DomainError
 
 SECTIONS = {"content": "Content", "resource": "Resources", "library": "Library"}
 KINDS = {

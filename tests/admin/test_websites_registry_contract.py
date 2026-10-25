@@ -15,7 +15,7 @@ from publication.support import CONFIG
 from publication.test_release_export_contract import exporting_publisher
 
 from admin.support import admin_client, login, rpc
-from kajenn_public_site.catalog.local import LocalCatalog
+from kajenn_press.catalog.local import LocalCatalog
 
 GRANTS = {
     "admin": {"*": ["read", "write", "use", "create_site", "build", "preview_grant", "publish"]},

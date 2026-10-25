@@ -217,7 +217,7 @@ e policy sono selezionate esplicitamente.
 ## Phase 2 implemented API
 
 The published Kajenn 0.5.0 wheel provides the qualified host without Gramlot.
-`PublicSiteApplication` exposes the same `EditorialService` through authenticated
+`PressApplication` exposes the same `EditorialService` through authenticated
 POST routes at `/<operation>` and MCP `tools/call` at `/mcp`. OpenAPI discovery is
 `GET /_meta/schema_json`; MCP discovery is `tools/list`. The request principal is
 Kajenn's authenticated avatar. An `editor` tag admits these routes; domain grants

@@ -5,9 +5,9 @@ from uuid import uuid4
 from genro_bag import Bag
 from gramlot import IndexPage, endpoint, source
 
-from kajenn_public_site.admin.host import CURRENT_REQUEST, execute_read, execute_site_create
-from kajenn_public_site.admin.views import AdminPage, literal_text
-from kajenn_public_site.domain import DomainError
+from kajenn_press.admin.host import CURRENT_REQUEST, execute_read, execute_site_create
+from kajenn_press.admin.views import AdminPage, literal_text
+from kajenn_press.domain import DomainError
 
 
 class Page(AdminPage, IndexPage):

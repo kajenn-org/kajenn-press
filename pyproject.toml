@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kajenn-public-site"
+name = "kajenn-press"
 version = "0.1.0"
 description = "Filesystem catalog and immutable editorial sources for Kajenn"
 requires-python = ">=3.11"
@@ -18,7 +18,7 @@ render = ["gramlot==0.3.8", "genro-builders==0.30.0", "genro-bag==0.28.0",
           "markdown-it-py==4.2.0", "nh3==0.3.7"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kajenn_public_site"]
+packages = ["src/kajenn_press"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

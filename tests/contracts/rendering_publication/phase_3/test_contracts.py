@@ -82,8 +82,8 @@ def test_installed_full_cycle_preserves_static_content_and_backend_contracts(
     tests = Path(__file__).resolve().parents[3]
     code = """import asyncio, importlib.util, sys
 from pathlib import Path
-import kajenn_public_site
-assert 'site-packages' in kajenn_public_site.__file__, 'Use KAJENN_APP_PYTHON with a noneditable installation'
+import kajenn_press
+assert 'site-packages' in kajenn_press.__file__, 'Use KAJENN_APP_PYTHON with a noneditable installation'
 assert all(importlib.util.find_spec(name) is None for name in ('gramlot','markdown_it','nh3','sqlalchemy','asqueel'))
 sys.path.insert(0, sys.argv[1])
 from publication.test_release_api import full_api_cycle

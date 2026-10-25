@@ -11,7 +11,7 @@ from pathlib import Path
 import uvicorn
 from kajenn.auth.user_store import UserStore
 
-from kajenn_public_site.application import create_server
+from kajenn_press.application import create_server
 
 SECRETS = Path("/secrets")
 PERMISSIONS = ["read", "write", "use", "create_site", "build", "preview_grant", "publish"]

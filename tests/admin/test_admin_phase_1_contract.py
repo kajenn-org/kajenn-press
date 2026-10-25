@@ -16,7 +16,7 @@ pytest.importorskip("gramlot", reason="Run the admin contract suite in the quali
 from api.support import call, seed_http
 
 from admin.support import admin_client, login, open_page, rpc
-from kajenn_public_site.admin.host import CURRENT_REQUEST
+from kajenn_press.admin.host import CURRENT_REQUEST
 
 
 def test_admin_is_optional_and_installs_from_reproducible_artifacts(tmp_path):  # wf:phase-1:new
@@ -30,7 +30,7 @@ def test_admin_is_optional_and_installs_from_reproducible_artifacts(tmp_path):  
             headless,
             "-I",
             "-c",
-            "import importlib.util; import kajenn_public_site.application; assert importlib.util.find_spec('gramlot') is None; assert importlib.util.find_spec('gramlot_py_server') is None",
+            "import importlib.util; import kajenn_press.application; assert importlib.util.find_spec('gramlot') is None; assert importlib.util.find_spec('gramlot_py_server') is None",
         ],
         capture_output=True,
         text=True,
@@ -78,7 +78,7 @@ def test_request_identity_is_current_isolated_and_not_client_supplied(tmp_path):
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             _site, other, _template, content, _variant = await seed_http(http)
-            service = server.applications["public_site"].service
+            service = server.applications["press"].service
             service.policy.grants["writer"] = {"site:" + other["record_id"]: ["read"]}
             async with httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=server),
@@ -129,7 +129,7 @@ def test_logout_and_grant_revocation_apply_to_open_pages(tmp_path):  # wf:phase-
                 site=site["record_id"],
                 selected=content["record_id"],
             )
-            service = server.applications["public_site"].service
+            service = server.applications["press"].service
             rights = service.policy.grants.pop("admin")
             refused = await rpc(
                 http,
@@ -171,7 +171,7 @@ def test_admin_session_mutations_require_the_authorized_origin(tmp_path):  # wf:
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             site, *_ = await seed_http(http)
-            catalog = server.applications["public_site"].service.catalog
+            catalog = server.applications["press"].service.catalog
             generation = catalog.read().generation
             for path, payload in (
                 (
@@ -271,8 +271,8 @@ def test_site_and_library_navigation_has_explicit_record_boundaries(tmp_path):  
                 selected=content["record_id"],
             )
             assert "Selection unavailable" in view["value"] and "Article" not in view["value"]
-            service = server.applications["public_site"].service
-            from kajenn_public_site.catalog.local import Change
+            service = server.applications["press"].service
+            from kajenn_press.catalog.local import Change
 
             # A genuine operational catalog record, never an editorial record.
             service.catalog.commit(
@@ -333,7 +333,7 @@ def test_lightweight_lists_do_not_eagerly_load_private_payloads(
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             site, _other, template, _content, variant = await seed_http(http)
-            catalog = server.applications["public_site"].service.catalog
+            catalog = server.applications["press"].service.catalog
             calls = []
             original = catalog.read_payload
 
@@ -371,7 +371,7 @@ def test_lightweight_lists_do_not_eagerly_load_private_payloads(
                     "revision_id": variant["revision_id"],
                 },
             )
-            server.applications["public_site"].service.policy.grants["admin"].pop("*")
+            server.applications["press"].service.policy.grants["admin"].pop("*")
             assert "error" in await rpc(
                 http,
                 page,
@@ -395,7 +395,7 @@ def test_effective_capabilities_and_new_reads_are_shared(tmp_path):  # wf:phase-
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             site, _other, template, _content, _variant = await seed_http(http)
-            service = server.applications["public_site"].service
+            service = server.applications["press"].service
             service.policy.grants["admin"] = {
                 "site:" + site["record_id"]: ["read"],
                 "library": ["read", "use"],
@@ -488,7 +488,7 @@ def test_admin_preview_and_public_origins_remain_separate(tmp_path):  # wf:phase
             server,
         ):
             await login(http)
-            app = server.applications["public_site"]
+            app = server.applications["press"]
             fixture = await asyncio.to_thread(site_fixture, app.service, app.publication)
             app.publication.public_origins["https://one.test"] = fixture["settings"]["record_id"]
             build = await build_http(http, fixture, "admin-separation")

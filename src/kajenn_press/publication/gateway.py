@@ -49,7 +49,7 @@ class PreviewGateway:
 
     @property
     def publication(self):
-        return self.applications["public_site"].publication
+        return self.applications["press"].publication
 
     def binding(self, scope):
         hosts = [v.decode("ascii") for k, v in scope["headers"] if k.lower() == b"host"]
