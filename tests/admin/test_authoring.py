@@ -14,8 +14,8 @@ from admin.support import admin_client, login, rpc
 from kajenn_press.admin.pages.author import BLOCKS, TEMPLATE
 
 
-def test_create_reopen_render_retry_and_revoke(tmp_path):  # wf:phase-1:new
-    async def check():  # wf:phase-1:new
+def test_create_reopen_render_retry_and_revoke(tmp_path):
+    async def check():
         grants = {"admin": {"*": ["read", "write", "use", "create_site", "build"]}}
         async with admin_client(
             tmp_path, grants, {**CONFIG, "render_python": os.environ["KAJENN_RENDER_PYTHON"]}
@@ -29,7 +29,7 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):  # wf:phase-1:new
             initial = await rpc(http, page, "editor", "source", site=site["record_id"])
             assert "htmlEditor" in initial["value"] and "codeMirror" in initial["value"]
 
-            async def command(operation, **arguments):  # wf:phase-1:new
+            async def command(operation, **arguments):
                 reply = await rpc(http, page, "command", operation=operation, arguments=arguments)
                 assert reply["value"]["ok"], reply
                 return reply["value"]["result"]

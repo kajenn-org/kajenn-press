@@ -111,8 +111,12 @@ class ReleaseStorage:
                 history.append(job)
         manifests = []
         for job in history:
-            raw = service.catalog.read_payload(job["id"], "manifest")
             manifest_digest = job["data"]["attributes"]["manifest_digest"]
+            manifests.append(manifest_digest)
+            if self.node(f"manifests/{manifest_digest}.json").exists():
+                # A manifest is written after its objects: a stored one has all of them.
+                continue
+            raw = service.catalog.read_payload(job["id"], "manifest")
             if digest(raw) != manifest_digest:
                 raise DomainError("invalid_output", "Sealed manifest digest differs")
             manifest = json.loads(raw)
@@ -122,7 +126,6 @@ class ReleaseStorage:
                     raise DomainError("invalid_output", "Artifact integrity failure")
                 self.write_once("objects/" + item["sha256"], body)
             self.write_once(f"manifests/{manifest_digest}.json", raw)
-            manifests.append(manifest_digest)
         attrs = channel["data"]["attributes"]
         pointer = {
             "schema": POINTER_SCHEMA,

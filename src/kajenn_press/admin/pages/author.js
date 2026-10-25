@@ -1,20 +1,20 @@
-function templateSnapshot(node) { // wf:phase-1:new
+function templateSnapshot(node) {
     return {name: node.GET('draft.template_name'), source: node.GET('draft.source')};
 }
-function pageSnapshot(node) { // wf:phase-1:new
+function pageSnapshot(node) {
     return {title: node.GET('draft.title'), language: node.GET('draft.language'),
         body: node.GET('draft.body'), template_revision: node.GET('draft.template_revision')};
 }
-function equal(a, b) { return JSON.stringify(a) === JSON.stringify(b); } // wf:phase-1:new
+function equal(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
 export class Logic {
-    initialize(node, _args) { // wf:phase-1:new
+    initialize(node, _args) {
         this.authorState = {template: node.GET('draft.template_id') ? templateSnapshot(node) : null,
             page: node.GET('draft.variant_id') ? pageSnapshot(node) : null, pending: {}, disposed: false,
             // Dirty compares unsaved drafts with their opening state, not with "never saved".
             initial: {template: templateSnapshot(node), page: pageSnapshot(node)}};
         const state = this.authorState;
-        const guard = event => { // wf:phase-1:new
+        const guard = event => {
             if (node.GET('author.dirty') || node.GET('author.busy')) {
                 event.preventDefault(); event.returnValue = '';
             }
@@ -23,20 +23,20 @@ export class Logic {
         // The same-origin administration shell owns retained iframes.
         window.parent.addEventListener('beforeunload', guard);
         // A dataController is not rendered: dispose with its rendered parent pane.
-        this.page.src.renderer.onDispose(node.parentNode, () => { // wf:phase-1:new
+        this.page.src.renderer.onDispose(node.parentNode, () => {
             state.disposed = true;
             window.removeEventListener('beforeunload', guard);
             window.parent.removeEventListener('beforeunload', guard);
         });
         this.changed(node, {});
     }
-    changed(node, _args) { // wf:phase-1:new
+    changed(node, _args) {
         const state = this.authorState;
         if (!state || state.disposed) return;
         node.SET('author.dirty', !equal(state.template ?? state.initial.template, templateSnapshot(node)) ||
             !equal(state.page ?? state.initial.page, pageSnapshot(node)));
     }
-    async callCommand(operation, arguments_) { // wf:phase-1:new
+    async callCommand(operation, arguments_) {
         const reply = await this.page.rpc.call('data', 'command', {operation, arguments: arguments_});
         if (!reply.ok) {
             const error = new Error(reply.error.message);
@@ -46,7 +46,7 @@ export class Logic {
         }
         return reply.result;
     }
-    async saveTemplate(node, _args) { // wf:phase-1:new
+    async saveTemplate(node, _args) {
         const state = this.authorState;
         if (!state || node.GET('author.busy')) return;
         const current = templateSnapshot(node);
@@ -83,7 +83,7 @@ export class Logic {
             if (!state.disposed) { node.SET('author.busy', false); this.changed(node, {}); }
         }
     }
-    async savePage(node, _args) { // wf:phase-1:new
+    async savePage(node, _args) {
         const state = this.authorState;
         if (!state || node.GET('author.busy')) return;
         if (!state.pending.page && (!node.GET('draft.template_revision') || !equal(state.template, templateSnapshot(node)))) {
@@ -128,7 +128,7 @@ export class Logic {
             if (!state.disposed) { node.SET('author.busy', false); this.changed(node, {}); }
         }
     }
-    async preview(node, _args) { // wf:phase-1:new
+    async preview(node, _args) {
         const state = this.authorState;
         if (!state || node.GET('author.busy')) return;
         if (node.GET('author.dirty') || !node.GET('draft.variant_id')) {

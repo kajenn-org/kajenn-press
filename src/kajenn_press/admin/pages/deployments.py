@@ -14,6 +14,7 @@ STATES = {
     "not_exported": ("Not in storage", "badge badge--warn"),
     "nothing_to_serve": ("Nothing to serve", "badge badge--error"),
     "storage_unconfigured": ("No release storage", "badge badge--error"),
+    "storage_unavailable": ("Storage unreadable", "badge badge--error"),
 }
 NOTES = {
     "storage_differs": "Storage names a different release than the catalog. The child keeps "
@@ -22,6 +23,8 @@ NOTES = {
     "The child has nothing new to serve until it is exported.",
     "nothing_to_serve": "No release is active for this channel and storage holds no pointer.",
     "storage_unconfigured": "This installation has no release storage configured.",
+    "storage_unavailable": "Release storage cannot be read or holds a malformed pointer. "
+    "The child keeps serving the last release it validated.",
 }
 REFRESH = "this.SET('deploy.refresh', (this.GET('deploy.refresh') || 0) + 1)"
 

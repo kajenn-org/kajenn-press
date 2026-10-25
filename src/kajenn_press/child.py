@@ -45,7 +45,7 @@ class ReleaseReader:
             return self.loaded
         try:
             self.loaded = self.load()
-        except (DomainError, StorageError, OSError, ValueError, KeyError):
+        except (DomainError, StorageError, OSError, ValueError, KeyError, TypeError):
             # A release validated earlier keeps being served; nothing validated means 503.
             if self.loaded is None:
                 raise DomainError("unavailable", "No valid release in storage") from None

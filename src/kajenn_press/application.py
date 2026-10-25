@@ -193,17 +193,17 @@ class PressApplication(McpOpenApiApplication):
         return self._execute(_request, "records_list", {"scope": scope, "kind": kind})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def records_index(self, scope: str, kind: str | None = None, _request=None) -> dict:  # wf:phase-1:new
+    def records_index(self, scope: str, kind: str | None = None, _request=None) -> dict:
         """List authorized editorial metadata without source or media payloads."""
         return self._execute(_request, "records_index", {"scope": scope, "kind": kind})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def revision_index(self, record_id: str, _request=None) -> dict:  # wf:phase-1:new
+    def revision_index(self, record_id: str, _request=None) -> dict:
         """List exact revision metadata without reading historical payloads."""
         return self._execute(_request, "revision_index", {"record_id": record_id})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def scope_capabilities(self, scope: str, _request=None) -> dict:  # wf:phase-1:new
+    def scope_capabilities(self, scope: str, _request=None) -> dict:
         """Read the current principal's actual permissions in a readable scope."""
         return self._execute(_request, "scope_capabilities", {"scope": scope})
 
@@ -412,7 +412,7 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def render_preview(self, variant_id: str, revision_id: str, _request=None) -> dict:  # wf:phase-1:new
+    def render_preview(self, variant_id: str, revision_id: str, _request=None) -> dict:
         """Render an exact saved variant in the configured worker, without publishing it."""
         return self._execute(_request, "render_preview", {"variant_id": variant_id, "revision_id": revision_id})
 

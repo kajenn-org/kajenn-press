@@ -7,7 +7,7 @@ const {Logic} = await import('data:text/javascript;base64,' + Buffer.from(text).
 globalThis.crypto ??= webcrypto;
 globalThis.window = {addEventListener() {}, removeEventListener() {}};
 window.parent = window;
-function fixture(call) { // wf:phase-1:new
+function fixture(call) {
     const values = new Map(Object.entries({
         'draft.site': 'site', 'draft.template_scope': 'site:site',
         'draft.template_name': 'Template', 'draft.source': 'original template',
@@ -29,7 +29,7 @@ function fixture(call) { // wf:phase-1:new
     logic.initialize(node, {});
     return {logic, node, dispose: () => dispose()};
 }
-function saved(record) { return {ok: true, result: {records: [record]}}; } // wf:phase-1:new
+function saved(record) { return {ok: true, result: {records: [record]}}; }
 
 test('uncertain template retries its snapshot/key and preserves later typing', async () => {
     const calls = [];

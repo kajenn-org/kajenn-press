@@ -13,7 +13,7 @@ from kajenn_press.application import create_server
 
 
 class FixtureUsers(UserStore):
-    def __init__(self, storage, **kwargs):  # wf:phase-1:new
+    def __init__(self, storage, **kwargs):
         self.records = {
             name: {
                 "identity": name,
@@ -24,21 +24,21 @@ class FixtureUsers(UserStore):
             for name in ("admin", "writer")
         }
 
-    def load_all(self):  # wf:phase-1:new
+    def load_all(self):
         return copy.deepcopy(list(self.records.values()))
 
-    def get(self, identity):  # wf:phase-1:new
+    def get(self, identity):
         return copy.deepcopy(self.records.get(identity))
 
-    def save(self, record):  # wf:phase-1:new
+    def save(self, record):
         self.records[record["identity"]] = copy.deepcopy(record)
 
-    def delete(self, identity):  # wf:phase-1:new
+    def delete(self, identity):
         return self.records.pop(identity, None) is not None
 
 
 @asynccontextmanager
-async def admin_client(root, grants=None, publication=None):  # wf:phase-1:new
+async def admin_client(root, grants=None, publication=None):
     origin = publication["management_origin"] if publication else "https://admin.test"
     server = create_server(
         root,
@@ -64,7 +64,7 @@ async def admin_client(root, grants=None, publication=None):  # wf:phase-1:new
         await asyncio.wait_for(task, 30)
 
 
-async def open_page(http):  # wf:phase-1:new
+async def open_page(http):
     import re
 
     response = await http.get("/admin/")
@@ -72,7 +72,7 @@ async def open_page(http):  # wf:phase-1:new
     return re.search(r'"pageId":"([a-f0-9]+)"', response.text)[1]
 
 
-async def rpc(http, page, method, content_type="data", **params):  # wf:phase-1:new
+async def rpc(http, page, method, content_type="data", **params):
     response = await http.post(
         "/admin/gramlot/rpc",
         json={
@@ -92,7 +92,7 @@ async def rpc(http, page, method, content_type="data", **params):  # wf:phase-1:
     return result
 
 
-async def login(http, identity="admin"):  # wf:phase-1:new
+async def login(http, identity="admin"):
     page = await open_page(http)
     result = await rpc(http, page, "sign_in", username=identity, password="fixture-only")
     assert result.get("value") == "", result

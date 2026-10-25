@@ -18,12 +18,12 @@ KINDS = {
 }
 
 
-def caption(record):  # wf:phase-1:new
+def caption(record):
     attrs = record["attributes"]
     return attrs.get("title") or attrs.get("name") or attrs.get("language") or record["record_id"]
 
 
-def literal_text(pane, tag, text, **attributes):  # wf:phase-1:new
+def literal_text(pane, tag, text, **attributes):
     """Saved text is Data, never a Source expression (even when it starts with == or ^)."""
     path = "display_text." + uuid4().hex
     pane.dataSetter(path, text)
@@ -33,7 +33,7 @@ def literal_text(pane, tag, text, **attributes):  # wf:phase-1:new
 class AdminPage(GramlotPage):
     css = ("/index.css",)
 
-    async def scope_records(self, site, section):  # wf:phase-1:new
+    async def scope_records(self, site, section):
         if section not in KINDS:
             raise DomainError("invalid_input", "Section unavailable")
         scope = "library" if section == "library" else "site:" + site
@@ -41,7 +41,7 @@ class AdminPage(GramlotPage):
         return scope, [r for r in records if r["kind"] in KINDS[section]]
 
     @source(auth="editor")
-    async def permissions(self, pane, site="", section="content"):  # wf:phase-1:new
+    async def permissions(self, pane, site="", section="content"):
         try:
             scope = "library" if section == "library" else "site:" + site
             rights = await execute_read("scope_capabilities", scope=scope)
@@ -61,7 +61,7 @@ class AdminPage(GramlotPage):
     @source(auth="editor")
     async def workspace(
         self, pane, site="", section="content", search="", refresh=0
-    ):  # wf:phase-1:new
+    ):
         try:
             _scope, records = await self.scope_records(site, section)
             site_label = (
@@ -115,7 +115,7 @@ class AdminPage(GramlotPage):
     @source(auth="editor")
     async def detail(
         self, pane, site="", section="content", selected="", fallback="", revision=""
-    ):  # wf:phase-1:new
+    ):
         try:
             scope, records = await self.scope_records(site, section)
             record_id = selected or fallback
@@ -181,7 +181,7 @@ class AdminPage(GramlotPage):
         except DomainError as error:
             pane.p(str(error), role="status")
 
-    def login_view(self, root):  # wf:phase-1:new
+    def login_view(self, root):
         root.dataSetter("login.username", "")
         root.dataSetter("login.password", "")
         root.dataSetter("login.error", "")
@@ -214,7 +214,7 @@ class AdminPage(GramlotPage):
         box.p("^login.error", role="status")
 
     @endpoint
-    async def sign_in(self, username="", password=""):  # wf:phase-1:new
+    async def sign_in(self, username="", password=""):
         request = CURRENT_REQUEST.get()
         server_app = request.server.application_at("_server")
         result = await asyncio.to_thread(
@@ -223,20 +223,20 @@ class AdminPage(GramlotPage):
         return "Sign-in failed" if "error" in result else ""
 
     @endpoint(auth="editor")
-    def sign_out(self):  # wf:phase-1:new
+    def sign_out(self):
         request = CURRENT_REQUEST.get()
         request.server.session_store.delete(request.session.id)
         return True
 
     @endpoint(auth="editor")
-    async def read(self, operation, arguments=None):  # wf:phase-1:new
+    async def read(self, operation, arguments=None):
         return await execute_read(operation, **(arguments or {}))
 
 
 class WorkspacePage(AdminPage):
     section = "content"
 
-    async def main(self, root):  # wf:phase-1:new
+    async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)

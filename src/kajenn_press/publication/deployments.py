@@ -106,15 +106,15 @@ class Deployments:
         catalog = {"build_id": active, "channel_generation": channel["generation"] if channel else 0}
         if self.release_storage is None:
             return {"catalog": catalog, "storage": None, "state": "storage_unconfigured"}
-        storage = self.export_status(snapshot, settings_id) if active else None
-        pointer = (
-            storage["pointer"] if storage else self.release_storage.read_pointer(settings_id)
-        )
-        if active is None and pointer is None:
+        storage = self.export_status(snapshot, settings_id)
+        pointer = storage["pointer"]
+        if storage["state"] == "unavailable":
+            state = "storage_unavailable"
+        elif active is None and pointer is None:
             state = "nothing_to_serve"
         elif pointer is None:
             state = "not_exported"
-        elif storage and storage["state"] == "exported":
+        elif storage["state"] == "exported":
             state = "up_to_date"
         else:
             state = "storage_differs"

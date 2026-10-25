@@ -28,17 +28,17 @@ READ_OPERATIONS = frozenset(
 )
 
 
-async def execute_read(operation, **arguments):  # wf:phase-1:new
+async def execute_read(operation, **arguments):
     if operation not in READ_OPERATIONS:
         raise DomainError("invalid_operation", "Unsupported administration read")
     return await execute_service(operation, arguments)
 
 
-async def execute_site_create(**arguments):  # wf:phase-1:new
+async def execute_site_create(**arguments):
     return await execute_service("site_create", arguments)
 
 
-async def execute_service(operation, arguments):  # wf:phase-1:new
+async def execute_service(operation, arguments):
     request = CURRENT_REQUEST.get()
     avatar = request.avatar()
     if avatar is None or "editor" not in avatar.tags:
@@ -52,7 +52,7 @@ async def execute_service(operation, arguments):  # wf:phase-1:new
 
 
 class AdminConfiguration(ShortcutConfiguration):
-    def applications_section(self, cfg):  # wf:phase-1:new
+    def applications_section(self, cfg):
         apps = cfg.applications(default=self.default_code)
         for app_class, params in self.app_entries:
             node = apps.application(**params, app_class=app_class)
@@ -61,7 +61,7 @@ class AdminConfiguration(ShortcutConfiguration):
 
 
 class AdminApplication(Application):
-    def __init__(self, **kwargs):  # wf:phase-1:new
+    def __init__(self, **kwargs):
         core = files("gramlot")
         collections, assets = [], {}
         for name in ("layout", "tree", "inputs", "editors"):
@@ -96,7 +96,7 @@ class AdminApplication(Application):
         )
 
     @route(media_type="text/html")
-    async def index(self, *segments, _request, body_raw=None, **query):  # wf:phase-1:new
+    async def index(self, *segments, _request, body_raw=None, **query):
         token = CURRENT_REQUEST.set(_request)
         try:
             return await super().index(*segments, _request=_request, body_raw=body_raw, **query)
@@ -107,15 +107,15 @@ class AdminApplication(Application):
 class ManagementGuard:
     """Origin checks for browser sessions without constraining bearer API clients."""
 
-    def __init__(self, server, management_origin):  # wf:phase-1:new
+    def __init__(self, server, management_origin):
         self.server = server
         self.origin = origin(management_origin)
 
     @property
-    def applications(self):  # wf:phase-1:new
+    def applications(self):
         return self.server.applications
 
-    async def __call__(self, scope, receive, send):  # wf:phase-1:new
+    async def __call__(self, scope, receive, send):
         if scope["type"] == "lifespan":
             return await self.server(scope, receive, send)
         if scope["type"] != "http":

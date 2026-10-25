@@ -15,7 +15,7 @@ class Page(AdminPage, IndexPage):
     datapath = "index"
     css = ("/themes/gramlot-index/theme.css", "/index.css")
 
-    async def main(self, root):  # wf:phase-1:new
+    async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)
@@ -43,7 +43,7 @@ class Page(AdminPage, IndexPage):
         IndexPage.main(self, root)
 
     @staticmethod
-    def navigation_bag(site, sites):  # wf:phase-1:new
+    def navigation_bag(site, sites):
         navigation, current = Bag(), Bag()
         navigation.set_item(
             "home",
@@ -117,7 +117,7 @@ class Page(AdminPage, IndexPage):
         )
         return navigation
 
-    def top(self, pane):  # wf:phase-1:new
+    def top(self, pane):
         pane.set_attr({"height": "54px", "class": "admin-top"})
         bar = pane.header(class_="admin-toolbar")
         bar.strong("kajenn public site")
@@ -160,7 +160,7 @@ class Page(AdminPage, IndexPage):
         )
 
     @source(auth="editor")
-    async def site_selector(self, pane, version=0):  # wf:phase-1:new
+    async def site_selector(self, pane, version=0):
         sites = await execute_read("sites_list")
         select = pane.select(id="site", value="^admin.site")
         if not sites:
@@ -168,7 +168,7 @@ class Page(AdminPage, IndexPage):
         for item in sites:
             literal_text(select, "option", item["attributes"]["name"], value=item["record_id"])
 
-    def left(self, pane):  # wf:phase-1:new
+    def left(self, pane):
         IndexPage.left(self, pane)
         pane.set_attr(
             {
@@ -188,15 +188,15 @@ class Page(AdminPage, IndexPage):
             _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
         )
 
-    def center(self, pane):  # wf:phase-1:new
+    def center(self, pane):
         pane.set_attr({"overflow": "hidden"})
         IndexPage.center(self, pane)
 
-    def bottom(self, pane):  # wf:phase-1:new
+    def bottom(self, pane):
         pane.set_attr({"height": "28px", "class": "admin-footer"})
         pane.span("Kajenn public site · Browse mode · Each tab keeps its own site")
 
-    def behavior(self, shell):  # wf:phase-1:new
+    def behavior(self, shell):
         IndexPage.behavior(self, shell)
         shell.dataController(
             "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.author' : 'home');"
@@ -214,14 +214,14 @@ class Page(AdminPage, IndexPage):
         )
 
     @endpoint(auth="editor")
-    async def navigation_for_site(self, site):  # wf:phase-1:new
+    async def navigation_for_site(self, site):
         sites = await execute_read("sites_list")
         if site and not any(item["record_id"] == site for item in sites):
             raise DomainError("forbidden", "Site not accessible")
         return self.navigation_bag(site, sites)
 
     @source(auth="editor")
-    async def index_panel(self, pane, selection):  # wf:phase-1:new
+    async def index_panel(self, pane, selection):
         # Navigation is client Data: validate its scope and derive the URL again.
         node = selection.get_node("#0")
         section, site = node.attr.get("section"), node.attr.get("site", "")
@@ -252,7 +252,7 @@ class Page(AdminPage, IndexPage):
         pane.iframe(src=url, title=title, width="100%", height="100%", border=0)
 
     @endpoint(auth="editor")
-    async def create_site(self, name, languages, key):  # wf:phase-1:new
+    async def create_site(self, name, languages, key):
         try:
             result = await execute_site_create(
                 name=name, languages=[v.strip() for v in languages.split(",") if v.strip()], key=key

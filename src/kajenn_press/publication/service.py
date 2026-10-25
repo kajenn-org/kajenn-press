@@ -249,8 +249,13 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, Deployments, Public
     def export_status(self, snapshot, settings_id):
         try:
             return self.release_storage.status(snapshot, settings_id)
-        except (OSError, StorageError, DomainError) as exc:
-            return {"state": "unavailable", "error": getattr(exc, "code", type(exc).__name__)}
+        except (OSError, StorageError, DomainError, ValueError, KeyError, TypeError) as exc:
+            # Unreadable storage or a malformed pointer: reported, never a failed read.
+            return {
+                "state": "unavailable",
+                "error": getattr(exc, "code", type(exc).__name__),
+                "pointer": None,
+            }
 
     def _release_export(self, snapshot, identity, settings_id):
         if self.release_storage is None:

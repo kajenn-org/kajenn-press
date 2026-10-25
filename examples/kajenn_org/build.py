@@ -179,6 +179,8 @@ def build(mcp, state, public_origin, serving_address):
             "release_activate", key="activate-" + release_key, settings_id=settings_id,
             build_id=job["record_id"], expected_generation=channel["generation"],
         )
+        if "export" not in activated:
+            raise RuntimeError("Release storage required: the installation exports nothing")
         if activated["export"]["state"] != "exported":
             raise RuntimeError("Release activated but not exported: " + json.dumps(activated["export"]))
     if "child" not in state:

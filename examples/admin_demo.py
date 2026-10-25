@@ -17,7 +17,7 @@ from kajenn_press.services.editorial import EditorialService
 
 
 class DemoUsers(UserStore):
-    def __init__(self, storage):  # wf:phase-1:new
+    def __init__(self, storage):
         self.record = {
             "identity": "demo",
             "password_hash": self.hash_password("demo"),
@@ -25,23 +25,23 @@ class DemoUsers(UserStore):
             "enabled": True,
         }
 
-    def load_all(self):  # wf:phase-1:new
+    def load_all(self):
         return [copy.deepcopy(self.record)] if self.record else []
 
-    def get(self, identity):  # wf:phase-1:new
+    def get(self, identity):
         return copy.deepcopy(self.record) if self.record and identity == "demo" else None
 
-    def save(self, record):  # wf:phase-1:new
+    def save(self, record):
         self.record = copy.deepcopy(record)
 
-    def delete(self, identity):  # wf:phase-1:new
+    def delete(self, identity):
         found = self.get(identity) is not None
         if found:
             self.record = None
         return found
 
 
-def main():  # wf:phase-1:new
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8874)
     parser.add_argument("--render-python", default=os.environ.get("KAJENN_RENDER_PYTHON"))

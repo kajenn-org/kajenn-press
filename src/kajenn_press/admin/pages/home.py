@@ -7,7 +7,7 @@ from kajenn_press.admin.views import AdminPage
 class Page(AdminPage):
     title = "Home · How it works"
 
-    async def main(self, root):  # wf:phase-1:new
+    async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)

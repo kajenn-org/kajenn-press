@@ -13,8 +13,8 @@ from services.scenarios import BLOCKS, DECLARATIONS
 from admin.support import admin_client, login, rpc
 
 
-def test_new_site_uses_shared_authority_and_mcp_creates_content(tmp_path):  # wf:phase-1:new
-    async def scenario():  # wf:phase-1:new
+def test_new_site_uses_shared_authority_and_mcp_creates_content(tmp_path):
+    async def scenario():
         async with admin_client(tmp_path) as (http, server):
             page = await login(http)
             main = await rpc(http, page, "main", "source")
@@ -99,10 +99,10 @@ def test_new_site_uses_shared_authority_and_mcp_creates_content(tmp_path):  # wf
     asyncio.run(scenario())
 
 
-def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):  # wf:phase-1:new
+def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
     from api.support import seed_http
 
-    async def scenario():  # wf:phase-1:new
+    async def scenario():
         async with admin_client(tmp_path) as (http, _server):
             page = await login(http)
             site, *_ = await seed_http(http)

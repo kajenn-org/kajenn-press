@@ -372,7 +372,7 @@ class EditorialService:
             and (kind is None or self._revision(snapshot, rid)["data"]["kind"] == kind)
         ]
 
-    def _metadata(self, snapshot, identity, record_id, revision_id=None):  # wf:phase-1:new
+    def _metadata(self, snapshot, identity, record_id, revision_id=None):
         revision = self._revision(snapshot, record_id, revision_id)
         self.policy.require(identity, self._scope(revision), "read")
         return {
@@ -385,7 +385,7 @@ class EditorialService:
             "previous_revision": revision["previous"],
         }
 
-    def _records_index(self, snapshot, identity, scope, kind=None):  # wf:phase-1:new
+    def _records_index(self, snapshot, identity, scope, kind=None):
         if kind is not None and kind not in EDITORIAL_KINDS:
             raise DomainError("invalid_input", "Unknown editorial kind")
         return [
@@ -396,7 +396,7 @@ class EditorialService:
             and (kind is None or self._revision(snapshot, rid)["data"]["kind"] == kind)
         ]
 
-    def _revision_index(self, snapshot, identity, record_id):  # wf:phase-1:new
+    def _revision_index(self, snapshot, identity, record_id):
         return [
             self._metadata(snapshot, identity, record_id, revision["id"])
             for revision in sorted(snapshot.revisions.values(), key=lambda r: r["generation"],
@@ -404,7 +404,7 @@ class EditorialService:
             if revision["record_id"] == record_id
         ]
 
-    def _scope_capabilities(self, snapshot, identity, scope):  # wf:phase-1:new
+    def _scope_capabilities(self, snapshot, identity, scope):
         if scope == "installation":
             allowed = self.policy.allows(identity, scope, "create_site") and all(
                 self.policy.allows(identity, "*", permission) for permission in ("read", "write", "use"))

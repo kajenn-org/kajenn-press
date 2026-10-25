@@ -25,7 +25,7 @@ COMMANDS = frozenset(
 class Page(AdminPage):
     title = "Create page"
 
-    async def main(self, root):  # wf:phase-1:new
+    async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)
@@ -42,7 +42,7 @@ class Page(AdminPage):
         )
 
     @source(auth="editor")
-    async def editor(self, pane, site="", variant="", template_id=""):  # wf:phase-1:new
+    async def editor(self, pane, site="", variant="", template_id=""):
         if not site:
             pane.p("Choose a site to start.")
             return
@@ -243,7 +243,7 @@ class Page(AdminPage):
             pane.p(str(error), role="status")
 
     @source(auth="editor")
-    async def saved_pages(self, pane, site, refresh=0):  # wf:phase-1:new
+    async def saved_pages(self, pane, site, refresh=0):
         records = await execute_read("records_index", scope="site:" + site)
         titles = {
             r["record_id"]: r["attributes"].get("title", "Page")
@@ -278,7 +278,7 @@ class Page(AdminPage):
                 )
 
     @endpoint(auth="editor")
-    async def command(self, operation, arguments):  # wf:phase-1:new
+    async def command(self, operation, arguments):
         if operation not in COMMANDS:
             raise DomainError("invalid_operation", "Command unavailable in this workspace")
         if not isinstance(arguments, dict):
