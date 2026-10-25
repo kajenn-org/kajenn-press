@@ -72,3 +72,7 @@ Quality check Extended, code review at effort high over `11bff67..5efad83`: 10 f
 New tests: `tests/publication/test_release_storage_faults.py`, `tests/child/test_child_pointer_faults.py`. Re-check Light over the touched files: `docs/13-amministrazione.md` listed the view states without the new one; corrected in the same commit.
 
 Checks after the final touch: ruff passed; base suite 112 passed, 8 skipped; admin 13 passed plus the known Gramlot wheel hash failure; Node 4 passed; Docker 4 passed (before the marker removal, which touches no Docker file).
+
+## Lessons (finalize)
+
+Owner decision (2026-10-25): no lessons saved; library behaviour found during the run goes to the library. Opened on genro-org/genro-storage: #85 (`open("xb")` raises `OSError` on s3, `FileExistsError` on local), #86 (s3 `read_bytes` fails with a precondition `OSError` when the object is replaced during the read), #87 (proposal: an atomic-replacement check offered by the library). Not carried out: Docker compose `!override` vs `!reset`, `secrets.py` shadowing the standard module, Kajenn session cookie on static responses.
