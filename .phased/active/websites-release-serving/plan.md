@@ -70,7 +70,9 @@ Main baseline: `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. This branch starts fr
   - Details: Compose RustFS, websites (admin, internal installation, render worker) and one child bound to `kajenn.localhost`. Build kajenn.org through MCP, activate, and serve it from the child. Document start, stop, rebuild and reset of volumes.
   - Done: `docker compose up` from a clean checkout serves kajenn.org from the child; the child's credentials cannot write the release bucket; an update and a rollback in websites become visible in the child within the cache interval. Record exact image digests and commands in the phase evidence.
 
-- [ ] **Phase 5**: Same composition with a shared Docker volume (`local` backend)
+- [x] **Phase 5**: Same composition with a shared Docker volume (`local` backend)
+  > Done: `compose.volume.yaml` replaces RustFS with a shared volume (read-write in websites, read-only in the child) and sets `RELEASE_STORAGE=local`; no product code changed. The Phase 4 cycle passes on the volume (site served, child write refused, no credential stored, update and rollback within the cache); websites started on the local mount, so the startup qualification accepted it with genro-storage 0.8.4. Docker tests of Phases 4 and 5: 4 passed.
+  > Files: deploy/docker/compose.volume.yaml, deploy/docker/websites.py, deploy/docker/child.py, deploy/docker/README.md, docs/14-release-storage.md, tests/docker/test_docker_composition_contract.py, tests/docker/test_local_volume_configuration_contract.py, .phased/active/websites-release-serving/evidence-phase-5.md, .phased/active/websites-release-serving/notes.md, .phased/active/websites-release-serving/plan.md
   - Run: opus / medium
   - Pattern: Phase 4 composition; Genro Storage `local` mount configuration in `genro_storage.storage_grammar.StorageGrammar.local`.
   - Files: `deploy/docker/` compose override and configuration for a shared volume; `docs/14-release-storage.md`.

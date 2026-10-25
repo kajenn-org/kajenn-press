@@ -15,18 +15,24 @@ from kajenn_press.child import create_static_site_server
 def secret(name):
     return (Path("/secrets") / name).read_text().strip()
 
+def release_storage():
+    """RELEASE_STORAGE=s3 (default): the RustFS bucket; local: the shared volume at /releases."""
+    if os.environ.get("RELEASE_STORAGE", "s3") == "local":
+        return {"protocol": "local", "base_path": "/releases"}
+    return {
+        "protocol": "s3",
+        "bucket": "releases",
+        "endpoint_url": "http://rustfs:9000",
+        "access_key": secret("storage_access"),
+        "secret_key": secret("storage_secret"),
+    }
+
 
 def main():
     config = json.loads(Path("/config/child.json").read_text())
     server = create_static_site_server(
         bindings=config["bindings"],
-        release_storage={
-            "protocol": "s3",
-            "bucket": "releases",
-            "endpoint_url": "http://rustfs:9000",
-            "access_key": secret("storage_access"),
-            "secret_key": secret("storage_secret"),
-        },
+        release_storage=release_storage(),
         cache_seconds=int(os.environ.get("CHILD_CACHE_SECONDS", "5")),
     )
     uvicorn.run(server, host="0.0.0.0", port=8876, log_level="warning")

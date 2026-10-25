@@ -20,6 +20,18 @@ PERMISSIONS = ["read", "write", "use", "create_site", "build", "preview_grant", 
 def secret(name):
     return (SECRETS / name).read_text().strip()
 
+def release_storage():
+    """RELEASE_STORAGE=s3 (default): the RustFS bucket; local: the shared volume at /releases."""
+    if os.environ.get("RELEASE_STORAGE", "s3") == "local":
+        return {"protocol": "local", "base_path": "/releases"}
+    return {
+        "protocol": "s3",
+        "bucket": "releases",
+        "endpoint_url": "http://rustfs:9000",
+        "access_key": secret("storage_access"),
+        "secret_key": secret("storage_secret"),
+    }
+
 
 class OperatorUsers(UserStore):
     """One operator, `operator`, with the generated password in /secrets/operator_password."""
@@ -56,13 +68,7 @@ def main():
             "preview_origin": os.environ["WEBSITES_PREVIEW_ORIGIN"],
             "render_python": "/opt/render/bin/python",
             "preview_secret": bytes.fromhex(secret("preview_secret")),
-            "release_storage": {
-                "protocol": "s3",
-                "bucket": "releases",
-                "endpoint_url": "http://rustfs:9000",
-                "access_key": secret("storage_access"),
-                "secret_key": secret("storage_secret"),
-            },
+            "release_storage": release_storage(),
         },
         administration={"origin": management_origin, "users": {"store_class": OperatorUsers}},
     )

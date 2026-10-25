@@ -127,6 +127,10 @@ def mc(hosts, *arguments, stdin=None, mount=None):
 
 def test_update_and_rollback_reach_the_child_within_the_cache_interval(composition):
     """Done criterion: an update and a rollback in websites reach the child within its cache."""
+    update_and_rollback()
+
+
+def update_and_rollback():
     mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
     (child,) = mcp("child_list")
     settings_id = child["attributes"]["settings_id"]

@@ -135,3 +135,9 @@ figlio: websites costruisce kajenn.org via MCP e lo esporta nel bucket, il
 figlio lo serve da `http://kajenn.localhost:8876/` con credenziali di sola
 lettura. Istruzioni in [deploy/docker/README.md](../deploy/docker/README.md).
 
+Macro 3b, fase 5. Con `deploy/docker/compose.volume.yaml` lo storage delle
+release è un volume Docker condiviso al posto di RustFS: websites lo monta in
+scrittura, il figlio in sola lettura, e cambia solo la configurazione
+(`RELEASE_STORAGE=local`). Richiede genro-storage 0.8.4 o successiva; il volume
+è condiviso solo tra container dello stesso host.
+

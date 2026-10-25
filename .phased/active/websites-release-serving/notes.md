@@ -44,3 +44,11 @@
 - Owner decision: the project is named `kajenn-press`. Package `kajenn_public_site` → `kajenn_press`, distribution and MCP name `kajenn-public-site` → `kajenn-press`, `PublicSiteApplication` → `PressApplication`, Kajenn application code `public_site` → `press`. Historical records keep the old name: evidence files, notes, the design prompt, the qualified admin freeze. The GitHub repository and the local folder are not renamed yet.
 - The render profile records third-party versions only, so builds frozen before the rename stay compatible.
 - Checks after the rename: ruff passed; Node 4 passed; base suite 109 passed, 7 skipped; admin 13 passed plus the known Gramlot wheel hash failure; Docker 3 passed. The Docker secret check now searches every tracked file for generated credentials instead of listing file extensions under `deploy/`, which flagged the Dockerfiles once they were tracked.
+
+## Phase 5
+
+- The Phase 4 entrypoints had the S3 storage written in code; they now read `RELEASE_STORAGE` (`s3` default, `local` for `/releases`). Product code is unchanged between the two compositions; the switch is the override file `compose.volume.yaml` plus that variable.
+- The override disables `rustfs` and `storage-init` through a profile (`s3`) and replaces the websites dependencies with `depends_on: !override`; `!reset` would empty them, ignoring the new entries. A one-shot `releases-init` gives the volume to uid 10002 (websites) with mode 755; the child (uid 10003) mounts it read-only.
+- Qualification record: websites started on the local mount, which happens only after `ReleaseStorage.qualify` accepted it (genro-storage 0.8.4); a refused mount stops the installation at startup.
+- `update_and_rollback()` was extracted from the Phase 4 Docker test so that both compositions run the same cycle.
+- Contract coverage: the Phase 5 fields and contract skeleton (renamed to `test_local_volume_configuration_contract.py`) differ from the plan commit by the owner's RustFS decision of 2026-10-24 (MinIO → shared volume once genro-storage#83 is fixed), recorded under Phase 1; the release fixing #83 (0.8.4) was adopted under Phase 4.
