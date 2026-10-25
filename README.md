@@ -121,8 +121,7 @@ Do not replace the pinned release with that editable checkout and assume the sam
 installation contract. The editorial-only application imports no Asqueel/SQL driver or Gramlot;
 the optional worker explicitly loads the qualified rendering packages.
 
-See the [implementation roadmap](.phased/roadmap.md) and
-[storage protocol](docs/06-storage-consistenza.md) for the full scope and limits.
+See the [storage protocol](docs/06-storage-consistenza.md) for the full scope and limits.
 
 
 ## Authenticated REST and MCP
