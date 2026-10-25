@@ -6,6 +6,7 @@ from typing import ClassVar
 
 from genro_routes import route
 from kajenn import AsgiServer, HTTPException, McpOpenApiApplication
+from kajenn.config import ConfigurationHandler, DefaultConfiguration
 from kajenn.lifespan import FatalBootError
 
 from .catalog.errors import CommitUncertain
@@ -687,8 +688,6 @@ def create_server(catalog_root, *, auth, grants, publication=None, administratio
         **options,
     )
     if administration is not None:
-        from kajenn.config import ConfigurationHandler, DefaultConfiguration
-
         config = ConfigurationHandler(AdminConfiguration(server_options), parents=[DefaultConfiguration])
         server = AsgiServer(config=config, **server_options)
     else:
