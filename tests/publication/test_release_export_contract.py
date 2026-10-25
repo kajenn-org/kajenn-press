@@ -9,6 +9,7 @@ import time
 
 import pytest
 from api.support import call, client
+from genro_storage.backends.local import LocalStorage
 from publication.release_support import activate, initial_release, updated_release
 from publication.storage_support import bucket_objects, filesystem, release_bucket
 from publication.support import CONFIG, services
@@ -125,13 +126,28 @@ def test_exported_release_is_byte_identical_and_immutable(tmp_path):
         editorial.catalog.close()
 
 
-def test_pointer_replacement_is_never_observed_partially(tmp_path):
+def non_atomic_write(self, path, data):
+    """Truncate, then write in chunks: the local backend before genro-storage 0.8.4 (#83)."""
+    target = self._resolve_path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(target, "wb") as stream:
+        for start in range(0, len(data), 4096):
+            stream.write(data[start : start + 4096])
+            stream.flush()
+
+
+def test_pointer_replacement_is_never_observed_partially(tmp_path, monkeypatch):
     # wf:contract: A concurrent reader of the configured backend observes either the old or the
     # wf:contract: new complete pointer during replacement.
     # wf:contract: A backend failing exclusive create, read-back digest or this check is refused
     # wf:contract: at startup with a clear error.
-    with pytest.raises(ValueError, match="partially replaced"):
-        ReleaseStorage(None, {"protocol": "local", "base_path": tempfile.mkdtemp()})
+    local = {"protocol": "local", "base_path": tempfile.mkdtemp()}
+    with monkeypatch.context() as patched:
+        patched.setattr(LocalStorage, "write_bytes", non_atomic_write)
+        with pytest.raises(ValueError, match="partially replaced"):
+            ReleaseStorage(None, local)
+    # genro-storage >= 0.8.4 replaces local files atomically: the same mount qualifies.
+    ReleaseStorage(None, local)
     storage = release_bucket()
     editorial, pub = exporting_publisher(tmp_path, storage)
     reader_storage = ReleaseStorage(None, storage)

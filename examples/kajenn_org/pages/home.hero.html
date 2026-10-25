@@ -1,0 +1,27 @@
+<div class="hero wrap">
+<div>
+<p class="eyebrow"><span class="dot"></span>ASGI application server · Beta</p>
+<h1>A <em>spicy</em> ASGI application server.</h1>
+<p class="lead">kajenn gives you the features FastAPI leaves to the user — sessions, authentication, websocket channels, tasks, MCP, storage — and a base server application included.</p>
+<div class="actions"><a class="button" href="/en/get-started/">Get started →</a><a class="button secondary" href="/en/concepts/">Core concepts</a></div>
+</div>
+<div class="codebox"><div class="codebar"><span>hello.py</span><span>Python 3.11+</span></div><pre><code><span class="kw">from</span> kajenn <span class="kw">import</span> AsgiServer, RoutedApplication
+<span class="kw">from</span> genro_routes <span class="kw">import</span> route
+
+
+<span class="kw">class</span> Hello(RoutedApplication):
+    mount = <span class="str">""</span>          <span class="comment"># this app answers the site root</span>
+
+    @route()
+    <span class="kw">def</span> index(self) -&gt; dict[str, str]:
+        <span class="kw">return</span> {<span class="str">"hello"</span>: <span class="str">"world"</span>}
+
+    @route()
+    <span class="kw">def</span> greet(self, name: str = <span class="str">"world"</span>) -&gt; dict[str, str]:
+        <span class="kw">return</span> {<span class="str">"hello"</span>: name}
+
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    server = AsgiServer(applications=[Hello])
+    server.serve(host=<span class="str">"127.0.0.1"</span>, port=8000)</code></pre></div>
+</div>

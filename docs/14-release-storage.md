@@ -56,6 +56,7 @@ parziale, il backend viene rifiutato e il server non parte.
 |---|---|
 | `s3` su RustFS 1.0.3 | Accettato (circa 2,4 secondi). Una lettura può fallire con `OSError` se l'oggetto cambia durante la lettura: il lettore ritenta. Nessun contenuto parziale. |
 | `local` (Genro Storage 0.8.1) | Rifiutato. `write_bytes` svuota e riscrive il file; un lettore vede contenuti parziali. Segnalato come [genro-org/genro-storage#83](https://github.com/genro-org/genro-storage/issues/83). |
+| `local` (Genro Storage 0.8.4) | Accettato. La 0.8.4 scrive su file temporaneo e sostituisce in modo atomico: issue #83 chiusa. Il progetto richiede `genro-storage>=0.8.4`. |
 
 ## Esito dell'export
 
@@ -126,3 +127,11 @@ PYTHONPATH=src .venv/bin/python examples/child_serve.py /percorso/child-config.j
 
 Profilo di installazione del figlio: `kajenn-public-site` con l'extra
 `release-s3` per S3. Non servono gli extra `render` né `admin`.
+
+## Composizione Docker locale
+
+Macro 3b, fase 4. `deploy/docker/` avvia RustFS, websites, un builder e un
+figlio: websites costruisce kajenn.org via MCP e lo esporta nel bucket, il
+figlio lo serve da `http://kajenn.localhost:8876/` con credenziali di sola
+lettura. Istruzioni in [deploy/docker/README.md](../deploy/docker/README.md).
+

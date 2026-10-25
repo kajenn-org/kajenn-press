@@ -1,0 +1,20 @@
+<div class="wrap"><div class="trustline"><span>Sessions</span><span>Authentication</span><span>Websocket channels</span><span>Tasks</span><span>OpenAPI and MCP</span><span>Storage</span></div></div>
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">Design principles</p><h2>Predictable by construction.</h2><p>kajenn is a spec-first redesign. Three principles govern almost every API decision.</p></div>
+<div class="three">
+<div class="feature"><span class="number">01</span><h3>No globals</h3><p>State lives in instances. A server is an object you build; components reach each other through an explicit parent reference. A test can start a fresh isolated server on every run.</p></div>
+<div class="feature"><span class="number">02</span><h3>Config is data</h3><p>You describe what you want with plain data and hand it to objects that already exist. Switching a backend changes the data, not the structure of your code.</p></div>
+<div class="feature"><span class="number">03</span><h3>Objects always exist</h3><p>Sessions, authentication and tasks are always present. Configuration decides which backend they use, so there is no "is it enabled?" branching.</p></div>
+</div></div></div>
+<div class="section dark"><div class="wrap split">
+<div><p class="eyebrow">One rule for every server</p><h2>The demux rule.</h2><p class="lead">An application has a code, its name, and a mount, the URL prefix it answers under. Every request is dispatched the same way.</p></div>
+<div><p class="rule">First path segment → the application mounted there, if one is; else the application on the site root, if there is one; else, for / itself with a default declared, a 307 to that application's mount; else 404.</p><p class="muted">A server with one application on the root is a usage of this rule, not a different mechanism. <a href="/en/concepts/">Read the model →</a></p></div>
+</div></div>
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">One route tree, several transports</p><h2>REST, OpenAPI and MCP from the same handlers.</h2><p>Routing is delegated to genro-routes, a protocol-neutral routing library. The route tree does not know whether it is called over REST, OpenAPI or MCP, so the same tree can be exposed through several transports. The management surface lives in the <code>_server</code> application, mounted on every server.</p></div>
+<div class="family">
+<div><strong>kajenn</strong><p>Hosts applications, sessions, authentication, tasks and MCP.</p></div>
+<div><strong>Gramlot</strong><p>Builds the interfaces as readable Python declarations. <a href="https://www.gramlot.org/">gramlot.org ↗</a></p></div>
+<div><strong>Asqueel</strong><p>Handles structured data and migrations. <a href="https://asqueel.org/">asqueel.org ↗</a></p></div>
+</div></div></div>
+<div class="cta-band"><div class="wrap"><h2>Run your first server in minutes.</h2><div class="actions"><a class="button" href="/en/get-started/">Get started →</a><a class="button secondary" href="https://github.com/kajenn-org/kajenn">GitHub ↗</a></div></div></div>
