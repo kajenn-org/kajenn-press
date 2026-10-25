@@ -6,7 +6,7 @@ from uuid import UUID
 import pytest
 from services.scenarios import BLOCKS, create_service, record, seed
 
-from kajenn_public_site.domain import DomainError
+from kajenn_press.domain import DomainError
 
 
 def test_named_sources_restart_and_exact_template_selection(tmp_path):
@@ -106,7 +106,7 @@ def test_revision_checkpoint_compare_restore_and_idempotency(tmp_path, monkeypat
     # Make UUID order oppose generation order in the serialized catalog.
     identifiers = count((1 << 128) - 1, -1)
     monkeypatch.setattr(
-        "kajenn_public_site.catalog.local.uuid4", lambda: UUID(int=next(identifiers))
+        "kajenn_press.catalog.local.uuid4", lambda: UUID(int=next(identifiers))
     )
     service = create_service(tmp_path)
     try:
@@ -253,7 +253,7 @@ def test_scoped_grants_copy_and_media(tmp_path):
 
 
 def test_concurrent_variant_creation_has_one_shared_head(tmp_path):
-    from kajenn_public_site.services.editorial import EditorialService
+    from kajenn_press.services.editorial import EditorialService
 
     service = create_service(tmp_path)
     try:

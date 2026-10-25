@@ -6,11 +6,11 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from kajenn_public_site.catalog.local import LocalCatalog
-from kajenn_public_site.domain import AccessPolicy
-from kajenn_public_site.rendering.process import RenderWorker
-from kajenn_public_site.rendering.service import RenderService
-from kajenn_public_site.services.editorial import EditorialService
+from kajenn_press.catalog.local import LocalCatalog
+from kajenn_press.domain import AccessPolicy
+from kajenn_press.rendering.process import RenderWorker
+from kajenn_press.rendering.service import RenderService
+from kajenn_press.services.editorial import EditorialService
 
 
 def demonstrate(python, output):

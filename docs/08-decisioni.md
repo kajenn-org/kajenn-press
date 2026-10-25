@@ -10,7 +10,7 @@ Asqueel/PostgreSQL resta il futuro backend; integrazione, conservazione e
 parametri operativi sono rinviati. D4 distingue
 la direzione stabilita dai contratti ancora da definire. Il
 [prompt di progettazione](../PROMPT-PROGETTAZIONE.md) è stato corretto soltanto
-nella nomenclatura: il nome del progetto è `kajenn-public-site`.
+nella nomenclatura: il nome del progetto è `kajenn-press`.
 
 ## Indicazioni acquisite il 21 ottobre 2026
 

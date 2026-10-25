@@ -16,10 +16,10 @@ from rendering.support import (
 )
 from services.scenarios import create_service, record
 
-from kajenn_public_site.catalog.local import Change
-from kajenn_public_site.domain import DomainError
-from kajenn_public_site.rendering.contract import RenderInput, canonical
-from kajenn_public_site.rendering.service import RenderService
+from kajenn_press.catalog.local import Change
+from kajenn_press.domain import DomainError
+from kajenn_press.rendering.contract import RenderInput, canonical
+from kajenn_press.rendering.service import RenderService
 
 
 @pytest.mark.parametrize("engine", ["gramlot", "htmlbuilder"])
@@ -274,7 +274,7 @@ def test_trusted_worker_runs_only_for_explicit_rendering(tmp_path, monkeypatch):
         other = make_page(editorial)
         assert not sentinel.exists()
         editorial.execute("admin", "capabilities")
-        import kajenn_public_site.application  # noqa: F401
+        import kajenn_press.application  # noqa: F401
 
         assert not sentinel.exists()
         frozen = renderer.freeze("admin", page["variant"]["record_id"])

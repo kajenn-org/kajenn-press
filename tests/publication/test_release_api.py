@@ -60,7 +60,7 @@ async def full_api_cycle(root):
         "public_origins": {"https://one.test": fixture["settings"]["record_id"]},
     }
     async with client(root, grants=RELEASE_GRANTS, publication=config) as (http, server):
-        pub = server.applications["public_site"].publication
+        pub = server.applications["press"].publication
         other_channel = await command(
             http,
             "rest",
@@ -240,7 +240,7 @@ async def full_api_cycle(root):
         assert current == rollback
         for (rid, name), source in sources.items():
             assert (
-                server.applications["public_site"].service.catalog.read_payload(rid, name) == source
+                server.applications["press"].service.catalog.read_payload(rid, name) == source
             )
         response = await http.get("https://one.test/it/")
         assert response.status_code == 200 and response.content == old_html

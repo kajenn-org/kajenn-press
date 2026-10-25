@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from kajenn_public_site.catalog.local import Change, LocalCatalog
+from kajenn_press.catalog.local import Change, LocalCatalog
 
 
 def authorize_demo(principal, snapshot, changes):

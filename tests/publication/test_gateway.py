@@ -30,7 +30,7 @@ async def exchange(browser, grant):
 async def preview_scenario(root):
     config = {**CONFIG, "render_python": os.environ["KAJENN_RENDER_PYTHON"]}
     async with client(root, grants=GRANTS, publication=config) as (http, server):
-        app = server.applications["public_site"]
+        app = server.applications["press"]
         fixture = await asyncio.to_thread(site_fixture, app.service, app.publication)
         args = {
             "settings_id": fixture["settings"]["record_id"],

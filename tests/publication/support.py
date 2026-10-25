@@ -7,7 +7,7 @@ import zlib
 from rendering.support import configured_worker
 from services.scenarios import create_service, record
 
-from kajenn_public_site.publication.service import PublicationService
+from kajenn_press.publication.service import PublicationService
 
 CONFIG = {
     "management_origin": "https://admin.test",

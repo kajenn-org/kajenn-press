@@ -96,7 +96,7 @@ def test_authentication_and_post_only_mutations(tmp_path):
                 params={"key": "no", "name": "x", "kind": "css", "scope": "library", "source": "x"},
             )
             assert response.status_code == 405
-            before = server.applications["public_site"].service.catalog.read().generation
+            before = server.applications["press"].service.catalog.read().generation
             http.headers.clear()
             assert (
                 await http.post(
@@ -110,7 +110,7 @@ def test_authentication_and_post_only_mutations(tmp_path):
                 http, "rest", "site_create", key="denied", name="x", languages=["it"]
             )
             assert status == 403 and body["error"]["code"] == "forbidden"
-            assert server.applications["public_site"].service.catalog.read().generation == before
+            assert server.applications["press"].service.catalog.read().generation == before
 
     asyncio.run(scenario())
 
@@ -121,7 +121,7 @@ def test_duplicate_application_startup_fails_closed_and_releases_on_shutdown(
     from api.support import AUTH
     from services.scenarios import ADMIN
 
-    from kajenn_public_site.application import create_server
+    from kajenn_press.application import create_server
 
     async def scenario():
         async with client(tmp_path) as (http, _server):

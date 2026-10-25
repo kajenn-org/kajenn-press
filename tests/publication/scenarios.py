@@ -11,11 +11,11 @@ from publication.support import CONFIG, TEMPLATE, built, candidate, services, si
 from publication.test_gateway import exchange
 from services.scenarios import record
 
-from kajenn_public_site.catalog.local import Change
-from kajenn_public_site.domain import DomainError
-from kajenn_public_site.publication.artifacts import build_artifacts, verify_bundle
-from kajenn_public_site.publication.gateway import PreviewGateway
-from kajenn_public_site.publication.routes import localized_path, origin, request_path
+from kajenn_press.catalog.local import Change
+from kajenn_press.domain import DomainError
+from kajenn_press.publication.artifacts import build_artifacts, verify_bundle
+from kajenn_press.publication.gateway import PreviewGateway
+from kajenn_press.publication.routes import localized_path, origin, request_path
 
 
 def allow_fixture(*args):
@@ -224,7 +224,7 @@ def invalid_outputs_contract(root):
         frozen = pub.candidate_data(pub.catalog.read().revisions[selection["revision_id"]])
         # Exact stable content/media IDs resolve through the frozen language map.
         media_id = fixture["media"]["revision_id"]
-        from kajenn_public_site.publication.artifacts import LinkResolver
+        from kajenn_press.publication.artifacts import LinkResolver
 
         resources = next(iter(frozen["entries"].values()))["input"]["data"]["resources"]
         resolver = LinkResolver(frozen, resources, "it", "/it/", "")
@@ -243,7 +243,7 @@ def invalid_outputs_contract(root):
         with pytest.raises(DomainError) as media:
             build_artifacts(bad_media, "fixture", pub.worker, lambda: False)
         assert media.value.code == "invalid_input"
-        from kajenn_public_site.publication.artifacts import verify_png
+        from kajenn_press.publication.artifacts import verify_png
 
         with pytest.raises(DomainError) as png:
             verify_png(b"<svg onload=alert(1)>")
@@ -332,7 +332,7 @@ def invalid_outputs_contract(root):
 
 class FixtureHost:
     def __init__(self, publication):
-        self.applications = {"public_site": type("App", (), {"publication": publication})()}
+        self.applications = {"press": type("App", (), {"publication": publication})()}
 
     async def __call__(self, scope, receive, send):
         raise AssertionError("Preview must never dispatch to management")

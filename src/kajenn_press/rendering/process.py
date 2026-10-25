@@ -39,7 +39,7 @@ class RenderWorker:
             environment = {"PATH": os.defpath, "LANG": "C.UTF-8", "TZ": "UTC"}
             try:
                 process = subprocess.Popen(
-                    [self.python, "-I", "-m", "kajenn_public_site.rendering.worker"],
+                    [self.python, "-I", "-m", "kajenn_press.rendering.worker"],
                     stdin=incoming,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,

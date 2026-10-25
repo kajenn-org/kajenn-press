@@ -5,8 +5,8 @@ import time
 import pytest
 from publication.support import candidate, services, site_fixture
 
-from kajenn_public_site.catalog.errors import CatalogError
-from kajenn_public_site.domain import DomainError
+from kajenn_press.catalog.errors import CatalogError
+from kajenn_press.domain import DomainError
 
 
 def interrupted_process(root, connection):

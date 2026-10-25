@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import httpx
 from services.scenarios import ADMIN
 
-from kajenn_public_site.application import create_server
+from kajenn_press.application import create_server
 
 AUTH = {
     "bearer": {

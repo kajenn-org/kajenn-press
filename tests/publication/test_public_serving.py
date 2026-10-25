@@ -6,7 +6,7 @@ from publication.release_support import activate, initial_release, publisher, up
 from publication.scenarios import FixtureHost
 from publication.support import CONFIG, built, candidate, site_fixture
 
-from kajenn_public_site.publication.gateway import PreviewGateway
+from kajenn_press.publication.gateway import PreviewGateway
 
 
 async def serving_scenario(root):

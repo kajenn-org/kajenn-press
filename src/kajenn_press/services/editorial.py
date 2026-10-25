@@ -129,8 +129,10 @@ class EditorialService:
             for permission in ("read", "write", "use"):
                 self.policy.require(identity, "*", permission)
             return
+        if operation == "scope_capabilities" and params.get("scope") == "installation":
+            return
         permission = "write" if operation in MUTATIONS else "read"
-        if operation in ("resource_save", "media_save", "records_list"):
+        if operation in ("resource_save", "media_save", "records_list", "records_index", "scope_capabilities"):
             scope = params["scope"]
             if scope != "library":
                 if not isinstance(scope, str) or not scope.startswith("site:"):
@@ -369,6 +371,48 @@ class EditorialService:
             and self._scope(self._revision(snapshot, rid)) == scope
             and (kind is None or self._revision(snapshot, rid)["data"]["kind"] == kind)
         ]
+
+    def _metadata(self, snapshot, identity, record_id, revision_id=None):
+        revision = self._revision(snapshot, record_id, revision_id)
+        self.policy.require(identity, self._scope(revision), "read")
+        return {
+            "record_id": record_id,
+            "revision_id": revision["id"],
+            "generation": revision["generation"],
+            "scope": self._scope(revision),
+            "kind": revision["data"]["kind"],
+            "attributes": deepcopy(revision["data"]["attributes"]),
+            "previous_revision": revision["previous"],
+        }
+
+    def _records_index(self, snapshot, identity, scope, kind=None):
+        if kind is not None and kind not in EDITORIAL_KINDS:
+            raise DomainError("invalid_input", "Unknown editorial kind")
+        return [
+            self._metadata(snapshot, identity, rid)
+            for rid, head in snapshot.records.items()
+            if snapshot.revisions[head["revision_id"]]["data"].get("kind") in EDITORIAL_KINDS
+            and self._scope(self._revision(snapshot, rid)) == scope
+            and (kind is None or self._revision(snapshot, rid)["data"]["kind"] == kind)
+        ]
+
+    def _revision_index(self, snapshot, identity, record_id):
+        return [
+            self._metadata(snapshot, identity, record_id, revision["id"])
+            for revision in sorted(snapshot.revisions.values(), key=lambda r: r["generation"],
+                                   reverse=True)
+            if revision["record_id"] == record_id
+        ]
+
+    def _scope_capabilities(self, snapshot, identity, scope):
+        if scope == "installation":
+            allowed = self.policy.allows(identity, scope, "create_site") and all(
+                self.policy.allows(identity, "*", permission) for permission in ("read", "write", "use"))
+            return {"scope": scope, "permissions": ["create_site"] if allowed else []}
+        permissions = ("read", "write", "use", "build", "preview_grant", "publish")
+        return {"scope": scope, "permissions": [
+            name for name in permissions if self.policy.allows(identity, scope, name)
+        ]}
 
     def _content_create(self, snapshot, identity, site_id, key, title):
         if self._revision(snapshot, site_id)["data"]["kind"] != "site":

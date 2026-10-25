@@ -9,7 +9,7 @@ from api.support import record as api_record
 from catalog.support import workspace
 from services.scenarios import BLOCKS, DECLARATIONS, create_service, record, seed
 
-from kajenn_public_site.domain import DomainError
+from kajenn_press.domain import DomainError
 
 
 def test_rest_and_mcp_share_domain_results():
@@ -77,7 +77,7 @@ def test_authorization_is_shared_and_scoped():
     async def scenario(root):
         async with client(root) as (http, server):
             site, other, template, _, _ = await seed_http(http)
-            policy = server.applications["public_site"].policy
+            policy = server.applications["press"].policy
             policy.grants["writer"] = {
                 "site:" + site["record_id"]: ["read", "write", "use"],
                 "library": ["read", "use"],

@@ -6,8 +6,8 @@ from uuid import uuid4
 
 from services.scenarios import create_service, record
 
-from kajenn_public_site.rendering.process import RenderWorker
-from kajenn_public_site.rendering.service import RenderService
+from kajenn_press.rendering.process import RenderWorker
+from kajenn_press.rendering.service import RenderService
 
 TEMPLATE = """def build(source, data):
     doc = source.html(lang="^language")
