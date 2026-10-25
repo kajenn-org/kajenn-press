@@ -7,10 +7,10 @@ from pathlib import Path
 from genro_storage import StorageNode
 
 from catalog.support import commit, crash_changes
-from kajenn_public_site.catalog import local
-from kajenn_public_site.catalog.errors import OwnershipError
-from kajenn_public_site.catalog.local import LocalCatalog
-from kajenn_public_site.objects import ObjectStore
+from kajenn_press.catalog import local
+from kajenn_press.catalog.errors import OwnershipError
+from kajenn_press.catalog.local import LocalCatalog
+from kajenn_press.objects import ObjectStore
 
 
 def main():

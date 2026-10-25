@@ -7,7 +7,7 @@ import secrets
 
 import httpx
 
-from kajenn_public_site.application import create_server
+from kajenn_press.application import create_server
 
 
 async def run(root):

@@ -7,7 +7,7 @@ discutere. Evidenze tecniche in [07](07-capacita-verificate.md).
 
 ## Prodotto
 
-kajenn-public-site è un ambiente per ideare, organizzare, revisionare e pubblicare
+kajenn-press è un ambiente per ideare, organizzare, revisionare e pubblicare
 conoscenza: siti istituzionali, riviste, documentazione, corsi e collezioni di
 risorse. Un articolo è un oggetto editoriale con identità e storia; il sito
 pubblico è una composizione deliberata di revisioni, navigazione, lingue e tema.

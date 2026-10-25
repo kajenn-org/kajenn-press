@@ -270,7 +270,7 @@ in questa sessione.
 
 ## Phase 1 implementation evidence — 2026-10-21
 
-The local implementation now lives in `src/kajenn_public_site/catalog/` and
+The local implementation now lives in `src/kajenn_press/catalog/` and
 `objects.py`. Earlier architectural sections describe the wider target; jobs,
 release activation, event delivery, retention, S3 and Asqueel are still future work.
 
@@ -313,7 +313,7 @@ authorization, concurrent threads, owner death, corruption and symlink/traversal
 rejection. This verifies process-crash behavior on the tested local platform, not
 arbitrary power-loss/hardware-cache behavior or network filesystems.
 
-The runnable example is `python3 examples/persistence.py /tmp/kajenn-public-site-demo`
+The runnable example is `python3 examples/persistence.py /tmp/kajenn-press-demo`
 after installing the project in a virtual environment. Run it twice: generation 2
 and the same stable IDs survive close/reopen and replay. Backend read APIs remain
 trusted internal operations; Phase 2 supplies authenticated site/library grants

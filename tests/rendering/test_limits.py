@@ -2,7 +2,7 @@
 
 import pytest
 
-from kajenn_public_site.rendering.process import RenderWorker
+from kajenn_press.rendering.process import RenderWorker
 
 
 @pytest.mark.parametrize("value", [0, -1, float("inf"), float("nan"), True, "15"])

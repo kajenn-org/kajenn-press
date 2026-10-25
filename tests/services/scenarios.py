@@ -1,8 +1,8 @@
 """Small complete editorial fixtures with actual local persistence."""
 
-from kajenn_public_site.catalog.local import LocalCatalog
-from kajenn_public_site.domain import AccessPolicy
-from kajenn_public_site.services.editorial import EditorialService
+from kajenn_press.catalog.local import LocalCatalog
+from kajenn_press.domain import AccessPolicy
+from kajenn_press.services.editorial import EditorialService
 
 ADMIN = {"admin": {"*": ["read", "write", "use", "create_site"]}}
 DECLARATIONS = {

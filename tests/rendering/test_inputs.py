@@ -3,9 +3,9 @@
 import pytest
 from services.scenarios import create_service, record, seed
 
-from kajenn_public_site.domain import DomainError
-from kajenn_public_site.rendering.contract import CONTRACT
-from kajenn_public_site.rendering.inputs import RenderInputs
+from kajenn_press.domain import DomainError
+from kajenn_press.rendering.contract import CONTRACT
+from kajenn_press.rendering.inputs import RenderInputs
 
 
 def test_exact_transitive_graph_and_current_policy(tmp_path):

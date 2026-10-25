@@ -13,19 +13,21 @@ from .catalog.filesystem import private_directory
 from .catalog.local import LocalCatalog
 from .domain import MUTATIONS, AccessPolicy, DomainError
 from .publication.gateway import PreviewGateway
+from .publication.service import EXPORTS, READS, PublicationService
 from .publication.service import OPERATIONS as PUBLICATION_OPERATIONS
-from .publication.service import READS, PublicationService
+from .rendering.contract import RenderProblem
 from .rendering.process import RenderWorker
+from .rendering.service import RenderService
 from .services.editorial import EditorialService
 
 
-class PublicSiteApplication(McpOpenApiApplication):
+class PressApplication(McpOpenApiApplication):
     openapi_info: ClassVar[dict] = {
-        "title": "kajenn-public-site",
+        "title": "kajenn-press",
         "version": "0.1.0",
         "description": "Private editorial services; exact revisions and named sources",
     }
-    mcp_name = "kajenn-public-site"
+    mcp_name = "kajenn-press"
 
     def __init__(self, catalog_root, grants, publication_config=None, **kwargs):
         self.catalog_root = Path(catalog_root)
@@ -74,13 +76,29 @@ class PublicSiteApplication(McpOpenApiApplication):
         is_rest = request.scope.get("kajenn.channel") != "mcp"
         if (
             is_rest
-            and operation in (MUTATIONS | (PUBLICATION_OPERATIONS - READS))
+            and operation
+            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | {"render_preview"})
             and request.scope["method"] != "POST"
         ):
             raise HTTPException(405, "Mutations require POST")
         if self.service is None:
             raise HTTPException(503, "Editorial service is not started")
         try:
+            if operation == "render_preview":
+                if set(arguments) != {"variant_id", "revision_id"} or any(
+                    not isinstance(value, str) or not value for value in arguments.values()
+                ):
+                    raise DomainError("invalid_input", "An exact variant ID and revision ID are required")
+                if self.publication is None:
+                    raise DomainError("unavailable", "Configure the optional rendering worker first")
+                renderer = RenderService(self.service.catalog, self.policy, self.publication.worker)
+                identity = request.avatar().identity
+                try:
+                    frozen = renderer.freeze(identity, **arguments)
+                    result = renderer.render(identity, frozen)
+                except RenderProblem as error:
+                    result = {"status": "failed", "diagnostics": [error.diagnostic]}
+                return {"ok": True, "result": result}
             service = self.publication if operation in PUBLICATION_OPERATIONS else self.service
             if service is None:
                 raise DomainError("unavailable", "Configure the optional publication worker first")
@@ -90,7 +108,7 @@ class PublicSiteApplication(McpOpenApiApplication):
                     rendering=True,
                     preview=True,
                     publication=True,
-                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS),
+                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS | {"render_preview"}),
                     permissions=result["permissions"] + ["build", "preview_grant", "publish"],
                 )
             return {"ok": True, "result": result}
@@ -173,6 +191,21 @@ class PublicSiteApplication(McpOpenApiApplication):
     def records_list(self, scope: str, kind: str | None = None, _request=None) -> dict:
         """Records list. See capabilities for domain schemas and exact-source semantics."""
         return self._execute(_request, "records_list", {"scope": scope, "kind": kind})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def records_index(self, scope: str, kind: str | None = None, _request=None) -> dict:
+        """List authorized editorial metadata without source or media payloads."""
+        return self._execute(_request, "records_index", {"scope": scope, "kind": kind})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def revision_index(self, record_id: str, _request=None) -> dict:
+        """List exact revision metadata without reading historical payloads."""
+        return self._execute(_request, "revision_index", {"record_id": record_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def scope_capabilities(self, scope: str, _request=None) -> dict:
+        """Read the current principal's actual permissions in a readable scope."""
+        return self._execute(_request, "scope_capabilities", {"scope": scope})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def content_create(self, site_id: str, key: str, title: str, _request=None) -> dict:
@@ -379,6 +412,11 @@ class PublicSiteApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def render_preview(self, variant_id: str, revision_id: str, _request=None) -> dict:
+        """Render an exact saved variant in the configured worker, without publishing it."""
+        return self._execute(_request, "render_preview", {"variant_id": variant_id, "revision_id": revision_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_settings_save(
         self,
         site_id: str,
@@ -553,8 +591,57 @@ class PublicSiteApplication(McpOpenApiApplication):
         """Release history. Conditional transitions, current publish policy and exact releases."""
         return self._execute(_request, "release_history", {"settings_id": settings_id})
 
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def release_export(self, settings_id: str, _request=None) -> dict:
+        """Release export. Copy the active release and its pointer to release storage."""
+        return self._execute(_request, "release_export", {"settings_id": settings_id})
 
-def create_server(catalog_root, *, auth, grants, publication=None):
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_save(
+        self,
+        settings_id: str,
+        name: str,
+        public_origin: str,
+        serving_address: str,
+        key: str,
+        mount: str = "releases",
+        record_id: str | None = None,
+        expected_generation: int = 0,
+        _request=None,
+    ) -> dict:
+        """Child save. Register or update a server that serves a channel from release storage."""
+        return self._execute(
+            _request,
+            "child_save",
+            {
+                "settings_id": settings_id,
+                "name": name,
+                "public_origin": public_origin,
+                "serving_address": serving_address,
+                "key": key,
+                "mount": mount,
+                "record_id": record_id,
+                "expected_generation": expected_generation,
+            },
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_read(self, record_id: str, _request=None) -> dict:
+        """Child read. Registry record with catalog and storage releases side by side."""
+        return self._execute(_request, "child_read", {"record_id": record_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_list(self, _request=None) -> dict:
+        """Child list. Every registered child readable by the caller, with its releases."""
+        return self._execute(_request, "child_list", {})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def child_channels(self, _request=None) -> dict:
+        """Child channels. Channel settings a child can be registered for."""
+        return self._execute(_request, "child_channels", {})
+
+
+def create_server(catalog_root, *, auth, grants, publication=None, administration=None):
     """Build a host with explicit credentials/policy and private local storage.
 
     Authentication configuration belongs to the deployment; API clients cannot
@@ -563,19 +650,33 @@ def create_server(catalog_root, *, auth, grants, publication=None):
     """
     root = private_directory(catalog_root)
     private_directory(root / "host")
-    server = AsgiServer(
-        applications=[
+    applications = [
             (
-                PublicSiteApplication,
+                PressApplication,
                 {
-                    "code": "public_site",
+                    "code": "press",
                     "mount": "",
                     "catalog_root": str(root),
                     "grants": grants,
                     "publication_config": publication,
                 },
             )
-        ],
+        ]
+    options = {}
+    if administration is not None:
+        from .admin.host import AdminApplication, AdminConfiguration
+
+        admin = dict(administration)
+        management_origin = admin.pop("origin")
+        users = admin.pop("users")
+        if admin:
+            raise ValueError("Unknown administration configuration")
+        if publication is not None and management_origin != publication["management_origin"]:
+            raise ValueError("Administration and publication management origins must match")
+        applications.append((AdminApplication, {"code": "admin", "mount": "admin"}))
+        options.update(users=users, middleware={"session": {"secure": management_origin.startswith("https:")}})
+    server_options = dict(
+        applications=applications,
         auth=auth,
         plugins={"openapi": True},
         credential_cache_ttl=0,
@@ -583,7 +684,19 @@ def create_server(catalog_root, *, auth, grants, publication=None):
             {"name": "site", "protocol": "local", "base_path": str(root / "host")},
             {"name": "home", "protocol": "local", "base_path": str(root / "host")},
         ],
+        **options,
     )
+    if administration is not None:
+        from kajenn.config import ConfigurationHandler, DefaultConfiguration
+
+        config = ConfigurationHandler(AdminConfiguration(server_options), parents=[DefaultConfiguration])
+        server = AsgiServer(config=config, **server_options)
+    else:
+        server = AsgiServer(**server_options)
+    if administration is not None:
+        from .admin.host import ManagementGuard
+
+        server = ManagementGuard(server, management_origin)
 
     if publication is not None:
         return PreviewGateway(

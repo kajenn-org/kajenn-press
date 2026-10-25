@@ -5,7 +5,7 @@ import pytest
 from publication.crash_worker import interrupt_activation
 from publication.release_support import initial_release, publisher, updated_release
 
-from kajenn_public_site.domain import DomainError
+from kajenn_press.domain import DomainError
 
 
 def test_activation_process_crashes_and_idempotent_reopen(tmp_path):

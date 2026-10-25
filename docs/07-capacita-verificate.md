@@ -30,7 +30,7 @@ certificano da soli una capacità. Revisioni e hash in [09](09-fonti.md).
 
 ## Mappa
 
-| Area | Evidenza e stato osservato | Conseguenza per kajenn-public-site |
+| Area | Evidenza e stato osservato | Conseguenza per kajenn-press |
 |---|---|---|
 | kajenn: applicazioni | Presente: `BaseApplication`, code/instance/mount e configurazione; [K1](09-fonti.md#k1) | Applicazione separata coerente con l'host; sito editoriale e istanza restano concetti distinti |
 | kajenn: mount | Presente: dispatch per primo segmento, root per percorsi non rivendicati; [K1](09-fonti.md#k1) | Riservare mount; virtual hosting per dominio non dimostrato da questo dispatch |
@@ -100,7 +100,7 @@ stati eseguiti**, e nessun servizio S3/Telegram è stato avviato.
 | Gramlot core / componenti | Ripristino degli editor PoC HTML, Markdown, CSS/JS; binding/lifecycle, contratto per regioni interattive e relazione con HTML statico |
 | Genro Builders / Gramlot | Qualifica dei template e del rendering Data → HTML, inserimento dei frammenti e diagnostica dei binding |
 | gramlot-py-server / kajenn / Asqueel | Futuro contratto condiviso di integrazione da definire: runtime e connessioni, richieste/job, transazioni e identità; collegamento dei servizi alla Data Gramlot, composizione autenticata del pannello e mount |
-| kajenn-public-site | Contratto di catalogo, backend filesystem e futura migrazione Asqueel; modello editoriale, sorgenti/template e mapping Data, profili HTML/Markdown, servizi completi REST/MCP per LLM, policy, build, release, outbox, idempotenza e riconciliazione |
+| kajenn-press | Contratto di catalogo, backend filesystem e futura migrazione Asqueel; modello editoriale, sorgenti/template e mapping Data, profili HTML/Markdown, servizi completi REST/MCP per LLM, policy, build, release, outbox, idempotenza e riconciliazione |
 | Asqueel | Contratti di runtime, connessioni e transazioni necessari all’integrazione; qualifica del DML scelto, senza attribuirgli un CMS o una transazione S3 |
 | Deployment | Domini, TLS, bucket/versioning, retention fisica, credenziali, cache/CDN, backup e risorse worker |
 | Applicazioni di integrazione | Traduzione degli eventi, mapping degli utenti e consegna esterna; il nucleo resta indipendente dai provider |
@@ -108,3 +108,10 @@ stati eseguiti**, e nessun servizio S3/Telegram è stato avviato.
 Le estensioni sono necessità progettuali, non autorizzazioni a modificare i
 framework in questa sessione. Non è proposta alcuna facciata che simuli metodi
 mancanti usando attributi privati.
+
+## Macro 3, fase 1 — amministrazione in verifica
+
+- Artefatti qualificati: Gramlot 0.3.9 e gramlot-py-server 0.2.12, con gli SHA256 in [admin-artifacts.json](admin-artifacts.json). Il wheel Kajenn 0.5.0 headless resta quello già qualificato; non sostituirlo con un checkout omonimo.
+- Grammatica e bundle installati contengono CodeMirror, HTML/Jodit, Markdown/ProseMirror e `markdownPreview.allowHtml`. L'integrazione interattiva degli editor e HTML abilitato nel workspace appartengono alla fase 2.
+- Undici test amministrativi (nove contratti del piano e due verifiche Gallery/MCP) verificano isolamento delle identità, revoca/logout, origine delle richieste, confini degli ambiti, letture senza payload e parità UI/REST/MCP; la prova include una build e un'anteprima reali.
+- La consultazione usa IndexPage/IndexLogic, albero e iframe come la Gallery, Source/Data e Gramlot Base. Nuovo sito è stato anticipato alla fase 1 su richiesta esplicita. Per configurazione, profili separati, sessioni e demo vedere [13 · Amministrazione](13-amministrazione.md).

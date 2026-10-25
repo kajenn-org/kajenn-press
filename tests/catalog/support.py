@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from kajenn_public_site.catalog.local import Change, LocalCatalog
+from kajenn_press.catalog.local import Change, LocalCatalog
 
 
 @contextmanager
