@@ -17,8 +17,10 @@ TEMPLATE = """def build(source, data):
     body.h1("^page.title")
     body.main("^blocks.body")
 """
+LIVE_DELAY = 800  # ms after the last edit before a draft render
+PREVIEW_HEIGHT = 1000  # px of page shown in the scaled preview
 COMMANDS = frozenset(
-    {"resource_save", "content_create", "variant_create", "draft_save", "render_preview"}
+    {"resource_save", "content_create", "variant_create", "draft_save", "render_draft"}
 )
 
 
@@ -127,10 +129,22 @@ class Page(AdminPage):
                 "dirty": False,
                 "preview": "",
                 "refresh": 0,
+                "writable": writable,
+                "live_status": "The preview follows your edits after a short pause."
+                if draft["variant_id"]
+                else "Save the page once to see it update while you type.",
+                "preview_width": "1280",
+                "preview_scale": "0.5",
             }.items():
                 pane.dataSetter("author." + name, value)
             # _onBuilt: the parent pane is mounted, so initialize can register its dispose.
             pane.dataController(func="initialize", _onBuilt=True)
+            pane.dataController(
+                func="livePreview",
+                source="^draft.source",
+                body="^draft.body",
+                _delay=LIVE_DELAY,
+            )
             pane.dataController(
                 func="changed",
                 template_name="^draft.template_name",
@@ -233,10 +247,51 @@ class Page(AdminPage):
                 title="3 · Rendered page", pageName="preview", padding="18px", overflow="auto"
             )
             preview.p(
-                "Render uses the saved template and content revisions. Scripts and external resources are restricted in this quick preview; publication preview is a separate step.",
+                "Once the page is saved, the preview follows your unsaved template and content. "
+                "Scripts do not run here; publication preview is a separate step.",
                 class_="muted",
             )
-            preview.htmlPreview(value="^author.preview", height="550px")
+            controls = preview.div(class_="preview-controls")
+            controls.html_label("Width", for_="preview-width")
+            width = controls.select(id="preview-width", value="^author.preview_width")
+            width.option("Desktop · 1280 px", value="1280")
+            width.option("Phone · 375 px", value="375")
+            controls.html_label("Scale", for_="preview-scale")
+            scale = controls.select(id="preview-scale", value="^author.preview_scale")
+            for value in ("0.5", "0.75", "1"):
+                scale.option(value, value=value)
+            controls.span("^author.live_status", role="status", class_="muted")
+            # The page renders at its real width; the frame is scaled down to fit beside the editor.
+            # _init computes them once before the first change of width or scale.
+            preview.dataFormula(
+                "author.box_width",
+                "(+w*+s)+'px'",
+                w="^author.preview_width",
+                s="^author.preview_scale",
+                _init=True,
+            )
+            preview.dataFormula(
+                "author.box_height",
+                "(h*+s)+'px'",
+                s="^author.preview_scale",
+                h=PREVIEW_HEIGHT,
+                _init=True,
+            )
+            preview.dataFormula(
+                "author.frame_width", "w+'px'", w="^author.preview_width", _init=True
+            )
+            preview.dataFormula(
+                "author.frame_scale", "'scale('+s+')'", s="^author.preview_scale", _init=True
+            )
+            box = preview.div(
+                class_="preview-viewport", width="^author.box_width", height="^author.box_height"
+            )
+            box.div(
+                class_="preview-frame",
+                width="^author.frame_width",
+                height=f"{PREVIEW_HEIGHT}px",
+                transform="^author.frame_scale",
+            ).htmlPreview(value="^author.preview", height="100%")
             page.h2("Your templates and pages")
             page.div().remote("saved_pages", site=site, refresh="^author.refresh")
         except DomainError as error:

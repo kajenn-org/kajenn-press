@@ -95,7 +95,7 @@ class AdminApplication(Application):
             assets=assets,
             content_security_policy=(
                 "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-{nonce}'; "
-                "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                "style-src 'self' 'unsafe-inline' data:; img-src 'self' data:; "
                 "connect-src 'self'; frame-src 'self' about:; object-src 'none'; "
                 "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
             ),

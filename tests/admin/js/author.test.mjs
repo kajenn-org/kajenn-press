@@ -94,3 +94,39 @@ test('a new untouched draft is clean until the first edit', () => {
     logic.changed(node, {});
     assert.equal(node.GET('author.dirty'), false);
 });
+
+test('live preview keeps only the latest reply and drafts the template only when writable', async () => {
+    const calls = [], replies = [];
+    const {logic, node} = fixture((_type, _name, args) => {
+        calls.push(structuredClone(args));
+        return new Promise(resolve => replies.push(resolve));
+    });
+    await logic.livePreview(node, {});
+    assert.equal(calls.length, 0, 'an unsaved page has no variant to render');
+    node.SET('draft.variant_id', 'v');
+    node.SET('draft.variant_revision', 'vr');
+    node.SET('author.writable', true);
+    logic.authorState.page = {title: 'Page', language: 'en', body: '<p>Original</p>', template_revision: 'tr'};
+    logic.authorState.template = {name: 'Template', source: 'original template'};
+    node.SET('draft.template_revision', 'tr');
+    node.SET('draft.body', '<p>First</p>');
+    const first = logic.livePreview(node, {});
+    node.SET('draft.source', 'edited template');
+    node.SET('draft.body', '<p>Second</p>');
+    const second = logic.livePreview(node, {});
+    assert.deepEqual(calls[0].arguments.resources, {});
+    assert.deepEqual(calls[1].arguments.resources, {tr: 'edited template'});
+    assert.deepEqual(calls[1].arguments.blocks, {body: '<p>Second</p>'});
+    replies[1]({ok: true, result: {status: 'succeeded', html: 'second', diagnostics: []}});
+    await second;
+    replies[0]({ok: true, result: {status: 'succeeded', html: 'first', diagnostics: []}});
+    await first;
+    assert.equal(node.GET('author.preview'), 'second');
+    node.SET('author.writable', false);
+    const third = logic.livePreview(node, {});
+    assert.deepEqual(calls[2].arguments.resources, {});
+    replies[2]({ok: true, result: {status: 'failed', html: '', diagnostics: [{message: 'Broken template'}]}});
+    await third;
+    assert.equal(node.GET('author.preview'), 'second');
+    assert.equal(node.GET('author.live_status'), 'Broken template');
+});

@@ -137,18 +137,49 @@ export class Logic {
         node.SET('author.busy', true);
         node.SET('author.message', 'Rendering the saved page…');
         try {
-            const result = await this.callCommand('render_preview', {variant_id: node.GET('draft.variant_id'),
-                revision_id: node.GET('draft.variant_revision')});
+            const result = await this.callCommand('render_draft', {variant_id: node.GET('draft.variant_id'),
+                revision_id: node.GET('draft.variant_revision'), blocks: {}, resources: {}});
             if (state.disposed) return;
             if (result.status !== 'succeeded') throw new Error(result.diagnostics.map(d => d.message).join(' · '));
             node.SET('author.preview', result.html);
             node.SET('author.tab', 'preview');
-            node.SET('author.message', 'Rendered saved revisions. Nothing has been published.' +
+            node.SET('author.message', 'Rendered saved revisions with their styles and media. Nothing has been published.' +
                 (result.diagnostics.length ? ' ' + result.diagnostics.map(d => d.message).join(' · ') : ''));
         } catch (error) {
             if (!state.disposed) node.SET('author.message', error.message);
         } finally {
             if (!state.disposed) node.SET('author.busy', false);
+        }
+    }
+    async livePreview(node, _args) {
+        const state = this.authorState;
+        if (!state || state.disposed || !node.GET('draft.variant_id')) return;
+        // Only the latest request may update the preview; earlier replies are discarded.
+        const sequence = state.liveSequence = (state.liveSequence ?? 0) + 1;
+        const page = state.page ?? state.initial.page;
+        const saved = state.template ?? state.initial.template;
+        const source = node.GET('draft.source');
+        const resources = {};
+        // The saved page renders with its own template revision; an unsaved or newer template
+        // source replaces it. Drafting template code requires write, like saving it.
+        if (node.GET('author.writable') && (source !== saved.source ||
+                node.GET('draft.template_revision') !== page.template_revision)) {
+            resources[page.template_revision] = source;
+        }
+        node.SET('author.live_status', 'Rendering your draft…');
+        try {
+            const result = await this.callCommand('render_draft', {variant_id: node.GET('draft.variant_id'),
+                revision_id: node.GET('draft.variant_revision'), blocks: {body: node.GET('draft.body')},
+                resources});
+            if (state.disposed || sequence !== state.liveSequence) return;
+            if (result.status !== 'succeeded') {
+                node.SET('author.live_status', result.diagnostics.map(d => d.message).join(' · '));
+                return;
+            }
+            node.SET('author.preview', result.html);
+            node.SET('author.live_status', 'Draft preview · not saved, not published.');
+        } catch (error) {
+            if (!state.disposed && sequence === state.liveSequence) node.SET('author.live_status', error.message);
         }
     }
 }

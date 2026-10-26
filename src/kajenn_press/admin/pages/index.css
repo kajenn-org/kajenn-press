@@ -95,6 +95,12 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .author-page input { width:min(100%,480px); }
 .author-page select { min-width:120px; }
 .author-page a { color:var(--gramlot-action); }
+.preview-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 12px; }
+.preview-controls label { margin:0; }
+.preview-controls select { min-width:0; width:auto; }
+/* The frame keeps the page's real width and is scaled from its top-left corner. */
+.preview-viewport { overflow:hidden; border:1px solid var(--gramlot-border); border-radius:6px; background:white; max-width:100%; }
+.preview-frame { transform-origin:0 0; }
 
 /* Deployments: catalog release beside the release read back from storage. */
 .deploy-page .lead { max-width:900px; color:var(--gramlot-text-secondary); margin:0 0 14px; }

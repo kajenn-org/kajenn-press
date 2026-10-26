@@ -21,6 +21,8 @@ from .rendering.process import RenderWorker
 from .rendering.service import RenderService
 from .services.editorial import EditorialService
 
+RENDERS = frozenset({"render_preview", "render_draft"})
+
 
 class PressApplication(McpOpenApiApplication):
     openapi_info: ClassVar[dict] = {
@@ -78,24 +80,35 @@ class PressApplication(McpOpenApiApplication):
         if (
             is_rest
             and operation
-            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | {"render_preview"})
+            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | RENDERS)
             and request.scope["method"] != "POST"
         ):
             raise HTTPException(405, "Mutations require POST")
         if self.service is None:
             raise HTTPException(503, "Editorial service is not started")
         try:
-            if operation == "render_preview":
-                if set(arguments) != {"variant_id", "revision_id"} or any(
-                    not isinstance(value, str) or not value for value in arguments.values()
-                ):
+            if operation in RENDERS:
+                names = {"variant_id", "revision_id"}
+                if operation == "render_draft":
+                    names |= {"blocks", "resources"}
+                if set(arguments) != names:
+                    raise DomainError("invalid_input", "Expected " + ", ".join(sorted(names)))
+                exact = {"variant_id": arguments["variant_id"], "revision_id": arguments["revision_id"]}
+                if any(not isinstance(value, str) or not value for value in exact.values()):
                     raise DomainError("invalid_input", "An exact variant ID and revision ID are required")
+                draft = {}
+                if operation == "render_draft":
+                    draft = {
+                        "block_sources": self._sources(arguments["blocks"], "blocks"),
+                        "resource_sources": self._sources(arguments["resources"], "resources"),
+                        "data_urls": True,
+                    }
                 if self.publication is None:
                     raise DomainError("unavailable", "Configure the optional rendering worker first")
                 renderer = RenderService(self.service.catalog, self.policy, self.publication.worker)
                 identity = request.avatar().identity
                 try:
-                    frozen = renderer.freeze(identity, **arguments)
+                    frozen = renderer.freeze(identity, **exact, **draft)
                     result = renderer.render(identity, frozen)
                 except RenderProblem as error:
                     result = {"status": "failed", "diagnostics": [error.diagnostic]}
@@ -109,7 +122,7 @@ class PressApplication(McpOpenApiApplication):
                     rendering=True,
                     preview=True,
                     publication=True,
-                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS | {"render_preview"}),
+                    operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS | RENDERS),
                     permissions=result["permissions"] + ["build", "preview_grant", "publish"],
                 )
             return {"ok": True, "result": result}
@@ -416,6 +429,41 @@ class PressApplication(McpOpenApiApplication):
     def render_preview(self, variant_id: str, revision_id: str, _request=None) -> dict:
         """Render an exact saved variant in the configured worker, without publishing it."""
         return self._execute(_request, "render_preview", {"variant_id": variant_id, "revision_id": revision_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def render_draft(
+        self,
+        variant_id: str,
+        revision_id: str,
+        blocks: dict | None = None,
+        resources: dict | None = None,
+        _request=None,
+    ) -> dict:
+        """Render unsaved block and resource sources over an exact saved variant; writes nothing.
+
+        blocks maps declared block names to source text; resources maps revision IDs of the
+        page's template, CSS or JavaScript to source text and needs write in their scope.
+        Resources are referenced as data: URLs.
+        """
+        return self._execute(
+            _request,
+            "render_draft",
+            {
+                "variant_id": variant_id,
+                "revision_id": revision_id,
+                "blocks": blocks or {},
+                "resources": resources or {},
+            },
+        )
+
+    @staticmethod
+    def _sources(mapping, label):
+        if not isinstance(mapping, dict) or any(
+            not isinstance(key, str) or not key or not isinstance(value, str)
+            for key, value in mapping.items()
+        ):
+            raise DomainError("invalid_input", f"{label} must map names to source text")
+        return mapping
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_settings_save(

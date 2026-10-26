@@ -115,3 +115,15 @@ def test_record_tab_stays_inside_its_site(tmp_path):
             assert "Selection unavailable" in denied["value"] and "Article" not in denied["value"]
 
     asyncio.run(scenario())
+
+
+def test_csp_admits_data_stylesheets_for_the_draft_preview(tmp_path):
+    async def scenario():
+        async with admin_client(tmp_path) as (http, _server):
+            response = await http.get("/admin/")
+            policy = response.headers["content-security-policy"]
+            assert "style-src 'self' 'unsafe-inline' data:;" in policy
+            # Scripts stay restricted: data: is admitted for styles and images only.
+            assert "data:" not in policy.split("script-src", 1)[1].split(";", 1)[0]
+
+    asyncio.run(scenario())
