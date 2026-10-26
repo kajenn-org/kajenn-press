@@ -594,6 +594,11 @@ class PressApplication(McpOpenApiApplication):
         return self._execute(_request, "channel_create", {"settings_id": settings_id, "key": key})
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publication_overview(self, site_id: str, _request=None) -> dict:
+        """Publication overview: channel settings, routes per variant, channel state and recent builds."""
+        return self._execute(_request, "publication_overview", {"site_id": site_id})
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def channel_read(self, settings_id: str, _request=None) -> dict:
         """Channel read. Conditional transitions, current publish policy and exact releases."""
         return self._execute(_request, "channel_read", {"settings_id": settings_id})

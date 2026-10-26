@@ -110,8 +110,11 @@ class Page(AdminPage, IndexPage):
             current.set_item(
                 "publication",
                 None,
-                title="Publishing · coming soon",
-                label="Publishing · coming soon",
+                label="Publishing",
+                title=label + " · Publishing",
+                url="publishing?site=" + site,
+                site=site,
+                section="publishing",
             )
         navigation.set_item(
             "site",
@@ -279,13 +282,15 @@ class Page(AdminPage, IndexPage):
             url, title = "library", "Shared library"
         elif section == "deployments":
             url, title = "deployments", "Deployments"
-        elif section in {"new_page", "resource", "page"}:
+        elif section in {"new_page", "resource", "page", "publishing"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
                 raise DomainError("forbidden", "Site not accessible")
             if section == "new_page":
                 url, title = "author?site=" + site, item["attributes"]["name"] + " · New page"
+            elif section == "publishing":
+                url, title = "publishing?site=" + site, item["attributes"]["name"] + " · Publishing"
             elif section == "page":
                 record_id = node.attr.get("record", "")
                 records = await execute_read("records_index", scope="site:" + site)

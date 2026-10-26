@@ -66,7 +66,9 @@ def main():
     parser.add_argument("--render-python", default=os.environ.get("KAJENN_RENDER_PYTHON"))
     args = parser.parse_args()
     root = tempfile.mkdtemp(prefix="kajenn-admin-demo-")
-    grants = {"demo": {"*": ["read", "write", "use", "create_site", "build"]}}
+    grants = {
+        "demo": {"*": ["read", "write", "use", "create_site", "build", "preview_grant", "publish"]}
+    }
     service = EditorialService(LocalCatalog(root), AccessPolicy(grants))
     template = service.execute(
         "demo",

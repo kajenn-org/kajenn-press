@@ -117,6 +117,18 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .media-view { max-width:100%; max-height:60vh; margin:12px 0; border:1px solid var(--gramlot-border); background:white; }
 .page-actions input { width:auto; min-width:160px; }
 
+/* Publishing panel: channel, routes, builds and history as consecutive sections. */
+.publish-page { max-width:1200px; padding-top:20px; }
+.publish-section { margin:22px 0; padding:18px; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:8px; }
+.publish-section h2 { margin:0 0 6px; font-size:19px; }
+.publish-section h3 { margin:18px 0 8px; font-size:16px; }
+.publish-section select { width:auto; min-width:160px; }
+.publish-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 16px; margin:12px 0; }
+.publish-form select { width:100%; }
+.publish-section td input { width:100%; min-width:90px; }
+.publish-choices { display:flex; flex-wrap:wrap; gap:6px 18px; margin:12px 0; }
+@media(max-width:850px) { .publish-form { grid-template-columns:1fr; } }
+
 /* Deployments: catalog release beside the release read back from storage. */
 .deploy-page .lead { max-width:900px; color:var(--gramlot-text-secondary); margin:0 0 14px; }
 .deploy-table { width:100%; border-collapse:collapse; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:6px; }

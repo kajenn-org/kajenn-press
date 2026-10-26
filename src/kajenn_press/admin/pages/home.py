@@ -29,7 +29,8 @@ class Page(AdminPage):
             "Markdown or source, beside a preview that follows your unsaved edits. New page "
             "creates a page with a starter template. Each page and resource opens in its own tab. "
             "Templates, styles, scripts and media open in their own editor, beside a page "
-            "that uses them. Publication controls are still to come."
+            "that uses them. Publishing builds the site, gives a private preview link, "
+            "activates a release and rolls it back."
         )
         start = home.section(class_="guide-section")
         start.h2("Getting started")

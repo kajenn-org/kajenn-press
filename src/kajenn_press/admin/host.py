@@ -27,6 +27,7 @@ READ_OPERATIONS = frozenset(
         "record_read",
         "child_list",
         "child_channels",
+        "publication_overview",
     }
 )
 
