@@ -32,10 +32,12 @@ Starting point (main `64fcad6`, Macro 3b): `deploy/docker/compose.yaml` runs sec
 
 ## Work Plan
 
-- [ ] **Phase 1**: Addresses from `.env`, proxy trust and the `demo` profile
+- [x] **Phase 1**: Addresses from `.env`, proxy trust and the `demo` profile
+  > Done: Origins and trusted proxies come from `KPRESS_SCHEME`, `KPRESS_MANAGEMENT_HOST`, `KPRESS_PREVIEW_HOST`, `KPRESS_TRUSTED_PROXIES` (required; `.env.example` holds the Mac values, `.env` is git-ignored). websites runs uvicorn with `proxy_headers` and `forwarded_allow_ips` from the environment. `builder` and `child` are in profile `demo`. New `tests/docker/test_proxy_origin_contract.py`: without profile only the manager runs; a forwarded `https` request with the configured Host gets 200 on `/admin/`, plain http and a wrong Host get 404 (ManagementGuard answers 404, not 403). Docker tests 6 passed twice in a row; ruff clean. The first run after the change failed once at `up --build` for the demo composition; the cause was not captured and two later runs passed. Base suite not rerun: no file under `src/` changed.
+  > Files: deploy/docker/compose.yaml, deploy/docker/websites.py, deploy/docker/.env.example, deploy/docker/README.md, .gitignore, tests/docker/test_docker_composition_contract.py, tests/docker/test_local_volume_configuration_contract.py, tests/docker/test_proxy_origin_contract.py, .phased/active/kpress-deployment/plan.md
   - Files: `deploy/docker/compose.yaml`, `deploy/docker/compose.volume.yaml`, `deploy/docker/websites.py`, new `deploy/docker/.env.example`, `deploy/docker/README.md`, `tests/docker/`.
   - Details: Origins come from `.env`. uvicorn gets `proxy_headers=True` and `forwarded_allow_ips` limited to the composition network. `builder` and `child` get `profiles: [demo]`; the Docker tests pass `--profile demo`.
-  - Done: The four Docker tests pass with the `demo` profile. `docker compose up` without profile starts secrets, RustFS, storage-init and websites only. A new Docker test sends a request with `X-Forwarded-Proto: https` and the configured Host from inside the network and gets the administration login, and gets 403 for a wrong Host.
+  - Done: The four Docker tests pass with the `demo` profile. `docker compose up` without profile starts secrets, RustFS, storage-init and websites only. A new Docker test sends a request with `X-Forwarded-Proto: https` and the configured Host from inside the network and gets the administration login, and gets 404 for a wrong Host.
 
 - [ ] **Phase 2**: Two hostnames on the Mac and the nginx configuration `ui`
   - Files: `deploy/docker/.env.example`, new `deploy/docker/nginx-kpress.conf` (example server blocks for the two names), `deploy/docker/README.md`, `tests/docker/`.

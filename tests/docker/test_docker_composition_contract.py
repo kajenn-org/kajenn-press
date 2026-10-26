@@ -19,15 +19,23 @@ pytestmark = pytest.mark.skipif(
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "deploy/docker/compose.yaml")]
-MC = "minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
+# Fixed addresses for the tests; they take precedence over a developer's deploy/docker/.env.
+ADDRESSES = {
+    "KPRESS_SCHEME": "http",
+    "KPRESS_MANAGEMENT_HOST": "127.0.0.1:8875",
+    "KPRESS_PREVIEW_HOST": "localhost:8875",
+    "KPRESS_TRUSTED_PROXIES": "127.0.0.1",
+}
+MC ="minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
 sys.path.insert(0, str(ROOT / "examples/kajenn_org"))
 
 from build import Mcp
 
 
-def compose(*arguments, check=True):
+def compose(*arguments, check=True, addresses=ADDRESSES):
     return subprocess.run(
-        [*COMPOSE, *arguments], capture_output=True, text=True, check=check, timeout=900
+        [*COMPOSE, "--profile", "demo", *arguments], capture_output=True, text=True,
+        check=check, timeout=900, env={**os.environ, **addresses},
     )
 
 

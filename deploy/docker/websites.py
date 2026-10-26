@@ -72,7 +72,11 @@ def main():
         },
         administration={"origin": management_origin, "users": {"store_class": OperatorUsers}},
     )
-    uvicorn.run(server, host="0.0.0.0", port=8875, log_level="warning")
+    # Scheme and client address from X-Forwarded-* only when sent by these addresses (a reverse proxy).
+    uvicorn.run(
+        server, host="0.0.0.0", port=8875, log_level="warning",
+        proxy_headers=True, forwarded_allow_ips=os.environ["WEBSITES_FORWARDED_ALLOW_IPS"],
+    )
 
 
 if __name__ == "__main__":
