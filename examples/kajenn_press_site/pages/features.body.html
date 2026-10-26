@@ -1,0 +1,35 @@
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">Editing</p><h2>A model for editorial work.</h2></div>
+<div class="three">
+<div class="feature"><span class="number">01</span><h3>Sites and languages</h3><p>One installation manages several sites. Each site declares its languages, and each language of a page is a separate variant that is published when it is ready.</p></div>
+<div class="feature"><span class="number">02</span><h3>Exact revisions</h3><p>Sources are stored as exact bytes. Every change creates an immutable revision, and any past revision can be read, compared or restored.</p></div>
+<div class="feature"><span class="number">03</span><h3>Shared resources</h3><p>Templates, CSS, JavaScript and media belong to one site or to the shared library. A template declares the exact resource revisions it depends on.</p></div>
+</div>
+</div></div>
+<div class="section"><div class="wrap split">
+<div class="section-heading"><p class="eyebrow">Rendering</p><h2>Templates in Python, pages in static HTML.</h2><p>A trusted template defines <code>build(source, data)</code> with Gramlot or HtmlBuilder. Editors fill named HTML or Markdown blocks. The build produces complete HTML that works with JavaScript disabled.</p></div>
+<div>
+<div class="feature"><h3>The data a template receives</h3><ul><li><code>site.id</code>, <code>site.name</code> and <code>language</code></li><li><code>page.id</code>, <code>page.variant_id</code> and <code>page.title</code></li><li><code>blocks.&lt;name&gt;</code> with the prepared editorial HTML</li><li><code>resources.&lt;revision&gt;.url</code> and <code>kind</code></li></ul></div>
+<div class="callout">Editorial HTML and Markdown pass through the same nh3 allowlist. Scripts, event handlers, iframes and unsafe URL protocols are removed, and the diagnostics name the block that was filtered.</div>
+</div>
+</div></div>
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">Building and publishing</p><h2>Every step is explicit.</h2></div>
+<div class="three">
+<div class="feature"><span class="number">04</span><h3>Persistent builds</h3><p>A candidate fixes the exact revisions to publish. The build runs in the background in a separate Python process, with an isolated interpreter, a timeout and an output limit.</p></div>
+<div class="feature"><span class="number">05</span><h3>Private previews</h3><p>A preview grant issues a link that expires and can be revoked. Previews are served from their own origin and never change a public channel.</p></div>
+<div class="feature"><span class="number">06</span><h3>Activation and rollback</h3><p>Activation and rollback are conditional on the channel generation. Rollback reactivates a published release without running the template engines again.</p></div>
+</div>
+</div></div>
+<div class="section dark"><div class="wrap split">
+<div><p class="eyebrow">Storage and serving</p><h2>No database required.</h2><p class="lead">The catalog lives on a local filesystem. Payloads, media and manifests live in Genro Storage. Asqueel on PostgreSQL is a planned alternative backend.</p></div>
+<div class="steps">
+<div class="step"><h3>Crash-safe commits</h3><p>All changes of a command succeed or fail together. Receipts and a recovery report tell committed operations apart from incomplete ones.</p></div>
+<div class="step"><h3>Release storage</h3><p>After each activation or rollback, the active release is exported to a Genro Storage mount: a local volume or an S3 bucket.</p></div>
+<div class="step"><h3>Serving without the catalog</h3><p>A <code>StaticSiteServerApplication</code> child serves the public pages directly from release storage.</p></div>
+</div>
+</div></div>
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">Status</p><h2>Version 0.1.0.</h2><p>The editorial backend, rendering, builds, previews, publication and release storage are implemented. The multisite Gramlot administration is in its first phase. The HTML, Markdown, CSS and JavaScript editors come next.</p></div>
+<div class="actions"><a class="button" href="/en/get-started/">Get started →</a><a class="button secondary" href="https://github.com/kajenn-org/kajenn-press">Source on GitHub ↗</a></div>
+</div></div>
