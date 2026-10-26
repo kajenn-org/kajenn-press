@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<proposal id="site-editor" title="Kajenn Press administration as a site editor" date="2026-10-26" lang="en" author="Giovanni Porcari" status="draft">
+
+  <problem>
+    <p>Kajenn Press must become the tool used to create and edit sites interactively. An author writes a Gramlot template, sees the rendered page next to the editor, and edits contents and CSS from the administration with Gramlot editors.</p>
+    <p>The administration today is mostly a browser. Its only editing workspace supports one template shape: one required HTML block named <c>body</c>. A site built with other blocks, such as the Kajenn Press presentation site with <c>hero</c> and <c>body</c>, can be edited only through MCP or REST.</p>
+    <p>The rendered preview shows saved revisions only, and without the CSS and images of the site.</p>
+  </problem>
+
+  <current>
+    <fact source="src/kajenn_press/admin/pages/index.py:13" method="read" verified="2026-10-26">The administration shell is an <c>IndexPage</c> with a site selector in the top bar, a navigation tree on the left and retained iframe tabs in the center.</fact>
+    <fact source="src/kajenn_press/admin/pages/author.py:9" method="read" verified="2026-10-26">The authoring page declares <c>BLOCKS = {"body": {"format": "html", "required": True}}</c> and refuses templates whose blocks differ, with the message at line 107.</fact>
+    <fact source="src/kajenn_press/admin/pages/author.py:239" method="read" verified="2026-10-26">The authoring page shows the result of <c>render_preview</c> in an <c>htmlPreview</c>.</fact>
+    <fact source="src/kajenn_press/application.py:416" method="read" verified="2026-10-26"><c>render_preview</c> takes a <c>variant_id</c> and an exact saved <c>revision_id</c>: unsaved edits cannot be rendered.</fact>
+    <fact source="src/kajenn_press/rendering/inputs.py:90" method="read" verified="2026-10-26">Resource URLs in Data default to <c>/_resources/&lt;sha256&gt;.&lt;suffix&gt;</c>; <c>freeze</c> accepts a <c>resource_urls</c> override (line 22).</fact>
+    <fact source="gramlot/js/src/components/html-preview.js:13" method="read" verified="2026-10-26"><c>htmlPreview</c> renders its value through <c>srcdoc</c> in an iframe with <c>sandbox=""</c> and has no zoom parameter.</fact>
+    <fact source="src/kajenn_press/admin/host.py:91" method="read" verified="2026-10-26">The administration CSP allows <c>style-src 'self' 'unsafe-inline'</c> and <c>img-src 'self' data:</c>.</fact>
+    <fact source="src/kajenn_press/admin/views.py:189" method="read" verified="2026-10-26">The login view and the top bar still show the former name "kajenn public site"; the login has no logo.</fact>
+    <p>A sandboxed iframe without <c>allow-same-origin</c> has an opaque origin, so <c>/_resources/</c> URLs and session cookies cannot serve the preview. This follows from the HTML specification and was not tested in the administration.</p>
+    <limit source="docs/13-amministrazione.md">Publication from the administration is a later phase; build, activation and rollback are available through MCP and REST only.</limit>
+  </current>
+
+  <solution>
+    <section title="Shell and navigation">
+      <p>The shell stays an <c>IndexPage</c>. Each opened object gets its own retained tab: a page, a template, a stylesheet, a script or a media item.</p>
+      <table title="Shell regions">
+        <row head="true"><cell>Region</cell><cell>Content</cell></row>
+        <row><cell>top</cell><cell>Kajenn Press logo at 48 px with the text name, site selector, New site, account and Sign out</cell></row>
+        <row><cell>left</cell><cell>Navigation tree of the current site: Pages, Templates, Styles, Scripts, Media, Publishing; then Shared library and Deployments</cell></row>
+        <row><cell>center</cell><cell>One retained tab per opened object, closable</cell></row>
+        <row><cell>bottom</cell><cell>Status: save state of the active tab and permissions in the current scope</cell></row>
+      </table>
+      <p>Each tree group lists its records. Selecting a record opens its editor tab, or selects the tab when it is already open. A New command in each group creates a record of that kind.</p>
+      <rule level="must" why="Gramlot constitution">Behaviour uses Source, Data, bindings and components; no imperative DOM manipulation.</rule>
+    </section>
+
+    <section title="Login and identity">
+      <p>The login card shows the Kajenn Press logo, <c>assets/kajenn-press/logo/kajenn-press-256.png</c> displayed at 160 px, the minimum size for the full logo in the identity guide. Labels "kajenn public site" become "Kajenn Press".</p>
+      <rule level="must" why="assets/kajenn-press/theme-guide.md">The logo is never cropped, rotated, stretched, shadowed or recoloured.</rule>
+    </section>
+
+    <section title="Page editor">
+      <p>The page editor opens one language variant.</p>
+      <list>
+        <item>Toolbar: Save draft, Revert, Revisions, Open template, Readiness.</item>
+        <item>Left pane: one tab per block declared by the template. HTML blocks offer Jodit (<c>htmlEditor</c>) and the source (<c>codeMirror</c>, html). Markdown blocks offer <c>markdownEditor</c> and the source.</item>
+        <item>Right pane: the scaled preview. A splitter separates the panes.</item>
+      </list>
+      <p>This removes the single-block limit of the current authoring page.</p>
+    </section>
+
+    <section title="Resource editor">
+      <list>
+        <item>Templates, CSS and JavaScript open in <c>codeMirror</c> with their language. Cmd+S saves a new revision.</item>
+        <item>Next to the code, the preview renders a sample page of the site with the resource being edited.</item>
+        <item>A template also shows a form for its block declarations and its dependencies.</item>
+        <item>Media show upload and a view of the file.</item>
+      </list>
+    </section>
+
+    <section title="Live preview">
+      <p>A new operation, <c>render_draft</c>, renders unsaved sources. It receives the variant and, optionally, unsaved block sources and unsaved resource sources that replace their saved revisions for this render. It freezes the inputs, runs the worker and returns HTML and diagnostics. It writes nothing to the catalog.</p>
+      <rule level="must">render_draft requires the same permissions as render_preview: build and read on the site, read and use on the resources.</rule>
+      <p>The editor calls <c>render_draft</c> about 800 ms after the last edit. A newer call replaces an older one.</p>
+      <p>For the preview, <c>freeze</c> receives <c>resource_urls</c> with <c>data:</c> URLs of the exact resource bytes, so CSS and images load inside the sandboxed iframe. The administration CSP adds <c>data:</c> to <c>style-src</c><ref to="d-css-policy"/>.</p>
+      <p>The preview renders the page at a fixed width, 1280 px or 375 px, inside a container scaled with <c>transform: scale()</c>. A selector offers 0.5, 0.75 and 1.</p>
+      <diagram kind="mermaid" title="Live preview flow"><![CDATA[
+sequenceDiagram
+    participant Editor as Editor tab
+    participant Admin as Admin endpoint
+    participant Service as Render service
+    participant Worker as Render worker
+    Editor->>Admin: render_draft(variant, unsaved sources)
+    Admin->>Service: freeze with overrides and data: URLs
+    Service->>Worker: frozen inputs
+    Worker-->>Service: HTML and diagnostics
+    Service-->>Admin: result, catalog unchanged
+    Admin-->>Editor: HTML into the scaled preview
+]]></diagram>
+    </section>
+
+    <section title="Phases">
+      <list ordered="true">
+        <item>Shell, login and navigation: logo, names, navigation tree, one tab per object, status bar.</item>
+        <item>Preview infrastructure: <c>render_draft</c> on REST and MCP, <c>data:</c> resource URLs, <c>data:</c> in the administration <c>style-src</c>, scaled preview container.</item>
+        <item>Page editor with all declared blocks and the live preview.</item>
+        <item>Resource editor for templates, CSS, JavaScript and media with the live preview.</item>
+        <item>Publishing panel: candidate, build, preview grant, activation and rollback.</item>
+      </list>
+    </section>
+  </solution>
+
+  <decisions>
+    <decision id="d-render-draft" status="decided">
+      <question>How does the preview show unsaved edits?</question>
+      <option id="d-render-draft-op" title="New render_draft operation"><p>Renders unsaved sources without writing to the catalog.</p></option>
+      <option id="d-render-draft-autosave" title="Save on every edit"><p>Every save creates an immutable revision.</p></option>
+      <choice option="d-render-draft-op" by="GP" date="2026-10-26">History holds only deliberate saves.</choice>
+    </decision>
+    <decision id="d-shell" status="decided">
+      <question>Which shell hosts the editors?</question>
+      <option id="d-shell-index" title="IndexPage with one tab per object"/>
+      <option id="d-shell-ide" title="Gramlot IdePage"><p>Built on a filesystem tree, not on catalog records.</p></option>
+      <choice option="d-shell-index" by="GP" date="2026-10-26">The current shell already uses it.</choice>
+    </decision>
+    <decision id="d-preview-resources" status="decided">
+      <question>How do CSS and media reach the sandboxed preview?</question>
+      <option id="d-preview-resources-data" title="data: URLs through resource_urls"/>
+      <option id="d-preview-resources-endpoint" title="Admin endpoint serving resource revisions"><p>The opaque origin of the sandboxed iframe sends no session cookie.</p></option>
+      <choice option="d-preview-resources-data" by="GP" date="2026-10-26">Needs no new endpoint and no cookie.</choice>
+    </decision>
+    <decision id="d-css-policy" status="decided">
+      <question>How is a data: stylesheet admitted by the administration CSP, which allows style-src 'self' 'unsafe-inline' only?</question>
+      <option id="d-css-policy-extend" title="Add data: to style-src"><p>One change in <c>src/kajenn_press/admin/host.py</c>; templates keep their <c>link</c> elements.</p></option>
+      <option id="d-css-policy-inline" title="Inline the stylesheet in the preview"><p>The preview rewrites each stylesheet link into a <c>style</c> element; the rendered HTML differs from the release.</p></option>
+      <choice option="d-css-policy-extend" by="GP" date="2026-10-26">The preview keeps the same HTML as the release.</choice>
+    </decision>
+  </decisions>
+
+  <consequences>
+    <p>Each <c>render_draft</c> call starts a worker process, with the configured timeout of 15 seconds by default. The delay of about 800 ms limits the calls while typing.</p>
+    <p>The <c>data:</c> URLs enlarge the preview HTML by the size of the CSS and media of the page, up to the existing input limit of 32 MiB.</p>
+    <p>The current authoring page and the browse pages are replaced by the new editors.</p>
+  </consequences>
+
+  <related>
+    <doc id="docs/13-amministrazione" href="../../docs/13-amministrazione.md">Gramlot administration, phase 1</doc>
+    <doc id="docs/10-rendering-statico" href="../../docs/10-rendering-statico.md">Static rendering contract v1</doc>
+  </related>
+</proposal>
