@@ -24,10 +24,11 @@ def write(path, value):
 write("/rustfs/access", "root" + secrets.token_hex(6))
 write("/rustfs/secret", secrets.token_urlsafe(32))
 write("/websites/storage_access", "websites" + secrets.token_hex(6))
-write("/websites/storage_secret", secrets.token_urlsafe(32))
+# Storage secrets are command-line arguments of `mc admin user add`: hex never starts with "-".
+write("/websites/storage_secret", secrets.token_hex(32))
 write("/websites/token", secrets.token_urlsafe(32))
 write("/websites/operator_password", secrets.token_urlsafe(12))
 write("/websites/preview_secret", secrets.token_hex(32))
 write("/child/storage_access", "child" + secrets.token_hex(6))
-write("/child/storage_secret", secrets.token_urlsafe(32))
+write("/child/storage_secret", secrets.token_hex(32))
 print("credentials ready", flush=True)

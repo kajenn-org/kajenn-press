@@ -39,8 +39,28 @@ KPRESS_SCHEME=https
 KPRESS_MANAGEMENT_HOST=kpress.genro.com
 KPRESS_PREVIEW_HOST=preview.kpress.genro.com
 KPRESS_TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+KPRESS_S3_ENDPOINT=https://fsn1.your-objectstorage.com
+KPRESS_S3_BUCKET=kpress-releases
+KPRESS_S3_CREDENTIALS_DIR=/opt/kpress-secrets
 EOF
 chmod 600 /opt/kpress/deploy/docker/.env
+```
+
+Releases go to the private Hetzner Object Storage bucket `kpress-releases`
+(Falkenstein, created 2026-10-26), not to RustFS. Object Storage keys are valid for
+every bucket of the project; the host already holds a pair for the Sourcerer
+backup. Copy it into the two files the composition mounts, without printing it:
+
+```bash
+install -d -m 700 /opt/kpress-secrets
+(set -a; . /opt/sourcerer-backup/aws.env; umask 077; printf '%s\n' "$AWS_ACCESS_KEY_ID" > /opt/kpress-secrets/access; printf '%s\n' "$AWS_SECRET_ACCESS_KEY" > /opt/kpress-secrets/secret)
+ls -l /opt/kpress-secrets
+```
+
+The files must be readable by uid 10002 (websites):
+
+```bash
+chown -R 10002:10002 /opt/kpress-secrets
 ```
 
 nginx connects to `127.0.0.1:8875`; Docker forwards the connection, so websites sees
@@ -49,14 +69,16 @@ private ranges. Port 8875 is published on `127.0.0.1` only, so only host process
 and the composition's own containers reach it.
 
 ```bash
-cd /opt/kpress && docker compose -f deploy/docker/compose.yaml up -d --build
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build
 ```
 
 ```bash
-cd /opt/kpress && docker compose -f deploy/docker/compose.yaml ps
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml ps
 ```
 
-`websites` and `rustfs` must be running; `secrets` and `storage-init` exited with code 0.
+`websites` must be running and `secrets` exited with code 0; `rustfs` and `storage-init`
+are not started. websites starts only after its release storage qualification accepted
+the bucket; a refused bucket stops it with an error in `docker compose ... logs websites`.
 
 ## 3. Certificates
 
@@ -98,7 +120,7 @@ Expected: `200`; `301 https://kpress.genro.com/admin/`; `Preview unavailable`.
 The operator password:
 
 ```bash
-cd /opt/kpress && docker compose -f deploy/docker/compose.yaml exec websites cat /secrets/operator_password
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml exec websites cat /secrets/operator_password
 ```
 
 Sign in at `https://kpress.genro.com/admin/` as `operator`.
@@ -106,26 +128,27 @@ Sign in at `https://kpress.genro.com/admin/` as `operator`.
 ## Update
 
 ```bash
-cd /opt/kpress && git pull --ff-only && docker compose -f deploy/docker/compose.yaml up -d --build
+cd /opt/kpress && git pull --ff-only && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build
 ```
 
 If `nginx-kpress.conf` changed, repeat step 4.
 
 ## Restart and stop
 
-`docker compose ... restart` and `down` (without `-v`) keep catalog, releases and
-credentials. `down -v` deletes all of them; the next `up` starts empty with new
-credentials.
+`docker compose ... restart` and `down` (without `-v`) keep catalog and credentials.
+`down -v` deletes the catalog and the generated credentials; the next `up` starts an
+empty catalog. Releases already exported stay in the bucket.
 
 ## Manual backup
 
-The state lives in named volumes: `kajenn-websites_websites-data` (catalog),
-`kajenn-websites_rustfs-data` (releases), and the three secrets volumes.
+The catalog and the generated credentials live in the named volumes
+`kajenn-websites_websites-data` and `kajenn-websites_websites-secrets`. Releases are in
+the bucket and can be exported again from the catalog with `release_export`.
 
 ```bash
-mkdir -p /opt/kpress-backup && cd /opt/kpress && docker compose -f deploy/docker/compose.yaml stop websites rustfs
-for v in websites-data rustfs-data websites-secrets rustfs-secrets child-secrets; do docker run --rm -v kajenn-websites_$v:/v:ro -v /opt/kpress-backup:/b python:3.12-slim tar czf /b/$v-$(date +%F).tgz -C /v .; done
-cd /opt/kpress && docker compose -f deploy/docker/compose.yaml start rustfs websites
+mkdir -p /opt/kpress-backup && cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml stop websites
+for v in websites-data websites-secrets; do docker run --rm -v kajenn-websites_$v:/v:ro -v /opt/kpress-backup:/b python:3.12-slim tar czf /b/$v-$(date +%F).tgz -C /v .; done
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml start websites
 ```
 
 The archives contain credentials: keep `/opt/kpress-backup` private.
