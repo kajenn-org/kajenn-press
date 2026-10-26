@@ -47,7 +47,8 @@ Starting point (main `64fcad6`, Macro 3b): `deploy/docker/compose.yaml` runs sec
   - Details: The Mac `.env` uses `http://kpress.localhost:8875` and `http://preview.kpress.localhost:8875`. The nginx example has one server block per name, proxying to `127.0.0.1:8875` with `Host`, `X-Forwarded-Proto` and `X-Forwarded-For`; certificate paths are placeholders filled on the server.
   - Done: On the Mac `http://kpress.localhost:8875/admin/` shows the login and accepts the `operator` password; a preview link created from the administration opens on `http://preview.kpress.localhost:8875`. A Docker test runs nginx (image pinned by digest) with the example configuration in front of websites and gets the login through it. Docker tests pass. Browser check by the owner.
 
-- [ ] **Phase 3**: Installation on the Hetzner server
+- [>] **Phase 3**: Installation on the Hetzner server
+  > Progress: `deploy/docker/HETZNER.md` written and linked from `deploy/docker/README.md`. Checked locally: the port-80-only extraction (`sed -n '1,/^}/p'`) passes `nginx -t` on nginx 1.24.0; the backup loop ran against the Mac demo (five archives, websites back to 200). Server `.env` trusts Docker's private ranges (`10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`): nginx on the host reaches 127.0.0.1:8875 through Docker, which presents the gateway of the composition network. Pending: the deployment files on `main`, the DNS records, and the owner running the runbook on the host.
   - Files: new `deploy/docker/HETZNER.md` (runbook), `deploy/docker/README.md`.
   - Details: The runbook lists, in order: DNS records for both names pointing to the server; certificates for both names with the method the server's nginx already uses; `git clone` of kajenn-org/kajenn-press; `.env` with the two origins and the trusted proxy address; `docker compose up -d --build`; the two nginx server blocks and `nginx -t` before reload; reading the operator password; updating with `git pull` and `up -d --build`; a manual backup of the named volumes.
   - Owner actions: create the DNS records, give SSH access or run the commands; no command runs on the server without the owner's go-ahead.
@@ -56,7 +57,7 @@ Starting point (main `64fcad6`, Macro 3b): `deploy/docker/compose.yaml` runs sec
 ## Server facts and owner decisions
 
 - Server (checked by the owner on 2026-10-26): Hetzner host 46.62.203.133, x86_64, nginx 1.24.0 (Ubuntu) on the host listening on 80/443, certbot at `/usr/bin/certbot`, port 8875 free. Its `sites-enabled` already holds asqueel, genroasgi, gramlot, gramlot-galleries, pagspett and sourcerer; kpress adds its own file without touching them. The certbot webroot convention comes from `sourcerer_v2/docker_v2/nginx/sourcerer.genro.com.conf`.
-- Trusted proxy address: host nginx reaches the published port through Docker, so websites sees the gateway address of the composition network, not 127.0.0.1. Phase 1 fixes it in `.env` and the Phase 2 nginx test checks it.
+- Trusted proxy address: host nginx reaches the published port through Docker, so websites sees the gateway address of the composition network, not 127.0.0.1. The server `.env` trusts Docker's private ranges; port 8875 is published on 127.0.0.1 only.
 - Public sites (owner decision 2026-10-26): this plan installs the manager only; serving published sites from the server comes later.
 
 ## Notes

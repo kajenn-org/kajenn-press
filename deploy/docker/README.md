@@ -42,7 +42,8 @@ The `demo` builder talks to websites in plain http, so the demo needs `KPRESS_SC
 https; port 443 proxies both names to `127.0.0.1:8875` with `Host`,
 `X-Forwarded-Proto` and `X-Forwarded-For`. The server `.env` then sets
 `KPRESS_SCHEME=https`, the two names, and in `KPRESS_TRUSTED_PROXIES` the address
-nginx reaches websites from.
+nginx reaches websites from. The installation on the Hetzner host, step by step, is in
+[HETZNER.md](HETZNER.md).
 
 ## Start, use, stop
 
