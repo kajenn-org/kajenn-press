@@ -46,6 +46,11 @@ services:
       WEBSITES_MANAGEMENT_ORIGIN: ${KPRESS_SCHEME:?set in .env}://${KPRESS_MANAGEMENT_HOST:?set in .env}
       WEBSITES_PREVIEW_ORIGIN: ${KPRESS_SCHEME}://${KPRESS_PREVIEW_HOST:?set in .env}
       WEBSITES_FORWARDED_ALLOW_IPS: ${KPRESS_TRUSTED_PROXIES:?set in .env}
+      # Release storage: the RustFS bucket; compose.external-s3.yaml points elsewhere.
+      RELEASE_S3_ENDPOINT: http://rustfs:9000
+      RELEASE_S3_BUCKET: releases
+      RELEASE_S3_ACCESS_FILE: /secrets/storage_access
+      RELEASE_S3_SECRET_FILE: /secrets/storage_secret
     ports:
       - "127.0.0.1:8875:8875"
     volumes:
@@ -84,6 +89,10 @@ services:
     profiles: ["demo"]
     environment:
       CHILD_CACHE_SECONDS: "5"
+      RELEASE_S3_ENDPOINT: http://rustfs:9000
+      RELEASE_S3_BUCKET: releases
+      RELEASE_S3_ACCESS_FILE: /secrets/storage_access
+      RELEASE_S3_SECRET_FILE: /secrets/storage_secret
     ports:
       - "127.0.0.1:8876:8876"
     volumes:

@@ -67,6 +67,26 @@ docker compose -f deploy/docker/compose.yaml down
 `down -v` also deletes catalog, bucket and credentials: the next `up` starts
 from nothing and generates new credentials.
 
+## External S3 bucket instead of RustFS
+
+`compose.external-s3.yaml` sends releases to an existing S3-compatible bucket, such
+as Hetzner Object Storage, and does not start `rustfs` and `storage-init` (they move
+to the profile `rustfs`). The entrypoints build the Genro Storage `s3` mount from
+`RELEASE_S3_*`; the override fills them from `.env`:
+
+| Variable | Meaning |
+|---|---|
+| `KPRESS_S3_ENDPOINT` | S3 endpoint, e.g. `https://fsn1.your-objectstorage.com` |
+| `KPRESS_S3_BUCKET` | Existing bucket |
+| `KPRESS_S3_BASE_PATH` | Optional folder inside the bucket |
+| `KPRESS_S3_CREDENTIALS_DIR` | Host directory with two files, `access` and `secret`, mounted read-only |
+
+```bash
+docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build
+```
+
+websites starts only if the release storage qualification accepts the bucket.
+
 ## Shared volume instead of RustFS
 
 `compose.volume.yaml` replaces RustFS with a Docker volume, `releases`: websites
