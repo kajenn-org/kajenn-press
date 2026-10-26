@@ -15,6 +15,9 @@ from ..domain import DomainError
 from ..publication.routes import origin
 
 CURRENT_REQUEST = ContextVar("public_site_admin_request")
+LOGO_URL = "/assets/branding/kajenn-press-256.png"
+# Pages live below the administration mount, so they reference assets relatively.
+LOGO_SRC = LOGO_URL.removeprefix("/")
 READ_OPERATIONS = frozenset(
     {
         "sites_list",
@@ -82,6 +85,10 @@ class AdminApplication(Application):
                         resource.suffix
                     ],
                 }
+        assets[LOGO_URL] = {
+            "file": Path(__file__).parent / "branding" / "kajenn-press-256.png",
+            "type": "image/png",
+        }
         super().__init__(
             Path(__file__).parent / "pages",
             collections=collections,

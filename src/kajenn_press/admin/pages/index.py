@@ -1,17 +1,32 @@
-"""Gallery-style index with site toolbar and retained, scope-bound iframe pages."""
+"""Gallery-style index with site toolbar and one retained, scope-bound iframe tab per object."""
 
 from uuid import uuid4
 
 from genro_bag import Bag
 from gramlot import IndexPage, endpoint, source
 
-from kajenn_press.admin.host import CURRENT_REQUEST, execute_read, execute_site_create
-from kajenn_press.admin.views import AdminPage, literal_text
+from kajenn_press.admin.host import (
+    CURRENT_REQUEST,
+    LOGO_SRC,
+    execute_read,
+    execute_site_create,
+)
+from kajenn_press.admin.views import AdminPage, caption, literal_text
 from kajenn_press.domain import DomainError
+
+# Navigation groups of a site: tree key, label and the record kinds each one lists.
+GROUPS = (
+    ("pages", "Pages", "content"),
+    ("templates", "Templates", "template"),
+    ("styles", "Styles", "css"),
+    ("scripts", "Scripts", "javascript"),
+    ("media", "Media", "media"),
+)
+RECORD_KINDS = frozenset(kind for _key, _label, kind in GROUPS)
 
 
 class Page(AdminPage, IndexPage):
-    title = "Kajenn public site"
+    title = "Kajenn Press"
     datapath = "index"
     css = ("/themes/gramlot-index/theme.css", "/index.css")
 
@@ -30,6 +45,7 @@ class Page(AdminPage, IndexPage):
         for name, value in {
             "site": site,
             "sites_version": 0,
+            "nav_version": 0,
             "open_author": False,
             "nav_drawer": True,
             "new_site": False,
@@ -39,11 +55,11 @@ class Page(AdminPage, IndexPage):
             "key": uuid4().hex,
         }.items():
             root.dataSetter(f"admin.{name}", value)
-        self.navigation = self.navigation_bag(site, self.sites)
+        self.navigation = await self.navigation_bag(site, self.sites)
         IndexPage.main(self, root)
 
     @staticmethod
-    def navigation_bag(site, sites):
+    async def navigation_bag(site, sites):
         navigation, current = Bag(), Bag()
         navigation.set_item(
             "home",
@@ -56,33 +72,34 @@ class Page(AdminPage, IndexPage):
         item = next((item for item in sites if item["record_id"] == site), None)
         if item:
             label = item["attributes"]["name"]
-            current.set_item(
-                "author",
-                None,
-                label="Create page",
-                title="Site " + label + " · Create page",
-                url="author?site=" + site,
-                site=site,
-                section="author",
-            )
-            current.set_item(
-                "content",
-                None,
-                label="Content",
-                title="Site " + label + " · Content",
-                url="content?site=" + site,
-                site=site,
-                section="content",
-            )
-            current.set_item(
-                "resource",
-                None,
-                label="Resources",
-                title="Site " + label + " · Resources",
-                url="resources?site=" + site,
-                site=site,
-                section="resource",
-            )
+            records = await execute_read("records_index", scope="site:" + site)
+            for key, group_label, kind in GROUPS:
+                group = Bag()
+                if kind == "content":
+                    group.set_item(
+                        "new_page",
+                        None,
+                        label="New page",
+                        title=label + " · New page",
+                        url="author?site=" + site,
+                        site=site,
+                        section="new_page",
+                    )
+                for record in sorted(
+                    (r for r in records if r["kind"] == kind), key=lambda r: caption(r).casefold()
+                ):
+                    name = caption(record)
+                    group.set_item(
+                        "r_" + record["record_id"],
+                        None,
+                        label=name,
+                        title=label + " · " + name,
+                        url="record?site=" + site + "&record=" + record["record_id"],
+                        site=site,
+                        record=record["record_id"],
+                        section="record",
+                    )
+                current.set_item(key, group, label=group_label, title=group_label)
             current.set_item(
                 "publication",
                 None,
@@ -118,14 +135,19 @@ class Page(AdminPage, IndexPage):
         return navigation
 
     def top(self, pane):
-        pane.set_attr({"height": "54px", "class": "admin-top"})
+        pane.set_attr({"height": "64px", "class": "admin-top"})
         bar = pane.header(class_="admin-toolbar")
-        bar.strong("kajenn public site")
+        brand = bar.div(class_="admin-brand")
+        brand.img(src=LOGO_SRC, width="48", height="48", alt="")
+        brand.strong("Kajenn Press")
         bar.html_label("Current site", for_="site")
         bar.div(class_="site-selector").remote("site_selector", version="^admin.sites_version")
         bar.button(
             "New site", disabled=not self.can_create, class_="button--secondary"
         ).dataController("this.SET('admin.new_site',true)")
+        bar.button("Refresh", class_="button--quiet").dataController(
+            "this.SET('admin.nav_version',this.GET('admin.nav_version')+1)"
+        )
         account = bar.div(class_="account")
         account.span(self.identity)
         account.button("Sign out", class_="button--quiet").dataRpc(
@@ -175,17 +197,11 @@ class Page(AdminPage, IndexPage):
                 "class": "index-sidebar",
                 "drawer": "^admin.nav_drawer",
                 "drawer_label": "Navigation",
-                "width": "225px",
+                "width": "240px",
             }
         )
         pane.value.get_node("tree").set_attr(
             {"autoCollapse": False, "class": "admin-tree", "labelAttribute": "label"}
-        )
-        pane.div(class_="scope-permissions").remote(
-            "permissions",
-            site="^admin.site",
-            section="content",
-            _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
         )
 
     def center(self, pane):
@@ -193,13 +209,28 @@ class Page(AdminPage, IndexPage):
         IndexPage.center(self, pane)
 
     def bottom(self, pane):
-        pane.set_attr({"height": "28px", "class": "admin-footer"})
-        pane.span("Kajenn public site · Browse mode · Each tab keeps its own site")
+        pane.set_attr({"height": "30px", "class": "admin-footer"})
+        # The tree selection follows the active tab; a selected folder leaves the tab unchanged.
+        pane.dataSetter("admin.active_title", "No object open")
+        pane.dataController(
+            "var node=path?navigation.getNode(path):null;"
+            "if(node&&node.attr.url){this.SET('admin.active_title',node.attr.title)}",
+            path="^index.navigationSelection",
+            navigation="=index.navigation",
+        )
+        status = pane.div(class_="admin-status", role="status")
+        status.span("^admin.active_title", class_="active-title")
+        status.div(class_="scope-permissions").remote(
+            "permissions",
+            site="^admin.site",
+            section="content",
+            _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
+        )
 
     def behavior(self, shell):
         IndexPage.behavior(self, shell)
         shell.dataController(
-            "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.author' : 'home');"
+            "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.pages.new_page' : 'home');"
             # Narrow viewports start with the navigation drawer closed.
             "if(window.matchMedia('(max-width: 700px)').matches){this.SET('admin.nav_drawer','close')}",
             _onStart=True,
@@ -207,18 +238,19 @@ class Page(AdminPage, IndexPage):
         shell.dataRpc(
             "navigation_for_site",
             site="^admin.site",
+            version="^admin.nav_version",
             _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
             _onResult="var nav=this.GET('index.navigation');var branch=result.getNode('site');nav.setItem('site',branch.value,branch.attr);"
-            "this.SET('index.navigationSelection',this.GET('admin.open_author') ? 'site.author' : null);"
+            "this.SET('index.navigationSelection',this.GET('admin.open_author') ? 'site.pages.new_page' : null);"
             "this.SET('admin.open_author',false)",
         )
 
     @endpoint(auth="editor")
-    async def navigation_for_site(self, site):
+    async def navigation_for_site(self, site, version=0):
         sites = await execute_read("sites_list")
         if site and not any(item["record_id"] == site for item in sites):
             raise DomainError("forbidden", "Site not accessible")
-        return self.navigation_bag(site, sites)
+        return await self.navigation_bag(site, sites)
 
     @source(auth="editor")
     async def index_panel(self, pane, selection):
@@ -232,21 +264,28 @@ class Page(AdminPage, IndexPage):
             url, title = "library", "Shared library"
         elif section == "deployments":
             url, title = "deployments", "Deployments"
-        elif section in {"author", "content", "resource"}:
+        elif section in {"new_page", "record"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
                 raise DomainError("forbidden", "Site not accessible")
-            url = (
-                {"author": "author", "content": "content", "resource": "resources"}[section]
-                + "?site="
-                + site
-            )
-            title = (
-                item["attributes"]["name"]
-                + " · "
-                + {"author": "Create page", "content": "Content", "resource": "Resources"}[section]
-            )
+            if section == "new_page":
+                url, title = "author?site=" + site, item["attributes"]["name"] + " · New page"
+            else:
+                record_id = node.attr.get("record", "")
+                records = await execute_read("records_index", scope="site:" + site)
+                record = next(
+                    (
+                        r
+                        for r in records
+                        if r["record_id"] == record_id and r["kind"] in RECORD_KINDS
+                    ),
+                    None,
+                )
+                if record is None:
+                    raise DomainError("not_found", "Object unavailable in this site")
+                url = "record?site=" + site + "&record=" + record_id
+                title = item["attributes"]["name"] + " · " + caption(record)
         else:
             raise DomainError("invalid_input", "Page unavailable")
         pane.iframe(src=url, title=title, width="100%", height="100%", border=0)

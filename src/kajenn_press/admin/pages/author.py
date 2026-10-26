@@ -23,7 +23,7 @@ COMMANDS = frozenset(
 
 
 class Page(AdminPage):
-    title = "Create page"
+    title = "New page"
 
     async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()

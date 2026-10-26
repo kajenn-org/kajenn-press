@@ -7,7 +7,7 @@ from uuid import uuid4
 from gramlot import Page as GramlotPage
 from gramlot import endpoint, source
 
-from kajenn_press.admin.host import CURRENT_REQUEST, execute_read
+from kajenn_press.admin.host import CURRENT_REQUEST, LOGO_SRC, execute_read
 from kajenn_press.domain import DomainError
 
 SECTIONS = {"content": "Content", "resource": "Resources", "library": "Library"}
@@ -186,7 +186,7 @@ class AdminPage(GramlotPage):
         root.dataSetter("login.password", "")
         root.dataSetter("login.error", "")
         box = root.main(class_="login-shell").section(class_="login-card")
-        box.p("kajenn public site", class_="muted")
+        box.img(src=LOGO_SRC, width="160", height="160", alt="Kajenn Press", class_="login-logo")
         box.h1("Sign in to your sites")
         box.textbox(
             value="^login.username",

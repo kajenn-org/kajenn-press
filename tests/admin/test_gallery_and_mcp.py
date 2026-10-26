@@ -105,7 +105,7 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
     async def scenario():
         async with admin_client(tmp_path) as (http, _server):
             page = await login(http)
-            site, *_ = await seed_http(http)
+            site, _other, _template, content, _variant = await seed_http(http)
 
             nav = await rpc(http, page, "navigation_for_site", site=site["record_id"])
             navigation = nav["value"]
@@ -113,7 +113,12 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
             assert isinstance(navigation, Bag)
             selection = Bag()
             selection.set_item(
-                "chosen", None, site=site["record_id"], section="content", url="https://evil.test"
+                "chosen",
+                None,
+                site=site["record_id"],
+                section="record",
+                record=content["record_id"],
+                url="https://evil.test",
             )
             from genro_tytx import to_tytx
 
@@ -130,8 +135,9 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
                 "/admin/gramlot/rpc", content=payload, headers={"Content-Type": "application/json"}
             )
             source = response.json()["value"]
-            assert "evil.test" not in source and "content?site=" + site["record_id"] in source
-            for path in ("home", "content", "resources", "library"):
+            expected = "record?site=" + site["record_id"] + "&record=" + content["record_id"]
+            assert "evil.test" not in source and expected in source
+            for path in ("home", "content", "resources", "library", "record"):
                 response = await http.get("/admin/" + path)
                 assert response.status_code == 200
                 assert "frame-ancestors 'self'" in response.headers["content-security-policy"]
