@@ -22,7 +22,7 @@ GROUPS = (
     ("scripts", "Scripts", "javascript"),
     ("media", "Media", "media"),
 )
-RECORD_KINDS = frozenset(kind for _key, _label, kind in GROUPS)
+RESOURCE_KINDS = frozenset(kind for _key, _label, kind in GROUPS) - {"content"}
 
 
 class Page(AdminPage, IndexPage):
@@ -89,12 +89,12 @@ class Page(AdminPage, IndexPage):
                     (r for r in records if r["kind"] == kind), key=lambda r: caption(r).casefold()
                 ):
                     name = caption(record)
-                    # Pages open their editor; other objects open their record view.
-                    section = "page" if kind == "content" else "record"
+                    # Pages open the page editor; the other kinds open the resource editor.
+                    section = "page" if kind == "content" else "resource"
                     target = (
                         "page?site=" + site + "&content="
                         if kind == "content"
-                        else ("record?site=" + site + "&record=")
+                        else ("resource?site=" + site + "&record=")
                     )
                     group.set_item(
                         "r_" + record["record_id"],
@@ -279,7 +279,7 @@ class Page(AdminPage, IndexPage):
             url, title = "library", "Shared library"
         elif section == "deployments":
             url, title = "deployments", "Deployments"
-        elif section in {"new_page", "record", "page"}:
+        elif section in {"new_page", "resource", "page"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
@@ -304,13 +304,13 @@ class Page(AdminPage, IndexPage):
                     (
                         r
                         for r in records
-                        if r["record_id"] == record_id and r["kind"] in RECORD_KINDS
+                        if r["record_id"] == record_id and r["kind"] in RESOURCE_KINDS
                     ),
                     None,
                 )
                 if record is None:
                     raise DomainError("not_found", "Object unavailable in this site")
-                url = "record?site=" + site + "&record=" + record_id
+                url = "resource?site=" + site + "&record=" + record_id
                 title = item["attributes"]["name"] + " · " + caption(record)
         else:
             raise DomainError("invalid_input", "Page unavailable")

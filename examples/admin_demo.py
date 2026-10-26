@@ -22,6 +22,9 @@ LANDING = """def build(source, data):
     head.title("^page.title")
     head.style("body {font: 18px system-ui; margin: 0;} .hero {background: #172c43; color: #fff;"
                " padding: 48px;} .notes {padding: 24px 48px;}")
+    for asset in data.get_item("resources").values():
+        if asset.get_item("kind") == "css":
+            head.link(rel="stylesheet", href=asset.get_item("url"))
     body = page.body()
     body.section("^blocks.hero", class_="hero")
     body.section("^blocks.notes", class_="notes")
@@ -111,6 +114,15 @@ def main():
                         }
                     },
                 )
+        styles = service.execute(
+            "demo",
+            "resource_save",
+            key=f"css-{index}",
+            scope="site:" + site["record_id"],
+            kind="css",
+            name="Site styles",
+            source="h1 { color: #192e42; }\n",
+        )["records"][0]
         # A two-block page shows the page editor with an HTML and a Markdown block.
         landing_template = service.execute(
             "demo",
@@ -122,6 +134,8 @@ def main():
             source=LANDING,
             engine="gramlot",
             blocks=LANDING_BLOCKS,
+            # The landing page links the site styles, so editing them shows in the preview.
+            dependencies=[styles["revision_id"]],
         )["records"][0]
         landing = service.execute(
             "demo",
@@ -144,15 +158,6 @@ def main():
                     "source": "## Notes\n\n- written in **Markdown**\n",
                 },
             },
-        )
-        service.execute(
-            "demo",
-            "resource_save",
-            key=f"css-{index}",
-            scope="site:" + site["record_id"],
-            kind="css",
-            name="Site styles",
-            source="h1 { color: #192e42; }\n",
         )
     service.catalog.close()
     server = create_server(

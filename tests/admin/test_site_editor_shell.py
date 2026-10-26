@@ -1,7 +1,6 @@
 """Site editor shell: Kajenn Press identity, record navigation and one tab per object."""
 
 import asyncio
-import re
 
 import pytest
 
@@ -12,12 +11,6 @@ from api.support import record, seed_http
 from admin.support import admin_client, login, open_page, rpc
 
 LOGO = "assets/branding/kajenn-press-256.png"
-
-
-async def open_record_page(http, site, record_id):
-    response = await http.get(f"/admin/record?site={site}&record={record_id}")
-    assert response.status_code == 200, response.text
-    return re.search(r'"pageId":"([a-f0-9]+)"', response.text)[1]
 
 
 def test_login_and_toolbar_show_the_kajenn_press_logo(tmp_path):
@@ -69,53 +62,13 @@ def test_navigation_lists_site_records_by_kind(tmp_path):
             styles = nav.get_node("site.styles").value
             style_entry = styles.get_node("r_" + style["record_id"])
             assert style_entry.attr["label"] == "Site styles"
-            assert style_entry.attr["url"].startswith("record?site=")
+            assert style_entry.attr["url"].startswith("resource?site=")
             # The seeded template lives in the shared library, not in the site.
             assert len(nav.get_node("site.templates").value or []) == 0
             second = (await rpc(http, page, "navigation_for_site", site=other["record_id"]))[
                 "value"
             ]
             assert second.get_node("site.pages").value.get_node("r_" + content["record_id"]) is None
-
-    asyncio.run(scenario())
-
-
-def test_record_tab_stays_inside_its_site(tmp_path):
-    async def scenario():
-        async with admin_client(tmp_path) as (http, _server):
-            await login(http)
-            site, other, _template, content, _variant = await seed_http(http)
-            own = await open_record_page(http, site["record_id"], content["record_id"])
-            view = await rpc(
-                http,
-                own,
-                "detail",
-                "source",
-                site=site["record_id"],
-                section="content",
-                selected=content["record_id"],
-            )
-            assert "Article" in view["value"]
-            foreign = await open_record_page(http, other["record_id"], content["record_id"])
-            outer = await rpc(
-                http,
-                foreign,
-                "object_view",
-                "source",
-                site=other["record_id"],
-                record=content["record_id"],
-            )
-            assert "resource" in outer["value"]
-            denied = await rpc(
-                http,
-                foreign,
-                "detail",
-                "source",
-                site=other["record_id"],
-                section="resource",
-                selected=content["record_id"],
-            )
-            assert "Selection unavailable" in denied["value"] and "Article" not in denied["value"]
 
     asyncio.run(scenario())
 

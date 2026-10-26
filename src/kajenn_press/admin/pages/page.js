@@ -141,6 +141,32 @@ export class Logic {
             node.SET('page.message', error.message);
         }
     }
+    async useLatestTemplate(node, _args) {
+        const state = this.pageState;
+        if (!state || node.GET('page.busy')) return;
+        // Blocks whose name and format survive move to the new revision; new blocks start empty.
+        const latest = JSON.parse(node.GET('page.latest_declarations'));
+        const blocks = {};
+        for (const [name, source] of Object.entries(blockSources(node))) {
+            if (latest[name]?.format === declarations(node)[name].format) {
+                blocks[name] = {format: latest[name].format, source};
+            }
+        }
+        node.SET('page.busy', true);
+        try {
+            await this.callCommand('draft_save', {key: crypto.randomUUID(), variant_id: node.GET('page.variant_id'),
+                expected_generation: node.GET('page.variant_generation'),
+                template_revision: node.GET('page.latest_template'), blocks});
+            if (state.disposed) return;
+            node.SET('page.busy', false);
+            // Reload the editor: the latest template may declare other blocks.
+            node.SET('page.version', node.GET('page.version') + 1);
+        } catch (error) {
+            if (state.disposed) return;
+            node.SET('page.busy', false);
+            node.SET('page.message', error.message);
+        }
+    }
     async livePreview(node, _args) {
         const state = this.pageState;
         if (!state || state.disposed) return;

@@ -28,7 +28,8 @@ class Page(AdminPage):
             "Open a page under Pages to edit every block its template declares, in Jodit, "
             "Markdown or source, beside a preview that follows your unsaved edits. New page "
             "creates a page with a starter template. Each page and resource opens in its own tab. "
-            "Template, CSS and media editors, and publication controls, are still to come."
+            "Templates, styles, scripts and media open in their own editor, beside a page "
+            "that uses them. Publication controls are still to come."
         )
         start = home.section(class_="guide-section")
         start.h2("Getting started")

@@ -24,7 +24,7 @@ class Page(AdminPage):
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)
             return
-        for name, value in {"site": "", "content": "", "language": ""}.items():
+        for name, value in {"site": "", "content": "", "language": "", "version": 0}.items():
             root.dataSetter(f"page.{name}", value)
         root.dataController(
             "var q=new URLSearchParams(window.location.search);"
@@ -37,6 +37,7 @@ class Page(AdminPage):
             site="^page.site",
             content="^page.content",
             language="^page.language",
+            version="^page.version",
             _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
         )
 
@@ -54,7 +55,7 @@ class Page(AdminPage):
         return record, variants
 
     @source(auth="editor")
-    async def editor(self, pane, site="", content="", language=""):
+    async def editor(self, pane, site="", content="", language="", version=0):
         if not site or not content:
             pane.p("Select a page in the navigation.")
             return
@@ -75,6 +76,8 @@ class Page(AdminPage):
                 if r["revision_id"] == attrs["template_revision"]
             )
             declarations = template["attributes"]["blocks"]
+            # The page keeps its exact template revision until it is saved against a newer one.
+            latest = await execute_read("record_read", record_id=template["record_id"])
             history = await execute_read("revision_index", record_id=variant["record_id"])
             rights = await execute_read("scope_capabilities", scope="site:" + site)
         except DomainError as error:
@@ -88,6 +91,8 @@ class Page(AdminPage):
             "variant_revision": variant["revision_id"],
             "template_revision": attrs["template_revision"],
             "template_id": template["record_id"],
+            "latest_template": latest["revision_id"],
+            "latest_declarations": json.dumps(latest["attributes"]["blocks"]),
             "content_id": content,
             "declarations": json.dumps(declarations),
             "writable": writable,
@@ -141,6 +146,15 @@ class Page(AdminPage):
         actions.button(
             "Readiness", disabled="^page.busy", class_="button--secondary"
         ).dataController(func="readiness")
+        if latest["revision_id"] != attrs["template_revision"]:
+            actions.span(
+                f"Template revision {template['generation']} · latest {latest['generation']}",
+                class_="status",
+            )
+            if writable:
+                actions.button(
+                    "Use latest template", disabled="^page.busy", class_="button--secondary"
+                ).dataController(func="useLatestTemplate")
         missing = [code for code in site_record["attributes"]["languages"] if code not in variants]
         if missing and writable:
             pane.dataSetter("page.new_language", missing[0])

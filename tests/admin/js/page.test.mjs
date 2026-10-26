@@ -108,3 +108,23 @@ test('loading a revision fills the draft; open template asks the shell; add lang
     assert.equal(created.translated_from, 'vr1');
     assert.equal(node.GET('page.language'), 'en');
 });
+
+test('use latest template keeps matching blocks and reloads the editor', async () => {
+    const calls = [];
+    const {logic, node} = fixture(async (_type, _name, args) => {
+        calls.push(structuredClone(args));
+        if (args.operation === 'render_draft') return rendered('initial');
+        return {ok: true, result: {records: [{record_id: 'v', revision_id: 'vr2', generation: 2}]}};
+    });
+    // The latest template keeps intro, turns notes into HTML and adds an aside.
+    node.SET('page.latest_template', 'tr2');
+    node.SET('page.latest_declarations', JSON.stringify({intro: {format: 'html', required: true},
+        notes: {format: 'html', required: false}, aside: {format: 'markdown', required: false}}));
+    node.SET('page.version', 0);
+    logic.initialize(node, {});
+    await logic.useLatestTemplate(node, {});
+    const save = calls.find(c => c.operation === 'draft_save').arguments;
+    assert.equal(save.template_revision, 'tr2');
+    assert.deepEqual(save.blocks, {intro: {format: 'html', source: '<p>Saved</p>'}});
+    assert.equal(node.GET('page.version'), 1);
+});

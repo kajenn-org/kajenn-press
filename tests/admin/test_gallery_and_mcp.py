@@ -116,7 +116,7 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
                 "chosen",
                 None,
                 site=site["record_id"],
-                section="record",
+                section="page",
                 record=content["record_id"],
                 url="https://evil.test",
             )
@@ -135,9 +135,9 @@ def test_iframe_urls_are_derived_from_authorized_scope(tmp_path):
                 "/admin/gramlot/rpc", content=payload, headers={"Content-Type": "application/json"}
             )
             source = response.json()["value"]
-            expected = "record?site=" + site["record_id"] + "&record=" + content["record_id"]
+            expected = "page?site=" + site["record_id"] + "&content=" + content["record_id"]
             assert "evil.test" not in source and expected in source
-            for path in ("home", "library", "record", "page"):
+            for path in ("home", "library", "resource", "page"):
                 response = await http.get("/admin/" + path)
                 assert response.status_code == 200
                 assert "frame-ancestors 'self'" in response.headers["content-security-policy"]
