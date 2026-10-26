@@ -1,5 +1,6 @@
-# Local websites composition: RustFS release storage, websites, a builder and one child.
-# Start from the repository root: docker compose -f deploy/docker/compose.yaml up --build
+# websites composition: RustFS release storage and websites; profile `demo` adds a builder and one child.
+# Addresses come from deploy/docker/.env (copy .env.example). Start from the repository root:
+# docker compose -f deploy/docker/compose.yaml up --build
 name: kajenn-websites
 
 services:
@@ -42,8 +43,9 @@ services:
       dockerfile: deploy/docker/Dockerfile.websites
     image: kajenn-websites:local
     environment:
-      WEBSITES_MANAGEMENT_ORIGIN: http://127.0.0.1:8875
-      WEBSITES_PREVIEW_ORIGIN: http://localhost:8875
+      WEBSITES_MANAGEMENT_ORIGIN: ${KPRESS_SCHEME:?set in .env}://${KPRESS_MANAGEMENT_HOST:?set in .env}
+      WEBSITES_PREVIEW_ORIGIN: ${KPRESS_SCHEME}://${KPRESS_PREVIEW_HOST:?set in .env}
+      WEBSITES_FORWARDED_ALLOW_IPS: ${KPRESS_TRUSTED_PROXIES:?set in .env}
     ports:
       - "127.0.0.1:8875:8875"
     volumes:
@@ -55,11 +57,13 @@ services:
 
   builder:
     image: kajenn-websites:local
+    profiles: ["demo"]
     command:
       - python
       - /app/kajenn_org/build.py
       - --endpoint=http://websites:8875
-      - --host=127.0.0.1:8875
+      # Plain http inside the network: the demo needs KPRESS_SCHEME=http.
+      - --host=${KPRESS_MANAGEMENT_HOST}
       - --token-file=/secrets/token
       - --public-origin=http://kajenn.localhost:8876
       - --serving-address=http://127.0.0.1:8876
@@ -77,6 +81,7 @@ services:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.child
     image: kajenn-child:local
+    profiles: ["demo"]
     environment:
       CHILD_CACHE_SECONDS: "5"
     ports:

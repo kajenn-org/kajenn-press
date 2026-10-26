@@ -10,6 +10,7 @@ import time
 
 import pytest
 from docker.test_docker_composition_contract import (
+    ADDRESSES,
     COMPOSE,
     ROOT,
     child_get,
@@ -20,12 +21,13 @@ from docker.test_docker_composition_contract import (
 pytestmark = pytest.mark.skipif(
     os.environ.get("KAJENN_DOCKER") != "1", reason="Set KAJENN_DOCKER=1 to drive Docker"
 )
-VOLUME = [*COMPOSE, "-f", str(ROOT / "deploy/docker/compose.volume.yaml")]
+VOLUME = [*COMPOSE, "-f", str(ROOT / "deploy/docker/compose.volume.yaml"), "--profile", "demo"]
 
 
 def volume_compose(*arguments, check=True):
     return subprocess.run(
-        [*VOLUME, *arguments], capture_output=True, text=True, check=check, timeout=900
+        [*VOLUME, *arguments], capture_output=True, text=True, check=check, timeout=900,
+        env={**os.environ, **ADDRESSES},
     )
 
 
@@ -68,7 +70,7 @@ def test_shared_volume_backend_needs_configuration_only(shared_volume):
     assert denied.returncode != 0 and "Read-only file system" in denied.stderr
     content = subprocess.run(
         [*VOLUME, "exec", "-T", "websites", "sh", "-c", "cat /releases/*/*"],
-        capture_output=True, check=True, timeout=120,
+        capture_output=True, check=True, timeout=120, env={**os.environ, **ADDRESSES},
     ).stdout
     for name in ("token", "operator_password", "storage_secret"):
         assert secret("websites", name).encode() not in content
