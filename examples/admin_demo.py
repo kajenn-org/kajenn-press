@@ -15,6 +15,22 @@ from kajenn_press.catalog.local import LocalCatalog
 from kajenn_press.domain import AccessPolicy
 from kajenn_press.services.editorial import EditorialService
 
+LANDING = """def build(source, data):
+    page = source.html(lang="^language")
+    head = page.head()
+    head.meta(charset="utf-8")
+    head.title("^page.title")
+    head.style("body {font: 18px system-ui; margin: 0;} .hero {background: #172c43; color: #fff;"
+               " padding: 48px;} .notes {padding: 24px 48px;}")
+    body = page.body()
+    body.section("^blocks.hero", class_="hero")
+    body.section("^blocks.notes", class_="notes")
+"""
+LANDING_BLOCKS = {
+    "hero": {"format": "html", "required": True},
+    "notes": {"format": "markdown", "required": False},
+}
+
 
 class DemoUsers(UserStore):
     def __init__(self, storage):
@@ -95,6 +111,40 @@ def main():
                         }
                     },
                 )
+        # A two-block page shows the page editor with an HTML and a Markdown block.
+        landing_template = service.execute(
+            "demo",
+            "resource_save",
+            key=f"landing-template-{index}",
+            scope="site:" + site["record_id"],
+            kind="template",
+            name="Landing page",
+            source=LANDING,
+            engine="gramlot",
+            blocks=LANDING_BLOCKS,
+        )["records"][0]
+        landing = service.execute(
+            "demo",
+            "content_create",
+            key=f"{index}-landing",
+            site_id=site["record_id"],
+            title="Landing",
+        )["records"][0]
+        service.execute(
+            "demo",
+            "variant_create",
+            key=f"{index}-landing-en",
+            content_id=landing["record_id"],
+            language="en",
+            template_revision=landing_template["revision_id"],
+            blocks={
+                "hero": {"format": "html", "source": f"<h1>{name}</h1><p>A landing page.</p>"},
+                "notes": {
+                    "format": "markdown",
+                    "source": "## Notes\n\n- written in **Markdown**\n",
+                },
+            },
+        )
         service.execute(
             "demo",
             "resource_save",

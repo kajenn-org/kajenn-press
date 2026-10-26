@@ -156,6 +156,12 @@ The `render_draft` REST/MCP operation renders unsaved sources over an exact save
 
 **Render saved page** uses `render_draft` without drafted sources. Once a page is saved, the preview follows unsaved edits to the body and the template about 800 ms after the last change; a reply superseded by a newer request is discarded. The page renders at 1280 or 375 px and is scaled to 0.5, 0.75 or 1.
 
+### Page editor
+
+Each entry under **Pages** opens its editor in a tab of its own (`page?site=…&content=…`). A language selector chooses the variant; it is locked while the draft has unsaved changes. The editor shows one tab per block declared by the variant's template: HTML blocks in Jodit or as source, Markdown blocks in the Markdown editor or as source. A splitter separates the blocks from the scaled preview, which follows every unsaved block through `render_draft`.
+
+The toolbar saves all blocks with `draft_save` against the variant's generation (a conflict keeps the draft; an uncertain result retries the same submitted version and key), reverts to the saved revision, loads an earlier revision as an unsaved draft, opens the template's tab in the shell, checks `readiness` on the saved revision and adds a missing site language with `variant_create`, starting from the current blocks and recording `translated_from`. The page title stays read-only: the service has no operation that renames a content. **New page** still creates pages with the starter single-block template.
+
 ## Deployments
 
 The **Deployments** node lists the children registered in this installation: servers that serve a site from release storage (`StaticSiteServerApplication`, see [14](14-release-storage.md)). For each child the table shows the bound site, the release the catalog has active and the release read back from storage at that moment, with a state: Up to date, Storage differs from catalog, Not in storage, Nothing to serve, No release storage, Storage unreadable (storage cannot be read or holds a malformed pointer). A difference is shown and never corrected automatically; **Re-export** writes the active release and its pointer to storage again. **Register child** records a name, a channel and a declared serving address; the public origin comes from the channel. The same operations are available on REST and MCP: `child_save` (permission `publish`), `child_read`, `child_list`, `child_channels` (permission `read`).

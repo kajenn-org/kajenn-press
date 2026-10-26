@@ -23,6 +23,60 @@ def caption(record):
     return attrs.get("title") or attrs.get("name") or attrs.get("language") or record["record_id"]
 
 
+PREVIEW_HEIGHT = 1000  # px of page shown in the scaled preview
+
+
+def scaled_preview(pane, prefix, status):
+    """Width and scale selectors over a rendered page kept at its real width and scaled down.
+
+    The HTML comes from ``<prefix>.preview``; ``status`` points to the line beside the selectors.
+    """
+    pane.dataSetter(prefix + ".preview_width", "1280")
+    pane.dataSetter(prefix + ".preview_scale", "0.5")
+    controls = pane.div(class_="preview-controls")
+    controls.html_label("Width", for_=prefix + "-preview-width")
+    width = controls.select(id=prefix + "-preview-width", value=f"^{prefix}.preview_width")
+    width.option("Desktop · 1280 px", value="1280")
+    width.option("Phone · 375 px", value="375")
+    controls.html_label("Scale", for_=prefix + "-preview-scale")
+    scale = controls.select(id=prefix + "-preview-scale", value=f"^{prefix}.preview_scale")
+    for value in ("0.5", "0.75", "1"):
+        scale.option(value, value=value)
+    controls.span("^" + status, role="status", class_="muted")
+    # _init computes them once before the first change of width or scale.
+    pane.dataFormula(
+        prefix + ".box_width",
+        "(+w*+s)+'px'",
+        w=f"^{prefix}.preview_width",
+        s=f"^{prefix}.preview_scale",
+        _init=True,
+    )
+    pane.dataFormula(
+        prefix + ".box_height",
+        "(h*+s)+'px'",
+        s=f"^{prefix}.preview_scale",
+        h=PREVIEW_HEIGHT,
+        _init=True,
+    )
+    pane.dataFormula(
+        prefix + ".frame_width", "w+'px'", w=f"^{prefix}.preview_width", _init=True
+    )
+    pane.dataFormula(
+        prefix + ".frame_scale", "'scale('+s+')'", s=f"^{prefix}.preview_scale", _init=True
+    )
+    box = pane.div(
+        class_="preview-viewport",
+        width=f"^{prefix}.box_width",
+        height=f"^{prefix}.box_height",
+    )
+    box.div(
+        class_="preview-frame",
+        width=f"^{prefix}.frame_width",
+        height=f"{PREVIEW_HEIGHT}px",
+        transform=f"^{prefix}.frame_scale",
+    ).htmlPreview(value=f"^{prefix}.preview", height="100%")
+
+
 def literal_text(pane, tag, text, **attributes):
     """Saved text is Data, never a Source expression (even when it starts with == or ^)."""
     path = "display_text." + uuid4().hex

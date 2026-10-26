@@ -25,10 +25,10 @@ class Page(AdminPage):
         status = home.aside(class_="guide-status", aria_label="Available features")
         status.strong("What you can do today")
         status.p(
-            "Open New page under Pages to edit a Gramlot template, write its HTML body "
-            "with Jodit, save both and render the result. Each page and resource of the site "
-            "opens in its own tab. "
-            "Multi-block, Markdown and media editing, and publication controls, are still to come."
+            "Open a page under Pages to edit every block its template declares, in Jodit, "
+            "Markdown or source, beside a preview that follows your unsaved edits. New page "
+            "creates a page with a starter template. Each page and resource opens in its own tab. "
+            "Template, CSS and media editors, and publication controls, are still to come."
         )
         start = home.section(class_="guide-section")
         start.h2("Getting started")
@@ -46,7 +46,7 @@ class Page(AdminPage):
                 (
                     "In the navigation tree on the left, open Pages and then New page. "
                     "Save the starter template, open Content to write in Jodit, save the page "
-                    "and click Render saved page."
+                    "and click Render saved page. Reopen it from Pages to edit all its blocks."
                 ),
             ),
             (

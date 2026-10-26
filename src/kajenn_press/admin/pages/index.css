@@ -102,6 +102,19 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .preview-viewport { overflow:hidden; border:1px solid var(--gramlot-border); border-radius:6px; background:white; max-width:100%; }
 .preview-frame { transform-origin:0 0; }
 
+/* Page editor: toolbar on top, block editors and the scaled preview side by side. */
+.page-toolbar { padding:14px 18px 10px; border-bottom:1px solid var(--gramlot-border); background:var(--gramlot-surface); }
+.page-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; }
+.page-heading h1 { margin:0 12px 0 0; font-size:22px; }
+.page-heading .breadcrumb { width:100%; margin:0; }
+.page-heading select { width:auto; min-width:80px; }
+.page-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
+.page-actions select { width:auto; min-width:0; min-height:32px; }
+.page-status { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:8px; font-size:13px; }
+.page-message { font-weight:600; }
+.page-blocks { padding:8px; }
+.page-preview { padding:12px; overflow:auto; background:var(--gramlot-surface-subtle); }
+
 /* Deployments: catalog release beside the release read back from storage. */
 .deploy-page .lead { max-width:900px; color:var(--gramlot-text-secondary); margin:0 0 14px; }
 .deploy-table { width:100%; border-collapse:collapse; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:6px; }

@@ -89,15 +89,22 @@ class Page(AdminPage, IndexPage):
                     (r for r in records if r["kind"] == kind), key=lambda r: caption(r).casefold()
                 ):
                     name = caption(record)
+                    # Pages open their editor; other objects open their record view.
+                    section = "page" if kind == "content" else "record"
+                    target = (
+                        "page?site=" + site + "&content="
+                        if kind == "content"
+                        else ("record?site=" + site + "&record=")
+                    )
                     group.set_item(
                         "r_" + record["record_id"],
                         None,
                         label=name,
                         title=label + " · " + name,
-                        url="record?site=" + site + "&record=" + record["record_id"],
+                        url=target + record["record_id"],
                         site=site,
                         record=record["record_id"],
-                        section="record",
+                        section=section,
                     )
                 current.set_item(key, group, label=group_label, title=group_label)
             current.set_item(
@@ -229,6 +236,14 @@ class Page(AdminPage, IndexPage):
 
     def behavior(self, shell):
         IndexPage.behavior(self, shell)
+        # A tab asks the shell to open another object, e.g. a page editor opening its template.
+        shell.dataController(
+            "var group={"
+            + ",".join(f"'{kind}':'{key}'" for key, _label, kind in GROUPS)
+            + "}[kind];"
+            "if(group&&record_id){this.SET('index.navigationSelection','site.'+group+'.r_'+record_id)}",
+            subscribe_open_object=True,
+        )
         shell.dataController(
             "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.pages.new_page' : 'home');"
             # Narrow viewports start with the navigation drawer closed.
@@ -264,13 +279,24 @@ class Page(AdminPage, IndexPage):
             url, title = "library", "Shared library"
         elif section == "deployments":
             url, title = "deployments", "Deployments"
-        elif section in {"new_page", "record"}:
+        elif section in {"new_page", "record", "page"}:
             sites = await execute_read("sites_list")
             item = next((item for item in sites if item["record_id"] == site), None)
             if not item:
                 raise DomainError("forbidden", "Site not accessible")
             if section == "new_page":
                 url, title = "author?site=" + site, item["attributes"]["name"] + " · New page"
+            elif section == "page":
+                record_id = node.attr.get("record", "")
+                records = await execute_read("records_index", scope="site:" + site)
+                record = next(
+                    (r for r in records if r["record_id"] == record_id and r["kind"] == "content"),
+                    None,
+                )
+                if record is None:
+                    raise DomainError("not_found", "Page unavailable in this site")
+                url = "page?site=" + site + "&content=" + record_id
+                title = item["attributes"]["name"] + " · " + caption(record)
             else:
                 record_id = node.attr.get("record", "")
                 records = await execute_read("records_index", scope="site:" + site)

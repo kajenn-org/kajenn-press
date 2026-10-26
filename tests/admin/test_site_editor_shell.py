@@ -60,13 +60,16 @@ def test_navigation_lists_site_records_by_kind(tmp_path):
             assert pages.get_node("new_page").attr["section"] == "new_page"
             entry = pages.get_node("r_" + content["record_id"])
             assert entry.attr["label"] == "Article"
+            # Pages open their editor; the other kinds open the record view.
             assert entry.attr["url"] == (
-                "record?site=" + site["record_id"] + "&record=" + content["record_id"]
+                "page?site=" + site["record_id"] + "&content=" + content["record_id"]
             )
             # Language variants belong to their content and get no tree entry of their own.
             assert pages.get_node("r_" + variant["record_id"]) is None
             styles = nav.get_node("site.styles").value
-            assert styles.get_node("r_" + style["record_id"]).attr["label"] == "Site styles"
+            style_entry = styles.get_node("r_" + style["record_id"])
+            assert style_entry.attr["label"] == "Site styles"
+            assert style_entry.attr["url"].startswith("record?site=")
             # The seeded template lives in the shared library, not in the site.
             assert len(nav.get_node("site.templates").value or []) == 0
             second = (await rpc(http, page, "navigation_for_site", site=other["record_id"]))[
