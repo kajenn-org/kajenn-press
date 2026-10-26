@@ -1,7 +1,7 @@
 # kpress on the Hetzner host
 
-Installs the websites manager at `https://kpress.genro.org`, with private previews at
-`https://preview.kpress.genro.org`, behind the nginx already running on the host.
+Installs the websites manager at `https://kpress.genro.com`, with private previews at
+`https://preview.kpress.genro.com`, behind the nginx already running on the host.
 Only the manager runs: no `demo` profile, no public site served from this host.
 
 Host facts (checked 2026-10-26): 46.62.203.133, x86_64, Ubuntu, nginx 1.24.0 on the
@@ -15,11 +15,12 @@ Run every command as root on the host unless stated otherwise. Never run
 
 - The deployment files are on `main` of `kajenn-org/kajenn-press`
   (`deploy/docker/compose.yaml` reading `.env`, `nginx-kpress.conf`).
-- DNS: two A records pointing to `46.62.203.133`, created in the genro.org zone:
-  `kpress.genro.org` and `preview.kpress.genro.org`. Check from any machine:
+- DNS: two A records pointing to `46.62.203.133` in the Route 53 zone `genro.com`
+  (created 2026-10-26, TTL 300): `kpress.genro.com` and `preview.kpress.genro.com`.
+  Check from any machine:
 
 ```bash
-dig +short kpress.genro.org preview.kpress.genro.org
+dig +short kpress.genro.com preview.kpress.genro.com
 ```
 
 Both lines must print `46.62.203.133` before step 3.
@@ -35,8 +36,8 @@ git clone https://github.com/kajenn-org/kajenn-press.git /opt/kpress
 ```bash
 cat > /opt/kpress/deploy/docker/.env <<'EOF'
 KPRESS_SCHEME=https
-KPRESS_MANAGEMENT_HOST=kpress.genro.org
-KPRESS_PREVIEW_HOST=preview.kpress.genro.org
+KPRESS_MANAGEMENT_HOST=kpress.genro.com
+KPRESS_PREVIEW_HOST=preview.kpress.genro.com
 KPRESS_TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 EOF
 chmod 600 /opt/kpress/deploy/docker/.env
@@ -70,8 +71,8 @@ nginx -t && systemctl reload nginx
 ```
 
 ```bash
-certbot certonly --webroot -w /var/www/kpress-acme -d kpress.genro.org
-certbot certonly --webroot -w /var/www/kpress-acme -d preview.kpress.genro.org
+certbot certonly --webroot -w /var/www/kpress-acme -d kpress.genro.com
+certbot certonly --webroot -w /var/www/kpress-acme -d preview.kpress.genro.com
 ```
 
 Each certificate lands in `/etc/letsencrypt/live/<name>/`, the paths used by
@@ -87,12 +88,12 @@ nginx -t && systemctl reload nginx
 ## 5. Check
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://kpress.genro.org/admin/
-curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://kpress.genro.org/admin/
-curl -s https://preview.kpress.genro.org/admin/
+curl -s -o /dev/null -w '%{http_code}\n' https://kpress.genro.com/admin/
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://kpress.genro.com/admin/
+curl -s https://preview.kpress.genro.com/admin/
 ```
 
-Expected: `200`; `301 https://kpress.genro.org/admin/`; `Preview unavailable`.
+Expected: `200`; `301 https://kpress.genro.com/admin/`; `Preview unavailable`.
 
 The operator password:
 
@@ -100,7 +101,7 @@ The operator password:
 cd /opt/kpress && docker compose -f deploy/docker/compose.yaml exec websites cat /secrets/operator_password
 ```
 
-Sign in at `https://kpress.genro.org/admin/` as `operator`.
+Sign in at `https://kpress.genro.com/admin/` as `operator`.
 
 ## Update
 

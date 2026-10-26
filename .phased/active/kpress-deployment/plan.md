@@ -9,9 +9,9 @@ Must not break: The existing Docker contracts (`tests/docker/`) keep passing.
 
 ## Objective
 
-Install the kajenn-press site manager (websites: administration, catalog, render worker, release storage) at `https://kpress.genro.org`, with private previews at `https://preview.kpress.genro.org`, on the owner's Hetzner server, behind the nginx already running there. The same Docker composition runs on the owner's Mac at `http://kpress.localhost:8875` and `http://preview.kpress.localhost:8875`, without a proxy.
+Install the kajenn-press site manager (websites: administration, catalog, render worker, release storage) at `https://kpress.genro.com`, with private previews at `https://preview.kpress.genro.com`, on the owner's Hetzner server, behind the nginx already running there. The same Docker composition runs on the owner's Mac at `http://kpress.localhost:8875` and `http://preview.kpress.localhost:8875`, without a proxy.
 
-Owner decisions (2026-10-26): manager address `kpress.genro.org`; preview address `preview.kpress.genro.org`; the deployment is a Docker composition usable on the Mac as well; the Hetzner server already runs nginx on ports 80/443, and kpress attaches to it.
+Owner decisions (2026-10-26): manager address `kpress.genro.com`; preview address `preview.kpress.genro.com` (first written as genro.org, corrected by the owner: genro.org is not the owner's zone; genro.com is on Route 53, where both A records were created on 2026-10-26); the deployment is a Docker composition usable on the Mac as well; the Hetzner server already runs nginx on ports 80/443, and kpress attaches to it.
 
 Starting point (main `64fcad6`, Macro 3b): `deploy/docker/compose.yaml` runs secrets, RustFS, storage-init, websites, builder and one child. Its limits for a public host:
 
@@ -52,7 +52,7 @@ Starting point (main `64fcad6`, Macro 3b): `deploy/docker/compose.yaml` runs sec
   - Files: new `deploy/docker/HETZNER.md` (runbook), `deploy/docker/README.md`.
   - Details: The runbook lists, in order: DNS records for both names pointing to the server; certificates for both names with the method the server's nginx already uses; `git clone` of kajenn-org/kajenn-press; `.env` with the two origins and the trusted proxy address; `docker compose up -d --build`; the two nginx server blocks and `nginx -t` before reload; reading the operator password; updating with `git pull` and `up -d --build`; a manual backup of the named volumes.
   - Owner actions: create the DNS records, give SSH access or run the commands; no command runs on the server without the owner's go-ahead.
-  - Done: `https://kpress.genro.org/admin/` answers with a valid certificate and the operator logs in; a preview opens on `https://preview.kpress.genro.org`; a restart (`docker compose restart`) keeps catalog, releases and password.
+  - Done: `https://kpress.genro.com/admin/` answers with a valid certificate and the operator logs in; a preview opens on `https://preview.kpress.genro.com`; a restart (`docker compose restart`) keeps catalog, releases and password.
 
 ## Server facts and owner decisions
 
