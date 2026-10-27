@@ -30,12 +30,13 @@ class ReleaseStorage:
     def node(self, path):
         return self.storage.node(f"{MOUNT}:{path}")
 
-    def qualify(self, size=262144, min_reads=200, min_seconds=0.5, budget=20.0):
+    def qualify(self, size=262144, min_reads=200, min_seconds=0.5, budget=60.0):
         """Refuse a backend that loses bytes or exposes a partially replaced object.
 
         Replacements continue for at least `min_seconds` and until the reader has
         completed `min_reads` reads during them: a short or fixed run let the reader
-        miss every replacement window.
+        miss every replacement window. The budget leaves room for a remote bucket:
+        Hetzner Object Storage answers a 256 KiB read in about 130 ms.
         """
         probe = f"qualification/{uuid4().hex}"
         raw = uuid4().bytes * (size // 16)
