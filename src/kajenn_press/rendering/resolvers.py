@@ -11,6 +11,7 @@ from typing import ClassVar
 from genro_bag.resolver import BagResolver
 
 from .contract import RenderProblem
+from .preparation import prepare_blocks
 
 
 class ConnectionResolver(BagResolver):
@@ -36,8 +37,6 @@ class ConnectionResolver(BagResolver):
         value = self.fetch(self._config)
         if not self._kw["html"]:
             return value
-        from .preparation import prepare_blocks
-
         prepared, _diagnostics = prepare_blocks(
             {"value": {"format": "html", "source": value}},
             {"value": {"format": "html", "required": False}},
