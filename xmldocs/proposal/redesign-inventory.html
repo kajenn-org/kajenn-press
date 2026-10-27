@@ -261,6 +261,36 @@ th { background: var(--panel); }
       </table></div>
       <p>Decided here for the upstream item of Phase 1: per-site maintenance and the local re-render cache belong to the Kajenn server application of kajenn-press, not to Kajenn, until another Kajenn application needs them.</p>
     </section>
+
+    <section class="section" id="administration"><h3>Administration</h3>
+      <p>Today the shell is a Gramlot <code>IndexPage</code> with a site selector, a navigation tree grouped by record kind and one iframe tab per object; separate pages edit a new page, an existing page, a resource, publishing and deployments. The redesign has Sites and Library in the tree, one tab per site with Visual editor, SEO and Published site, a drawer with Pages and Contents, and a detachable floating editor.</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/host.py:115</code><span class="muted">2026-10-27</span></div><div><code>ManagementGuard</code> admits management requests only on the management origin; the administration CSP is set at line 99, with <code>frame-ancestors 'self'</code> at line 101.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:238</code><span class="muted">2026-10-27</span></div><div><code>login_view</code> shows the Kajenn Press logo and signs in through <code>sign_in</code> (line 271) with the server's identity store.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:29</code><span class="muted">2026-10-27</span></div><div><code>scaled_preview</code> keeps a rendered page at 1280 or 375 px and scales it; the page is shown by <code>htmlPreview</code> (line 77).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/page.py:14</code><span class="muted">2026-10-27</span></div><div>The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; <code>page.js</code> calls <code>render_draft</code> for the live preview (line 177).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:28</code><span class="muted">2026-10-27</span></div><div>The shell is <code>IndexPage</code>; <code>navigation_bag</code> (line 62) builds the tree of the selected site; <code>create_site</code> (line 325) creates a site from the dialog.</div></div>
+      <p>The HTML preview runs in an iframe with an empty <code>sandbox</code> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. This becomes decision <code>d-preview-interaction</code> in Phase 7.</p>
+
+      <div class="table-wrap"><table><caption>Classification</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>host.py</code>: <code>AdminApplication</code>, <code>ManagementGuard</code>, CSP</td><td>keep</td><td>Same origin boundary; the CSP changes only if the preview interaction needs it</td><td>—</td></tr>
+        <tr><td><code>views.py</code>: <code>login_view</code>, <code>sign_in</code>, <code>sign_out</code>, <code>read</code>, <code>caption</code>, <code>literal_text</code></td><td>keep</td><td>Login, session and service reads unchanged</td><td>—</td></tr>
+        <tr><td><code>views.py</code>: <code>scaled_preview</code></td><td>change</td><td>Center of the Visual editor: rendered site with slot borders on command, navigable through its links</td><td>d-nav</td></tr>
+        <tr><td><code>views.py</code>: <code>workspace</code>, <code>detail</code>, <code>WorkspacePage</code>, <code>pages/library.py</code></td><td>replace</td><td>Library node of the tree with its own lists of templates, styles, scripts and media</td><td>d-nav, d-template-inherit</td></tr>
+        <tr><td><code>pages/index.py</code>: <code>IndexPage</code> shell, tabs</td><td>keep</td><td>Same shell with one tab per site</td><td>d-nav</td></tr>
+        <tr><td><code>pages/index.py</code>: <code>navigation_bag</code>, site selector, New site dialog</td><td>replace</td><td>Tree Sites (sites and "new site") and Library; "new site" opens an empty site tab</td><td>d-nav</td></tr>
+        <tr><td><code>pages/home.py</code></td><td>change</td><td>Guide rewritten on the new model, or removed when the site tab explains itself</td><td>—</td></tr>
+        <tr><td><code>pages/author.py</code>, <code>author.js</code></td><td>replace</td><td>Visual editor of the site tab; a new page is created from a template in the Pages tree</td><td>d-nav</td></tr>
+        <tr><td><code>pages/page.py</code>, <code>page.js</code></td><td>change</td><td>The block editors and the <code>render_draft</code> loop move into the floating editor of a slot (CodeMirror, Jodit, Preview); the floating pane is missing upstream (GC-185)</td><td>d-slot-id</td></tr>
+        <tr><td><code>pages/resource.py</code>, <code>resource.js</code></td><td>change</td><td>Template, CSS, JavaScript and media editors reached from Library and from the site's templates; block declarations become <code>kpress_slot</code> slots read from the template</td><td>d-slot-id, d-template-inherit</td></tr>
+        <tr><td><code>pages/publishing.py</code>, <code>publishing.js</code></td><td>replace</td><td>Published site tab: command bar with Publish, rollback and maintenance, iframe on the live site</td><td>d-publish-select</td></tr>
+        <tr><td><code>pages/deployments.py</code></td><td>change</td><td>Registry of Kajenn servers, used by the first Publish</td><td>—</td></tr>
+        <tr><td>New: drawer with Pages and Contents trees</td><td>—</td><td>Built on the Gramlot tree and its drag source</td><td>d-content-copy</td></tr>
+        <tr><td>New: SEO tab</td><td>—</td><td>Form per page with root defaults and search/social previews</td><td>d-seo-inherit</td></tr>
+        <tr><td>New: Help me chat</td><td>—</td><td>No existing part</td><td>d-help-budget</td></tr>
+      </table></div>
+    </section>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>
   </ul></section></main></body></html>

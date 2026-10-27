@@ -186,6 +186,36 @@
       </table>
       <p>Decided here for the upstream item of Phase 1: per-site maintenance and the local re-render cache belong to the Kajenn server application of kajenn-press, not to Kajenn, until another Kajenn application needs them.</p>
     </section>
+
+    <section title="Administration" id="administration">
+      <p>Today the shell is a Gramlot <c>IndexPage</c> with a site selector, a navigation tree grouped by record kind and one iframe tab per object; separate pages edit a new page, an existing page, a resource, publishing and deployments. The redesign has Sites and Library in the tree, one tab per site with Visual editor, SEO and Published site, a drawer with Pages and Contents, and a detachable floating editor.</p>
+
+      <fact source="src/kajenn_press/admin/host.py:115" method="read" verified="2026-10-27"><c>ManagementGuard</c> admits management requests only on the management origin; the administration CSP is set at line 99, with <c>frame-ancestors 'self'</c> at line 101.</fact>
+      <fact source="src/kajenn_press/admin/views.py:238" method="read" verified="2026-10-27"><c>login_view</c> shows the Kajenn Press logo and signs in through <c>sign_in</c> (line 271) with the server's identity store.</fact>
+      <fact source="src/kajenn_press/admin/views.py:29" method="read" verified="2026-10-27"><c>scaled_preview</c> keeps a rendered page at 1280 or 375 px and scales it; the page is shown by <c>htmlPreview</c> (line 77).</fact>
+      <fact source="src/kajenn_press/admin/pages/page.py:14" method="read" verified="2026-10-27">The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; <c>page.js</c> calls <c>render_draft</c> for the live preview (line 177).</fact>
+      <fact source="src/kajenn_press/admin/pages/index.py:28" method="read" verified="2026-10-27">The shell is <c>IndexPage</c>; <c>navigation_bag</c> (line 62) builds the tree of the selected site; <c>create_site</c> (line 325) creates a site from the dialog.</fact>
+      <p>The HTML preview runs in an iframe with an empty <c>sandbox</c> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. This becomes decision <c>d-preview-interaction</c> in Phase 7.</p>
+
+      <table title="Classification">
+        <row head="true"><cell>Item</cell><cell>Fate</cell><cell>Successor or change</cell><cell>Decision</cell></row>
+        <row><cell><c>host.py</c>: <c>AdminApplication</c>, <c>ManagementGuard</c>, CSP</cell><cell>keep</cell><cell>Same origin boundary; the CSP changes only if the preview interaction needs it</cell><cell>—</cell></row>
+        <row><cell><c>views.py</c>: <c>login_view</c>, <c>sign_in</c>, <c>sign_out</c>, <c>read</c>, <c>caption</c>, <c>literal_text</c></cell><cell>keep</cell><cell>Login, session and service reads unchanged</cell><cell>—</cell></row>
+        <row><cell><c>views.py</c>: <c>scaled_preview</c></cell><cell>change</cell><cell>Center of the Visual editor: rendered site with slot borders on command, navigable through its links</cell><cell>d-nav</cell></row>
+        <row><cell><c>views.py</c>: <c>workspace</c>, <c>detail</c>, <c>WorkspacePage</c>, <c>pages/library.py</c></cell><cell>replace</cell><cell>Library node of the tree with its own lists of templates, styles, scripts and media</cell><cell>d-nav, d-template-inherit</cell></row>
+        <row><cell><c>pages/index.py</c>: <c>IndexPage</c> shell, tabs</cell><cell>keep</cell><cell>Same shell with one tab per site</cell><cell>d-nav</cell></row>
+        <row><cell><c>pages/index.py</c>: <c>navigation_bag</c>, site selector, New site dialog</cell><cell>replace</cell><cell>Tree Sites (sites and "new site") and Library; "new site" opens an empty site tab</cell><cell>d-nav</cell></row>
+        <row><cell><c>pages/home.py</c></cell><cell>change</cell><cell>Guide rewritten on the new model, or removed when the site tab explains itself</cell><cell>—</cell></row>
+        <row><cell><c>pages/author.py</c>, <c>author.js</c></cell><cell>replace</cell><cell>Visual editor of the site tab; a new page is created from a template in the Pages tree</cell><cell>d-nav</cell></row>
+        <row><cell><c>pages/page.py</c>, <c>page.js</c></cell><cell>change</cell><cell>The block editors and the <c>render_draft</c> loop move into the floating editor of a slot (CodeMirror, Jodit, Preview); the floating pane is missing upstream (GC-185)</cell><cell>d-slot-id</cell></row>
+        <row><cell><c>pages/resource.py</c>, <c>resource.js</c></cell><cell>change</cell><cell>Template, CSS, JavaScript and media editors reached from Library and from the site's templates; block declarations become <c>kpress_slot</c> slots read from the template</cell><cell>d-slot-id, d-template-inherit</cell></row>
+        <row><cell><c>pages/publishing.py</c>, <c>publishing.js</c></cell><cell>replace</cell><cell>Published site tab: command bar with Publish, rollback and maintenance, iframe on the live site</cell><cell>d-publish-select</cell></row>
+        <row><cell><c>pages/deployments.py</c></cell><cell>change</cell><cell>Registry of Kajenn servers, used by the first Publish</cell><cell>—</cell></row>
+        <row><cell>New: drawer with Pages and Contents trees</cell><cell>—</cell><cell>Built on the Gramlot tree and its drag source</cell><cell>d-content-copy</cell></row>
+        <row><cell>New: SEO tab</cell><cell>—</cell><cell>Form per page with root defaults and search/social previews</cell><cell>d-seo-inherit</cell></row>
+        <row><cell>New: Help me chat</cell><cell>—</cell><cell>No existing part</cell><cell>d-help-budget</cell></row>
+      </table>
+    </section>
   </solution>
 
   <related>

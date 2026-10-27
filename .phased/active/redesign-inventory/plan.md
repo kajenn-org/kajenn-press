@@ -63,7 +63,9 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
   - Details: classify `publication/` (artifacts, deployments, export, gateway, grants, jobs, releases, routes, service, serving), `child.py`, `deploy/docker/` and `examples/` against per-page published objects versioned by S3, the local re-render cache (`d-rerender-cache`), Publish of changed pages (`d-publish-select`), sitemap/robots/redirects, maintenance mode, private preview before going public.
   - Done: every file classified; the fate of channels, routes, candidates, builds, releases, grants and the websites registry stated.
 
-- [ ] **Phase 5**: Administration
+- [x] **Phase 5**: Administration
+  > Done: 15 items classified in section "Administration": 4 keep, 6 change, 5 replace, plus 3 new parts (drawer, SEO tab, Help me). Login, origin guard, CSP, the IndexPage shell, the editors and the `render_draft` loop are reused; navigation, the authoring page, the library workspace and the publishing panel are replaced.
+  > Found: the preview iframe runs with an empty sandbox, so clicking or dropping on a slot needs a script inside the preview or the page in the administration document. New decision `d-preview-interaction` for Phase 7.
   - Run: opus / high
   - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Administration").
   - Details: classify `admin/host.py`, `admin/views.py` and every page in `admin/pages/` against the navigation Sites/Library (`d-nav`), the three tabs of the site tab, the drawer and the floating editor. Name the parts reused as they are (login, shell, editors, preview container).
@@ -78,7 +80,7 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
 - [ ] **Phase 7**: Open decisions and the N2 entry contract
   - Run: opus / high
   - Files: `xmldocs/proposal/site-tab-redesign.xml` (decisions), `xmldocs/proposal/redesign-inventory.xml` (section "N2 entry contract"), `.phased/roadmap.md`.
-  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
+  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output) and in Phase 5 (`d-preview-interaction`: how clicks and drops reach slots in the preview), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
   - Owner actions: one answer per decision.
   - Done: no decision `open` or `proposed` in the proposal; the N2 entry contract written; the roadmap N1 section marked completed; PR opened.
 
