@@ -136,6 +136,22 @@ def non_atomic_write(self, path, data):
             stream.flush()
 
 
+def test_qualification_retries_reads_that_s3fs_aborts_with_a_type_error(monkeypatch):
+    # s3fs 2026.9.0 turns a PreconditionFailed without a message into a TypeError.
+    original, calls = LocalStorage.read_bytes, [0]
+
+    def aborted_read(self, path):
+        if threading.current_thread() is not threading.main_thread():
+            calls[0] += 1
+            if calls[0] % 2:
+                raise TypeError("argument of type 'NoneType' is not iterable")
+        return original(self, path)
+
+    monkeypatch.setattr(LocalStorage, "read_bytes", aborted_read)
+    ReleaseStorage(None, {"protocol": "local", "base_path": tempfile.mkdtemp()})
+    assert calls[0] > 1
+
+
 def test_pointer_replacement_is_never_observed_partially(tmp_path, monkeypatch):
     # wf:contract: A concurrent reader of the configured backend observes either the old or the
     # wf:contract: new complete pointer during replacement.
