@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<!-- generated from site-tab-redesign.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kajenn Press: the site tab, page Bags and per-page publication</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press: the site tab, page Bags and per-page publication</h1><div class="doc-meta"><span>site-tab-redesign</span><span>2026-10-27</span><span>Giovanni Porcari</span><span class="tag tag-draft">draft</span></div></header><section class="part problem"><h2>Problem</h2>
+    <p>The administration mirrors the data model and the API instead of the operator's tasks. The navigation groups are record kinds and the buttons are service operations. An operator who wants a site online meets templates in Python, channels, routes, candidates, builds and generations before seeing a result.</p>
+    <p>This proposal designs the administration from the operator's point of view first. The inventory of code changes comes after the design is agreed.</p>
+  </section><section class="part current"><h2>Current state</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:18</code><span class="muted">2026-10-27</span></div><div>The navigation tree of a site has one group per record kind: Pages, Templates, Styles, Scripts, Media.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:82</code><span class="muted">2026-10-27</span></div><div>The only creation entry in the tree is New page; Templates, Styles, Scripts and Media have none.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/author.py:161</code><span class="muted">2026-10-27</span></div><div>The New page workspace supports one HTML block named <code>body</code> and opens with a Gramlot template in Python to write or save first.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/publishing.py:199</code><span class="muted">2026-10-27</span></div><div>A build needs a channel first; the page shows "Save a channel first."</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/publishing.py:213</code><span class="muted">2026-10-27</span></div><div>A page without a route cannot be selected for a build; the operator finds out only in Publishing.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/home.py:69</code><span class="muted">2026-10-27</span></div><div>Open tabs keep their original site when the site selector changes; the guide asks the operator to check the tab title.</div></div>
+  </section><section class="part solution"><h2>Proposed solution</h2>
+    <section class="section"><h3>Principles</h3>
+      <ul>
+        <li>The published image is static. Only the editor changes it.</li>
+        <li>Sites are always served by Kajenn under its rules. A fully static site is a choice, not a limit: a slot can be a dynamic iframe backed by Gramlot and the database.</li>
+        <li>Versioning is delegated to S3. Kajenn Press keeps no version history of its own.</li>
+        <li>Pages hold autonomous copies of templates, contents and assets. Every copy carries the id of its original, so all copies of an original can be found and updated on request.</li>
+        <li>Languages are out of scope for now; they come back later.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>Navigation</h3>
+      <figure class="code"><figcaption>text</figcaption><pre><code>Sites
+    kajenn.org
+    genro.com
+    acme.org
+    -new site-
+Library
+    (shared CSS, common Gramlot templates, ...)</code></pre></figure>
+      <ul>
+        <li>Selecting a site opens its site tab. Each site has its own tab.</li>
+        <li>-new site- opens an empty site tab. It can start empty or from a starting site: a source zip kept in Library.</li>
+        <li>Library holds what several sites share: CSS, common Gramlot templates, media.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>The site tab</h3>
+      <p>The site tab has three tabs: Visual editor, SEO, Published site.</p>
+
+      <section class="section"><h4>Visual editor</h4>
+        <ul>
+          <li>The center shows the site rendered as it would be served locally. It opens on the root page; the operator moves to other pages through the links, as a visitor would.</li>
+          <li>On command, a very thin border marks every slot.</li>
+          <li>A block can be detached into a floating window with three tabs: CodeMirror (source), Jodit (visual editing), Preview.</li>
+        </ul>
+        <p>A side drawer holds a tab container with two tabs.</p>
+        <ul>
+          <li><b>Pages</b>: a logical tree of all pages, managed with drag and drop. The tree organises the editing only; public URLs are independent of it. Every page expands into the named slots of its template. A page that no link reaches is still reachable here.</li>
+          <li><b>Contents</b>: the contents of the site. A content used nowhere is shown in italic grey; used once, normal; used more than once, normal with a badge giving the number of uses.</li>
+        </ul>
+        <p>A content is dragged into an empty slot, either on the slot in the rendered page or on the slot node in the Pages tree.</p>
+        <p>Every page and template in the tree shows two marks: changed since the last publication, and holding copies that are older than their original.</p>
+      </section>
+
+      <section class="section"><h4>SEO</h4>
+        <ul>
+          <li>Every page has its own SEO: title, description, public URL, canonical, robots, Open Graph and social card, JSON-LD, image alt texts.</li>
+          <li>The root page has the most complete SEO and holds the site defaults: site name, sharing image, organisation, robots. An empty field of a page takes the root value; the tab shows that value beside the empty field.</li>
+          <li>The tab shows how the page looks in a search result and in a social share.</li>
+          <li>Before publishing it reports missing or duplicate titles, missing descriptions, images without alt and broken internal links.</li>
+          <li>Changing the URL of a page creates a 301 redirect from the old URL.</li>
+          <li>The 404 page of the site is an ordinary page.</li>
+          <li>The renderer reads all SEO data from here; <code>sitemap.xml</code> and <code>robots.txt</code> are generated at every publication.</li>
+        </ul>
+      </section>
+
+      <section class="section"><h4>Published site</h4>
+        <ul>
+          <li>A command top bar and, in the center, an iframe on the published site.</li>
+          <li>The top bar holds publication, rollback and the management commands, such as maintenance mode.</li>
+          <li>Maintenance mode makes Kajenn serve a maintenance page; the editor keeps seeing the real site through a private link.</li>
+          <li>An optional step publishes to a private address of the same server first, then makes it public.</li>
+          <li>The published site can have its own administration when needed. Its content is not designed here; Kajenn, Asqueel and Gramlot can build it.</li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="section"><h3>Pages, templates and slots</h3>
+      <ul>
+        <li>A page is a Bag holding a template Bag (always a copy, however made), a contents Bag and the other assets. A page can produce its static HTML.</li>
+        <li>A template is a Bag of Gramlot source: nested containers. It declares its slots.</li>
+        <li>A slot is any object able to host content (a content pane, a div, a grid or table cell) that the author marks with <code>kpress_slot</code>. The value is <code>True</code> or a unique name. Every container has a <code>node_label</code>, set by the author or automatic, so every slot also has a path such as <code>center.info.top.tab1</code>.</li>
+        <li>Slot kinds: HTML, Markdown, dynamic iframe, content computed by a resolver. Empty slots are reported before publishing.</li>
+        <li>Templates live on three levels: Library (generic), site, page. A site template inherits from a Library template; the operator chooses linked (Library changes reach it) or independent copy. A linked template is the Library Bag plus the site's additions, removals and changes of nodes. A page-local customised copy is a later option.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>Copies and updates</h3>
+      <ol>
+        <li>The operator edits a content, a template or an asset and sees the result.</li>
+        <li>Update shows the pages that hold a copy of it and the differences. Pages whose copy has local changes are flagged and start unselected.</li>
+        <li>The confirmed pages get the new copy and are rendered again. Update and publish can run as one step, so changing a shared CSS is one operation.</li>
+      </ol>
+      <p>The badge in Contents counts the copies that carry the same original id.</p>
+    </section>
+
+    <section class="section"><h3>Storage, publication and rendering</h3>
+      <div class="table-wrap"><table><caption>Objects on S3</caption>
+        <tr><th>Object</th><th>Unit</th><th>Content</th><th>Versioning</th></tr>
+        <tr><td>Source</td><td>one per site</td><td>one zipped Bag with everything; the editor unpacks it, works and zips it again</td><td>one S3 version per deliberate save</td></tr>
+        <tr><td>Published page</td><td>one per page</td><td>the page Bag, possibly zipped: sources in one branch, pre-rendered pure HTML in a parallel branch</td><td>one S3 version per publication of the page</td></tr>
+      </table></div>
+      <ul>
+        <li>Rolling back a page restores the previous S3 version of its object. Rolling back the site restores a previous source zip and republishes the pages.</li>
+        <li>A complete site travels as one source zip: move, backup, handover, starting site.</li>
+        <li>Publish lists the pages changed since the last publication, all selected; the operator can unselect some and confirms.</li>
+        <li>A published page holds what is needed to render it again at any time. Its Python template can read the database or do other work at render time through resolvers, with a cache of, for example, 10 minutes.</li>
+        <li>Re-rendered HTML is stored on the local filesystem of the serving server, not on S3. S3 holds only what the editor published. A new publication of a page discards its local copy.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>First publication</h3>
+      <ol>
+        <li>Choose the Kajenn server among the ones registered in Kajenn Press.</li>
+        <li>Enter the domain and whether <code>www</code> is served too.</li>
+        <li>DNS: with the provider's credentials Kajenn Press creates the records; without them it shows the exact records to create and checks when they become visible.</li>
+        <li>The TLS certificate is automatic, because the server is a Kajenn server.</li>
+        <li>All pages are published, the address is checked and the site appears in the Published site iframe.</li>
+      </ol>
+      <p>Whether a Python process is needed to re-render follows from the presence of resolvers in the templates; the operator is not asked.</p>
+    </section>
+
+    <section class="section"><h3>Help me</h3>
+      <p>The site tab has a Help me button that opens a chat with Sonnet. Sonnet knows how Kajenn Press works, helps the user say what to create, offers fonts and colours, draws SVG elements such as logo and icons, and creates everything needed.</p>
+      <ul>
+        <li>Choices appear as clickable previews: palettes, font pairs, logo versions.</li>
+        <li>Sonnet works through the MCP operations; the result is ordinary pages, templates and contents, editable by hand.</li>
+        <li>The visual editor shows the site taking shape beside the chat.</li>
+        <li>Help me is available on a new site and on an existing one.</li>
+        <li>The conversation is kept with the site and can be resumed.</li>
+        <li>Sonnet creates and saves; publishing stays an operator command.</li>
+        <li>One API key per Kajenn Press installation, part of the standard configuration.</li>
+        <li>Tokens and cost are shown per chat and in total per site, for information only: no budget, no limit while the tool is used internally.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>Editing by several people</h3>
+      <p>A site is edited by one person at a time. Whoever opens the editor takes the site; the others see who holds it and can only look. This prevents a second editor's zip from overwriting the first one's work.</p>
+    </section>
+  </section><section class="part decisions"><h2>Decisions</h2>
+    <div class="box decision decision-decided" id="d-nav"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-nav</span></div><div class="question">How does the operator choose and create a site?</div><ol class="options"><li id="d-nav-tree" class="chosen"><b>Sites and Library in the navigation tree; one tab per site</b></li><li id="d-nav-selector"><b>Site selector in the top bar and New site dialog (today)</b></li></ol><div class="choice"><b>Choice: Sites and Library in the navigation tree; one tab per site</b><span class="muted"> (GP, 2026-10-27)</span><div>Everything about a site lives in its tab.</div></div></div>
+    <div class="box decision decision-decided" id="d-content-copy"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-content-copy</span></div><div class="question">Does a page hold references to contents or copies?</div><ol class="options"><li id="d-content-copy-ref"><b>References</b><p>A change shows everywhere at once.</p></li><li id="d-content-copy-copy" class="chosen"><b>Autonomous copies carrying the original id</b><p>The operator edits, checks, then asks to update the copies.</p></li></ol><div class="choice"><b>Choice: Autonomous copies carrying the original id</b><span class="muted"> (GP, 2026-10-27)</span><div>Changes never propagate by accident.</div></div></div>
+    <div class="box decision decision-decided" id="d-slot-id"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-slot-id</span></div><div class="question">How is a slot identified?</div><ol class="options"><li id="d-slot-id-path"><b>Path of node labels</b></li><li id="d-slot-id-attr" class="chosen"><b>kpress_slot attribute declared by the template, True or a unique name</b></li></ol><div class="choice"><b>Choice: kpress_slot attribute declared by the template, True or a unique name</b><span class="muted"> (GP, 2026-10-27)</span><div>Every template declares its slots.</div></div></div>
+    <div class="box decision decision-decided" id="d-template-inherit"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-template-inherit</span></div><div class="question">Does a site template follow later changes of its Library template?</div><ol class="options"><li id="d-template-inherit-linked"><b>Linked</b></li><li id="d-template-inherit-copy"><b>Independent copy</b></li><li id="d-template-inherit-choose" class="chosen"><b>The operator chooses</b></li></ol><div class="choice"><b>Choice: The operator chooses</b><span class="muted"> (GP, 2026-10-27)</span><div>A linked template is the Library Bag plus the site's node changes.</div></div></div>
+    <div class="box decision decision-decided" id="d-publish-unit"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-publish-unit</span></div><div class="question">What is published and how is it versioned?</div><ol class="options"><li id="d-publish-unit-site"><b>One object per site</b></li><li id="d-publish-unit-page" class="chosen"><b>One object per page; source as one zip per site</b></li></ol><div class="choice"><b>Choice: One object per page; source as one zip per site</b><span class="muted"> (GP, 2026-10-27)</span><div>S3 versions each page; the site travels as one zip.</div></div></div>
+    <div class="box decision decision-decided" id="d-rerender-cache"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-rerender-cache</span></div><div class="question">Where does re-rendered HTML go?</div><ol class="options"><li id="d-rerender-cache-s3"><b>Written back to S3</b><p>Every re-render creates a new S3 version.</p></li><li id="d-rerender-cache-local" class="chosen"><b>Local filesystem of the serving server</b></li></ol><div class="choice"><b>Choice: Local filesystem of the serving server</b><span class="muted"> (GP, 2026-10-27)</span><div>S3 holds only what the editor published.</div></div></div>
+    <div class="box decision decision-decided" id="d-seo-inherit"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-seo-inherit</span></div><div class="question">Where does an empty SEO field of a page take its value?</div><ol class="options"><li id="d-seo-inherit-root" class="chosen"><b>From the root page</b></li><li id="d-seo-inherit-parent"><b>From the page above in the tree</b><p>Moving a page in the tree would change its published SEO.</p></li></ol><div class="choice"><b>Choice: From the root page</b><span class="muted"> (GP, 2026-10-27)</span><div>The tree is for editing only.</div></div></div>
+    <div class="box decision decision-decided" id="d-publish-select"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-publish-select</span></div><div class="question">Which pages does Publish publish?</div><ol class="options"><li id="d-publish-select-changed" class="chosen"><b>Changed pages, all selected, the operator can unselect</b></li><li id="d-publish-select-all"><b>All pages</b></li></ol><div class="choice"><b>Choice: Changed pages, all selected, the operator can unselect</b><span class="muted"> (GP, 2026-10-27)</span><div>One click in the usual case; a page not ready can stay back.</div></div></div>
+    <div class="box decision decision-decided" id="d-help-budget"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-help-budget</span></div><div class="question">Does Help me limit token consumption?</div><ol class="options"><li id="d-help-budget-info" class="chosen"><b>Information only</b></li><li id="d-help-budget-limit"><b>Budget with a limit</b></li></ol><div class="choice"><b>Choice: Information only</b><span class="muted"> (GP, 2026-10-27)</span><div>The tool is used internally for now.</div></div></div>
+    <div class="box decision decision-proposed" id="d-editing-lock"><div class="box-head"><span class="tag tag-proposed">proposed</span><span class="muted">d-editing-lock</span></div><div class="question">How do two people edit the same site?</div><ol class="options"><li id="d-editing-lock-one"><b>One editor at a time per site</b></li><li id="d-editing-lock-merge"><b>Concurrent editing with merge of the source zip</b></li></ol></div>
+    <div class="box decision decision-open" id="d-update-local"><div class="box-head"><span class="tag tag-open">open</span><span class="muted">d-update-local</span></div><div class="question">When a page changed its copy of a content, does Update overwrite it, skip it or ask?</div></div>
+    <div class="box decision decision-open" id="d-template-conflict"><div class="box-head"><span class="tag tag-open">open</span><span class="muted">d-template-conflict</span></div><div class="question">When a Library template changes a node that a linked site template changed or removed, which version wins?</div></div>
+    <div class="box decision decision-open" id="d-slot-removed"><div class="box-head"><span class="tag tag-open">open</span><span class="muted">d-slot-removed</span></div><div class="question">What do pages show when their template no longer declares a slot that held a content?</div></div>
+    <div class="box decision decision-open" id="d-template-switch"><div class="box-head"><span class="tag tag-open">open</span><span class="muted">d-template-switch</span></div><div class="question">When a page switches template, do slots with the same name keep their contents?</div></div>
+    <div class="box decision decision-open" id="d-dynamic-seo"><div class="box-head"><span class="tag tag-open">open</span><span class="muted">d-dynamic-seo</span></div><div class="question">Content in dynamic iframes is not indexed. Must content that matters for SEO always come from resolvers in the static HTML?</div></div>
+  </section><section class="part consequences"><h2>Consequences</h2>
+    <p>This proposal replaces the navigation and the editors of <a class="ref" href="../proposal/site-editor.html#site-editor"></a>: the site selector, the per-kind groups, the New page workspace and the publishing panel.</p>
+    <p>The publication model changes: channels, routes, candidates, builds and releases give way to per-page published objects versioned by S3 and a source zip per site. The catalog's own revision history is no longer the versioning mechanism.</p>
+    <p>A shared asset copied into every page costs storage per page, and changing it means updating and republishing every page that holds it.</p>
+    <p>The inventory of code changes is a separate step, after this design is agreed.</p>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../proposal/site-editor.html">proposal/site-editor</a> — Kajenn Press administration as a site editor</li>
+  </ul></section></main></body></html>

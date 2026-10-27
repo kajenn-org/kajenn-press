@@ -1,0 +1,19 @@
+{
+  "sites": [
+    {
+      "site": 1,
+      "navigation": true,
+      "css": true,
+      "png": true,
+      "essential_without_js": true
+    },
+    {
+      "site": 2,
+      "navigation": true,
+      "css": true,
+      "png": true,
+      "essential_without_js": true
+    }
+  ],
+  "revoked_pages_assets_get_head": true
+}

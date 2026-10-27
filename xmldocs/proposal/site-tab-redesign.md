@@ -1,0 +1,202 @@
+<!-- generated from site-tab-redesign.xml by xmldocs: do not edit, edit the XML -->
+
+## Kajenn Press: the site tab, page Bags and per-page publication
+*Proposal · site-tab-redesign · 2026-10-27 · draft*
+
+### Problem
+
+The administration mirrors the data model and the API instead of the operator's tasks. The navigation groups are record kinds and the buttons are service operations. An operator who wants a site online meets templates in Python, channels, routes, candidates, builds and generations before seeing a result.
+
+This proposal designs the administration from the operator's point of view first. The inventory of code changes comes after the design is agreed.
+
+### Current state
+
+- `READ` `src/kajenn_press/admin/pages/index.py:18` · 2026-10-27 — The navigation tree of a site has one group per record kind: Pages, Templates, Styles, Scripts, Media.
+- `READ` `src/kajenn_press/admin/pages/index.py:82` · 2026-10-27 — The only creation entry in the tree is New page; Templates, Styles, Scripts and Media have none.
+- `READ` `src/kajenn_press/admin/pages/author.py:161` · 2026-10-27 — The New page workspace supports one HTML block named `body` and opens with a Gramlot template in Python to write or save first.
+- `READ` `src/kajenn_press/admin/pages/publishing.py:199` · 2026-10-27 — A build needs a channel first; the page shows "Save a channel first."
+- `READ` `src/kajenn_press/admin/pages/publishing.py:213` · 2026-10-27 — A page without a route cannot be selected for a build; the operator finds out only in Publishing.
+- `READ` `src/kajenn_press/admin/pages/home.py:69` · 2026-10-27 — Open tabs keep their original site when the site selector changes; the guide asks the operator to check the tab title.
+
+### Proposed solution
+
+#### Principles
+
+- The published image is static. Only the editor changes it.
+- Sites are always served by Kajenn under its rules. A fully static site is a choice, not a limit: a slot can be a dynamic iframe backed by Gramlot and the database.
+- Versioning is delegated to S3. Kajenn Press keeps no version history of its own.
+- Pages hold autonomous copies of templates, contents and assets. Every copy carries the id of its original, so all copies of an original can be found and updated on request.
+- Languages are out of scope for now; they come back later.
+
+#### Navigation
+
+```text
+Sites
+    kajenn.org
+    genro.com
+    acme.org
+    -new site-
+Library
+    (shared CSS, common Gramlot templates, ...)
+```
+
+- Selecting a site opens its site tab. Each site has its own tab.
+- -new site- opens an empty site tab. It can start empty or from a starting site: a source zip kept in Library.
+- Library holds what several sites share: CSS, common Gramlot templates, media.
+
+#### The site tab
+
+The site tab has three tabs: Visual editor, SEO, Published site.
+
+#### Visual editor
+
+- The center shows the site rendered as it would be served locally. It opens on the root page; the operator moves to other pages through the links, as a visitor would.
+- On command, a very thin border marks every slot.
+- A block can be detached into a floating window with three tabs: CodeMirror (source), Jodit (visual editing), Preview.
+
+A side drawer holds a tab container with two tabs.
+
+- **Pages**: a logical tree of all pages, managed with drag and drop. The tree organises the editing only; public URLs are independent of it. Every page expands into the named slots of its template. A page that no link reaches is still reachable here.
+- **Contents**: the contents of the site. A content used nowhere is shown in italic grey; used once, normal; used more than once, normal with a badge giving the number of uses.
+
+A content is dragged into an empty slot, either on the slot in the rendered page or on the slot node in the Pages tree.
+
+Every page and template in the tree shows two marks: changed since the last publication, and holding copies that are older than their original.
+
+#### SEO
+
+- Every page has its own SEO: title, description, public URL, canonical, robots, Open Graph and social card, JSON-LD, image alt texts.
+- The root page has the most complete SEO and holds the site defaults: site name, sharing image, organisation, robots. An empty field of a page takes the root value; the tab shows that value beside the empty field.
+- The tab shows how the page looks in a search result and in a social share.
+- Before publishing it reports missing or duplicate titles, missing descriptions, images without alt and broken internal links.
+- Changing the URL of a page creates a 301 redirect from the old URL.
+- The 404 page of the site is an ordinary page.
+- The renderer reads all SEO data from here; `sitemap.xml` and `robots.txt` are generated at every publication.
+
+#### Published site
+
+- A command top bar and, in the center, an iframe on the published site.
+- The top bar holds publication, rollback and the management commands, such as maintenance mode.
+- Maintenance mode makes Kajenn serve a maintenance page; the editor keeps seeing the real site through a private link.
+- An optional step publishes to a private address of the same server first, then makes it public.
+- The published site can have its own administration when needed. Its content is not designed here; Kajenn, Asqueel and Gramlot can build it.
+
+#### Pages, templates and slots
+
+- A page is a Bag holding a template Bag (always a copy, however made), a contents Bag and the other assets. A page can produce its static HTML.
+- A template is a Bag of Gramlot source: nested containers. It declares its slots.
+- A slot is any object able to host content (a content pane, a div, a grid or table cell) that the author marks with `kpress_slot`. The value is `True` or a unique name. Every container has a `node_label`, set by the author or automatic, so every slot also has a path such as `center.info.top.tab1`.
+- Slot kinds: HTML, Markdown, dynamic iframe, content computed by a resolver. Empty slots are reported before publishing.
+- Templates live on three levels: Library (generic), site, page. A site template inherits from a Library template; the operator chooses linked (Library changes reach it) or independent copy. A linked template is the Library Bag plus the site's additions, removals and changes of nodes. A page-local customised copy is a later option.
+
+#### Copies and updates
+
+1. The operator edits a content, a template or an asset and sees the result.
+2. Update shows the pages that hold a copy of it and the differences. Pages whose copy has local changes are flagged and start unselected.
+3. The confirmed pages get the new copy and are rendered again. Update and publish can run as one step, so changing a shared CSS is one operation.
+
+The badge in Contents counts the copies that carry the same original id.
+
+#### Storage, publication and rendering
+
+*Objects on S3*
+
+| Object | Unit | Content | Versioning |
+|---|---|---|---|
+| Source | one per site | one zipped Bag with everything; the editor unpacks it, works and zips it again | one S3 version per deliberate save |
+| Published page | one per page | the page Bag, possibly zipped: sources in one branch, pre-rendered pure HTML in a parallel branch | one S3 version per publication of the page |
+
+- Rolling back a page restores the previous S3 version of its object. Rolling back the site restores a previous source zip and republishes the pages.
+- A complete site travels as one source zip: move, backup, handover, starting site.
+- Publish lists the pages changed since the last publication, all selected; the operator can unselect some and confirms.
+- A published page holds what is needed to render it again at any time. Its Python template can read the database or do other work at render time through resolvers, with a cache of, for example, 10 minutes.
+- Re-rendered HTML is stored on the local filesystem of the serving server, not on S3. S3 holds only what the editor published. A new publication of a page discards its local copy.
+
+#### First publication
+
+1. Choose the Kajenn server among the ones registered in Kajenn Press.
+2. Enter the domain and whether `www` is served too.
+3. DNS: with the provider's credentials Kajenn Press creates the records; without them it shows the exact records to create and checks when they become visible.
+4. The TLS certificate is automatic, because the server is a Kajenn server.
+5. All pages are published, the address is checked and the site appears in the Published site iframe.
+
+Whether a Python process is needed to re-render follows from the presence of resolvers in the templates; the operator is not asked.
+
+#### Help me
+
+The site tab has a Help me button that opens a chat with Sonnet. Sonnet knows how Kajenn Press works, helps the user say what to create, offers fonts and colours, draws SVG elements such as logo and icons, and creates everything needed.
+
+- Choices appear as clickable previews: palettes, font pairs, logo versions.
+- Sonnet works through the MCP operations; the result is ordinary pages, templates and contents, editable by hand.
+- The visual editor shows the site taking shape beside the chat.
+- Help me is available on a new site and on an existing one.
+- The conversation is kept with the site and can be resumed.
+- Sonnet creates and saves; publishing stays an operator command.
+- One API key per Kajenn Press installation, part of the standard configuration.
+- Tokens and cost are shown per chat and in total per site, for information only: no budget, no limit while the tool is used internally.
+
+#### Editing by several people
+
+A site is edited by one person at a time. Whoever opens the editor takes the site; the others see who holds it and can only look. This prevents a second editor's zip from overwriting the first one's work.
+
+### Decisions
+
+- **d-nav** `decided` — How does the operator choose and create a site?
+   1. **Sites and Library in the navigation tree; one tab per site**
+   2. **Site selector in the top bar and New site dialog (today)**
+   → Choice: **Sites and Library in the navigation tree; one tab per site** (GP, 2026-10-27) — Everything about a site lives in its tab.
+- **d-content-copy** `decided` — Does a page hold references to contents or copies?
+   1. **References**: A change shows everywhere at once.
+   2. **Autonomous copies carrying the original id**: The operator edits, checks, then asks to update the copies.
+   → Choice: **Autonomous copies carrying the original id** (GP, 2026-10-27) — Changes never propagate by accident.
+- **d-slot-id** `decided` — How is a slot identified?
+   1. **Path of node labels**
+   2. **kpress_slot attribute declared by the template, True or a unique name**
+   → Choice: **kpress_slot attribute declared by the template, True or a unique name** (GP, 2026-10-27) — Every template declares its slots.
+- **d-template-inherit** `decided` — Does a site template follow later changes of its Library template?
+   1. **Linked**
+   2. **Independent copy**
+   3. **The operator chooses**
+   → Choice: **The operator chooses** (GP, 2026-10-27) — A linked template is the Library Bag plus the site's node changes.
+- **d-publish-unit** `decided` — What is published and how is it versioned?
+   1. **One object per site**
+   2. **One object per page; source as one zip per site**
+   → Choice: **One object per page; source as one zip per site** (GP, 2026-10-27) — S3 versions each page; the site travels as one zip.
+- **d-rerender-cache** `decided` — Where does re-rendered HTML go?
+   1. **Written back to S3**: Every re-render creates a new S3 version.
+   2. **Local filesystem of the serving server**
+   → Choice: **Local filesystem of the serving server** (GP, 2026-10-27) — S3 holds only what the editor published.
+- **d-seo-inherit** `decided` — Where does an empty SEO field of a page take its value?
+   1. **From the root page**
+   2. **From the page above in the tree**: Moving a page in the tree would change its published SEO.
+   → Choice: **From the root page** (GP, 2026-10-27) — The tree is for editing only.
+- **d-publish-select** `decided` — Which pages does Publish publish?
+   1. **Changed pages, all selected, the operator can unselect**
+   2. **All pages**
+   → Choice: **Changed pages, all selected, the operator can unselect** (GP, 2026-10-27) — One click in the usual case; a page not ready can stay back.
+- **d-help-budget** `decided` — Does Help me limit token consumption?
+   1. **Information only**
+   2. **Budget with a limit**
+   → Choice: **Information only** (GP, 2026-10-27) — The tool is used internally for now.
+- **d-editing-lock** `proposed` — How do two people edit the same site?
+   1. **One editor at a time per site**
+   2. **Concurrent editing with merge of the source zip**
+- **d-update-local** `open` — When a page changed its copy of a content, does Update overwrite it, skip it or ask?
+- **d-template-conflict** `open` — When a Library template changes a node that a linked site template changed or removed, which version wins?
+- **d-slot-removed** `open` — What do pages show when their template no longer declares a slot that held a content?
+- **d-template-switch** `open` — When a page switches template, do slots with the same name keep their contents?
+- **d-dynamic-seo** `open` — Content in dynamic iframes is not indexed. Must content that matters for SEO always come from resolvers in the static HTML?
+
+### Consequences
+
+This proposal replaces the navigation and the editors of  (→ proposal/site-editor#site-editor): the site selector, the per-kind groups, the New page workspace and the publishing panel.
+
+The publication model changes: channels, routes, candidates, builds and releases give way to per-page published objects versioned by S3 and a source zip per site. The catalog's own revision history is no longer the versioning mechanism.
+
+A shared asset copied into every page costs storage per page, and changing it means updating and republishing every page that holds it.
+
+The inventory of code changes is a separate step, after this design is agreed.
+
+### Related documents
+
+- `proposal/site-editor` — Kajenn Press administration as a site editor

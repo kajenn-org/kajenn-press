@@ -17,3 +17,5 @@
 - The frame-ancestors policy becomes self for admin pages to allow the requested same-origin iframes. Index panel validates the client navigation node and derives its iframe URL from an authorized site/known section; it never trusts a client-supplied URL. Preview/public isolation remains unchanged.
 
 - The original approved mockup is preserved as mockups/phase-1-before-gallery.html. phase-1.html now applies the owner's explicit visual amendments (toolbar site selector + New site, tree and iframe tabs) to the static reference. No extra approval gate is invented for changes the owner directly requested.
+
+- Retired 2026-10-27: the owner redesigned the administration and the publication model (`xmldocs/proposal/site-tab-redesign.xml`). Phases 2-4 and `tests/deferred/` are not carried forward. See `.phased/roadmap.md`.
