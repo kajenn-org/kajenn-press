@@ -124,6 +124,8 @@ sequenceDiagram
 
 ### Consequences
 
+Implemented in kajenn-org/kajenn-press#5. Superseded on 2026-10-27 by  (→ proposal/site-tab-redesign#site-tab-redesign), which replaces its navigation, editors and publishing panel.
+
 Each `render_draft` call starts a worker process, with the configured timeout of 15 seconds by default. The delay of about 800 ms limits the calls while typing.
 
 The `data:` URLs enlarge the preview HTML by the size of the CSS and media of the page, up to the existing input limit of 32 MiB.

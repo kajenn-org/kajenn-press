@@ -1,0 +1,22 @@
+{
+  "installed_parent": "/tmp/kajenn-macro2-editorial-env/bin/python",
+  "sites": [
+    {
+      "site": 1,
+      "preview": true,
+      "public_without_js": true,
+      "language_only_update": true,
+      "retained_assets": true,
+      "exact_rollback": true
+    },
+    {
+      "site": 2,
+      "preview": true,
+      "public_without_js": true,
+      "language_only_update": true,
+      "retained_assets": true,
+      "exact_rollback": true
+    }
+  ],
+  "restart_preserves_channel_ids_and_bytes": true
+}

@@ -1,94 +1,98 @@
 # kajenn-press implementation roadmap
 
-Status: updated 2026-10-25. Macros 1, 2 and 3b are finalized on main. Macro 3 is suspended after its Phase 1 work; its plan is kept in `.phased/suspended/gramlot-administration/`. No plan is active.
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. The active plan is `kpress-deployment` (Phase 3, waiting for the owner's checks).
 
-The full product scope remains `docs/01-visione.md` through `docs/08-decisioni.md`. Filesystem/Genro Storage is the initial implementation; Asqueel is a future catalog backend. This roadmap does not require a database, shrink the product to a file server, or claim an upstream integration is already ready.
+The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
-## Macro 1 (completed): Filesystem catalog and REST/MCP management
+## Completed history
 
-- Objective: Establish durable local persistence and a shared service surface that later UI, rendering and LLM clients can consume.
-- Starts from: Design-only repository, approved product decisions and inspected Kajenn/Genro Storage source examples.
-- Ends at: A locally runnable application manages sites, language variants, shared drafts, named-block contracts, exact source revisions, media and generic-resource copies through authenticated REST and MCP; restart, conflict and recovery contracts pass without a database.
-- Delivers: The two completed phases, 19 contract tests and API/setup documentation, consolidated on main as `b50a5b5`. Archived plan and execution evidence remain on `codex/filesystem-storage` at `.phased/done/filesystem-storage/`.
-- Consumes: Public Kajenn application/router/auth/storage interfaces and Genro Storage local payload access; local filesystem primitives for the explicit catalog backend.
-- Requires of earlier work: Preserve all approved product decisions and document static evidence separately from executed qualification.
-- Open decisions: No unresolved product choice is delegated to this macro. Concrete Python names are implementation proposals reviewed through the interactive gate; a framework capability gap is a reported dependency, not authority to weaken the tests.
+### Macro 1 (completed): Filesystem catalog and REST/MCP management
 
-## Macro 2 (completed): Templates, static rendering, preview and coherent publication
+- Delivered: durable local catalog of sites, variants, drafts, named-block contracts, exact source revisions, media and resource copies through authenticated REST and MCP; restart, conflict and recovery contracts without a database.
+- On main as `b50a5b5`. Archived plan: [filesystem-storage](done/filesystem-storage/plan.md).
 
-- Objective: Turn selected revisions into complete public HTML, private previews and reversible releases using Gramlot or HtmlBuilder templates and Data.
-- Starts from: Macro 1's reliable catalog, exact source reads, source-format/block declarations, resource scopes, authentication and readiness diagnostics.
-- Ends at: A selected site can be rendered, inspected privately, activated and rolled back as a coherent release. Each language is selected independently; incomplete required blocks cannot be published. Essential editorial text, URLs, canonical, alternate links and sitemap are correct without browser JavaScript.
-- Delivers: Named-block preparation, template execution, CSS/JS/media dependency closure, artifact manifests, route/SEO generation, preview grants, build diagnostics and release lifecycle through the common services/REST/MCP.
-- Consumes: Macro 1 generations, receipts, immutable source/resource references, template declarations, language identities and grants; qualified Gramlot/HtmlBuilder renderers.
-- Requires of earlier work: Source text and format survive unchanged; metadata/text are distinguishable from prepared HTML; dependency references are exact and private; the backend supports atomic catalog changes and durable job/intention records.
-- Detailed plan: `codex/rendering-publication:.phased/done/rendering-publication/plan.md`, approved 2026-10-21: three interactive phases in this chat, with plan-time contract skeletons. Trusted team code runs in a separate worker; Markdown may contain filtered HTML; all language URLs are prefixed; private preview uses expiring revocable links on a separate origin. Qualify both installed renderers and the preparation profile before building their consumers; no database is introduced.
+### Macro 2 (completed): Templates, static rendering, preview and coherent publication
 
-- Implementation evidence: Macro 2 phases 1–3 implement rendering, private previews, conditional activation and rollback. All three phases are closed. Extended quality-check completed at 7b65ffd, with two corrections verified at b7d4195, 102 passing tests and a repeated installed two-engine browser cycle. Finalized and pushed to main as `3bfe65fcebd0f92e87ff7835e6feb1f9cce4a289`. Archived plan and phase-3 evidence remain on `codex/rendering-publication` under `.phased/done/rendering-publication/`.
+- Delivered: rendering of Gramlot/HtmlBuilder templates in a separate worker, private preview grants, channels, conditional activation and rollback of complete releases.
+- On main as `3bfe65f`. Archived plan: [rendering-publication](done/rendering-publication/plan.md).
 
-## Macro 3 (suspended after Phase 1): Gramlot administration and restored editors
+### Macro 3b (completed): websites and release serving from Genro Storage
 
-- Objective: Make the services usable through a coherent multi-site editorial and source-authoring UI, proven by building kajenn.org with it.
-- Starts from: Macro 2's complete preview/publication service cycle and Macro 1's service contracts.
-- Ends at: A team can select a site, manage its pages and routes, edit named HTML/Markdown blocks and template/CSS/JS sources, upload PNG resources, inspect a preview and publish/rollback through Gramlot without UI-only business rules. kajenn.org, the third sibling of gramlot.org and asqueel.org with Kajenn colors and logo, is built entirely through the administration UI; its deployment and DNS are not part of this macro.
-- Delivers: Site/page/resource workspaces, the site page list in template Data for navigation, source tabs, Data inspection, editor integration, save/conflict feedback and publication views; the kajenn.org catalog with library template and CSS; browser and visual acceptance evidence.
-- Consumes: Macro 1/2 schemas, exact sources, diagnostics, grants, previews and release operations; the upstream Gramlot editor-control and PoC restoration work.
-- Approved detailed plan: [gramlot-administration](suspended/gramlot-administration/plan.md), four phases (rewritten by the owner on 2026-10-23): authenticated multisite administration; site pages, navigation Data and editors; publication workspace; kajenn.org built through the UI. Explicit Save with dirty-exit protection; per-site navigation and separate library; PNG resources referenced by exact revision. Each phase has plan-owned contract skeletons, a mockup and browser/human acceptance checks.
-- Upstream evidence (2026-10-22): CodeMirror, Jodit and ProseMirror already exist; 27 focused editor tests passed. Embedded Markdown HTML is supported via `markdownPreview.allowHtml` in source, Python grammar and shipped bundle, filtered with DOMPurify without changing source. Newer Gramlot/adapter release branches contain per-request identity support; the combined new-editor/adapter artifact still requires application qualification. The static nh3 render profile remains separate. No upstream port or private API workaround is authorized.
-- Requires of earlier work: Public common services, exact source/revision/generation contracts, discoverable template block declarations, current-grant enforcement and private artifact separation. Add authorized read projections where UI discovery is absent; expose new application functions through REST/MCP as well.
-- Scope boundary: Source/Data-native administration and generic editors. Deferred from this macro on 2026-10-23, with their contracts kept verbatim in the plan's `tests/deferred/`: conflict comparison/resolution UI, revision diff/restore UI, per-variant media references, the media picker and block insertion, JPEG/WebP verification with Pillow. Cursor-aware rich insertion, Typst, component authoring, advanced editorial organization (menus as records, taxonomies) and automatic image derivatives are not added implicitly. Existing later-macro contracts remain in force.
-- Open decisions: No unresolved product choice is delegated to execution. Visual presentation is negotiated through each phase's mockup. A missing compatible public framework capability is a qualification stop with a reproducible upstream dependency, not permission to weaken contracts or edit sibling repositories.
+- Delivered: export of active releases to a Genro Storage mount, the lightweight child `StaticSiteServerApplication`, the websites registry, the Docker composition with RustFS or a shared volume.
+- On main through kajenn-org/kajenn-press#1 as `64fcad6`. Archived plan: [websites-release-serving](done/websites-release-serving/plan.md). Deferred findings C (internal `http` serving address), E (child object cache) and F (storage qualification on a real S3) stay open; F was addressed for Hetzner Object Storage by #6 and #7.
 
-## Macro 3b (completed): websites and release serving from Genro Storage
+### Macro 3 (retired 2026-10-27): Gramlot administration and restored editors
 
-- Objective: Separate where a site is edited and built from where it is served, so that websites can manage installations inside itself and children deployed elsewhere.
-- Starts from: Macro 2's immutable releases and conditional activation; Macro 3 Phase 1 administration (authenticated multisite shell, Create page, fixes of 2026-10-23); kajenn.org built through MCP only.
-- Ends at: Activated releases and their active pointer are exported to a configurable Genro Storage mount; a lightweight child application serves a site's active release from that mount without catalog, Gramlot or render worker; websites keeps a registry of children and shows which release each serves; a local Docker composition serves kajenn.org from a child with RustFS as S3-compatible release storage, and then from a shared volume with configuration changes only once genro-org/genro-storage#83 is fixed.
-- Owner decisions (2026-10-24): websites.genro.com is the manager's target address; websites manages installations (a catalog with one or more sites and their shared library); installations inside websites and with their own deployment coexist; shared resources stay shared inside an installation and are copied with provenance across installations; release storage goes through Genro Storage, configured per deployment.
-- Detailed plan: [websites-release-serving](done/websites-release-serving/plan.md), five phases: release export; child serving; websites registry and deployment view; Docker composition with RustFS; shared-volume configuration.
-- Implementation evidence: all five phases closed; extended quality check and final touch recorded in the plan's notes. Finalized on main through kajenn-org/kajenn-press#1 as `64fcad67a41a32961ee3e62b36cbced24bb2a86a`; the squash also carries the Macro 3 Phase 1 administration code. Archived plan and evidence remain on the local branch `codex/websites-release-serving` under `.phased/done/websites-release-serving/`. Deferred findings C (internal `http` serving address), E (child object cache) and F (storage qualification on a real S3) stay open.
-- Outside this macro: production DNS and deployment, TLS, CDN, the per-site management application of a deployed installation, cross-installation library copy.
-- Suspended Macro 3 phases (pages and navigation Data, editors, publication workspace, kajenn.org through the UI) keep their contracts and resume after this macro.
+- Phase 1 (authenticated multisite administration) shipped with #1. The site editor of `xmldocs/proposal/site-editor.xml` (shell, `render_draft`, page editor, resource editor, publishing panel) shipped with #5.
+- Phases 2–4 and the deferred contracts are not carried forward: the redesign replaces navigation, editors and publication. Archived plan: [gramlot-administration](done/gramlot-administration/plan.md).
 
-## Macro 4: Editorial organization and configurable review
+## Active
 
-- Objective: Complete the domain for structured publishing and teams while preserving direct publication when review is disabled.
-- Starts from: Macro 3's usable editing/publication UI and the durable version/permission contracts retained from Macro 1.
-- Ends at: Content types, taxonomy, menus, courses/collections, contributor metadata, translations, review requests/decisions and scheduling can be managed consistently through UI, REST and MCP; changes generate coherent releases.
-- Delivers: Structure and navigation editors/services, reference validation, language provenance, revision-bound review, configurable policies, scheduled activation and corresponding diagnostics.
-- Consumes: Stable IDs, immutable revisions, independent language variants, release candidates, jobs, audit and authenticated common services from earlier macros.
-- Requires of earlier work: Content identity must be independent of URL; generic/site scope and stable resource references survive every intermediate macro; publication rechecks current grants and configured review requirements; no assumption that all languages share one publication state.
-- Open decisions: Exact schema-editing UX and policy details such as reviewer separation, quorum, expiry and revocation. The already-approved publication flexibility and independent languages are not reopened.
+### kpress deployment
 
-## Macro 5: Direct public Gramlot components
+- Plan: [kpress-deployment](active/kpress-deployment/plan.md). Phases 1–2 done; Phase 3 (Hetzner installation) has its files on main (#2–#4, #6, #7).
+- Remaining: the owner's checks of the Done criterion: a preview opening on `https://preview.kpress.genro.com` and a `docker compose restart` keeping catalog, releases and password. Then the plan moves to `done/`.
+- The installation stays useful after the redesign: Docker composition, nginx, TLS and the Hetzner bucket are the base of the Kajenn server that will serve sites.
 
-- Objective: Add interactive Gramlot regions to the static site without removing essential readable content.
-- Starts from: Macro 4's editorial site, Macro 2's renderer/dependency manifests and Macro 3's generic source editors and content/resource workspaces. Component-specific property, definition and fallback authoring is new work in this macro.
-- Ends at: Multiple components mount directly into one public page, keep Data/IDs and lifecycle correct, load dependencies coherently and retain essential static content when JS is disabled or a component fails. Iframes are used only where explicit isolation is required.
-- Delivers: Registered component definitions, instance properties/validation, static fallback content, authoring support, public bootstrap and verified teardown/resource behavior.
-- Consumes: Earlier versioned template/resource references, the static HTML preparation pipeline, generic editors/workspaces, catalog/asset contracts and qualified upstream Gramlot/adapter capabilities. Component definitions, instance properties, fallback authoring and their versioned references are produced here using those existing contracts.
-- Requires of earlier work: Immutable component dependency references and per-instance identity must be representable; sanitization must preserve only explicitly registered component placeholders; neither HTML rendering nor Source mounting is treated as hydration proof.
-- Open decisions: Component placeholder syntax/serialization, mount/bootstrap contract, Data sharing, RPC/authentication, CSS isolation and accessibility after activation. Core gaps belong in Gramlot; host protocol gaps belong in its adapter/Kajenn and are qualified before product integration.
+## New macros
 
-## Macro 6: Portability, integrations and full-system qualification
+Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each macro gets its own detailed plan when it starts; this roadmap does not authorize later macros.
 
-- Objective: Complete the remaining catalogue and validate the complete filesystem-backed product with both human and LLM clients.
-- Starts from: Macro 5's static/interactive publishing platform and all durable contracts preserved through previous macros.
-- Ends at: Import/export and recovery checks preserve IDs and revision closure; jobs/audit/delivery state are inspectable; approved integrations are qualified; the full implemented catalogue has a documented UI/REST/MCP coverage matrix and reproducible end-to-end acceptance scenarios.
-- Delivers: Portable archives, search/operational completion, outbox delivery integrations including the Telegram adapter when configured, job cancellation/retry, media rendition completion, integrity/reconciliation tooling and a full product acceptance report. Catalog functions not closed earlier remain visible here rather than disappearing from scope.
-- Consumes: All prior domain/service contracts, exact manifests, receipts, audit and pending events; separate integration applications and environments where explicitly configured.
-- Requires of earlier work: Audit/event identity is durable; uncertain external effects are distinguishable from definite failures; indexes remain rebuildable; export includes schema/version/provenance without secrets; external integrations do not become core dependencies.
-- Open decisions: Provider configuration and real delivery tests, operational volumes, retention/backup/RPO/RTO and CDN guarantees when the owner chooses to address them. S3 is a separate qualified payload profile: activate it only after public Storage version/receipt/precondition contracts are sufficient. No automatic purge or production SLA is implied while these decisions remain deferred.
+### N1: Inventory against the redesign
 
-## Future work outside the initial implementation
+- Objective: map the redesign onto the existing code before changing it.
+- Delivers: for each module of `src/kajenn_press/` (catalog, services, rendering, publication, admin, child) and for `deploy/`, what stays, what changes and what is removed; the REST/MCP operations that survive, change or go; the migration of existing catalogs, if any.
+- Closes the open decisions of the proposal: Update on a locally changed copy, Library/site template conflicts, a removed slot, a template switch, SEO of dynamic iframe content.
 
-- Asqueel/PostgreSQL catalog backend and migration: revisit after the framework integration is defined. Requires preserved IDs, revisions, generations, audit, receipts, pending jobs and exact payload references from Macro 1 through Macro 6; one authoritative backend at a time, no implicit dual writes.
-- Independent-client multitenancy: deferred; the current site/library distinction is not a tenant-isolation claim.
-- Multiple catalog writers/hosts: separate backend capability and qualification, not a property inherited from local files or S3 versioning.
+### N2: Page Bag, template slots and copies
+
+- Objective: the page as a Bag holding a template Bag, a contents Bag and assets, able to produce its static HTML.
+- Delivers: the `kpress_slot` contract on hosting source nodes (`True` or a unique name); templates on Library, site and page level, linked or independent; copies carrying the original id; the Update operation with the list of affected pages and differences; slot kinds HTML, Markdown, dynamic iframe, resolver.
+
+### N3: Site source zip and S3 versioning
+
+- Objective: one zipped source Bag per site, unpacked for editing and zipped again on save.
+- Delivers: S3 versions per deliberate save; restore of a previous source; one editor at a time per site; export and import of a complete site as one zip; starting sites kept in Library.
+
+### N4: Per-page publication and Kajenn serving
+
+- Objective: one published object per page, versioned by S3, served by Kajenn.
+- Delivers: Publish of the changed pages with selection; per-page rollback; site rollback through the source zip; re-rendering through resolvers with a local filesystem cache; `sitemap.xml`, `robots.txt` and 301 redirects generated at publication; maintenance mode.
+- Replaces: channels, routes, candidates, builds and releases of Macro 2 and the release export of Macro 3b, as decided in N1.
+
+### N5: Navigation and the Visual editor tab
+
+- Objective: Sites and Library in the navigation tree; one tab per site; the Visual editor.
+- Delivers: rendered site opening on the root page and navigable through its links; slot borders on command; detachable blocks in a floating window with CodeMirror, Jodit and Preview; the drawer with the Pages tree (logical, drag and drop, slots under each page) and the Contents tree (use count states and badge); drag of a content into a slot from the preview or the tree; marks for pages changed since publication and for outdated copies.
+
+### N6: SEO tab
+
+- Delivers: per-page SEO with root defaults, search and social previews, checks before publishing (titles, descriptions, alt texts, internal links), redirects on URL change, the 404 page as an ordinary page.
+
+### N7: Published site tab
+
+- Delivers: command top bar with publish, rollback and management commands; iframe on the published site; first Publish (Kajenn server, domain, DNS with or without provider credentials, automatic TLS); optional private publication before going public.
+
+### N8: Help me
+
+- Delivers: a Sonnet chat in the site tab that interviews the user, offers fonts, colours and SVG drawings as clickable previews, and creates pages, templates and contents through the MCP operations; the conversation kept with the site; tokens and cost shown per chat and per site, for information only; one API key per installation; publishing stays an operator command.
+
+### N9: Languages
+
+- Delivers: languages back into the model, the editor, the SEO and the publication. Out of scope until the owner reopens it.
+
+### N10: Documentation
+
+- Delivers: `README.md` and `docs/` rewritten on the new model; `docs/01`–`docs/14` replaced or removed.
+
+## Future work outside these macros
+
+- The administration of a published site (Kajenn, Asqueel and Gramlot), when a site needs one.
+- Asqueel/PostgreSQL behind resolvers and dynamic slots.
+- Concurrent editing of one site by several people.
 
 ## Sequencing and scope controls
 
-- Macros and phases run in order. At each macro boundary, compare delivered evidence with the next macro's entry contract, then detail only that next macro in a new active plan.
-- Later consumer requirements pass through all intermediate macros unchanged unless the owner approves a recorded design change.
-- A missing framework capability produces a concrete reproducer and a bounded upstream work item; do not edit sibling projects as an incidental step. This roadmap plans those dependencies but does not launch separate chats or authorize external effects.
-- The active plan is not executable authorization for later macro scopes. No UI phases are claimed ready before their framework contracts and visual gate are prepared.
+- Each macro starts with its own plan, reviewed by the owner; the plan is not authorization for later macros.
+- A missing framework capability produces a concrete reproducer and a bounded upstream work item; sibling repositories are not edited as an incidental step.
+- Every phase runs on Opus, never Fable.
