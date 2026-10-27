@@ -10,6 +10,7 @@ pytest.importorskip("gramlot", reason="Requires the optional admin profile")
 
 from api.support import seed_http
 from genro_bag import Bag
+from genro_tytx import to_tytx
 from publication.support import CONFIG
 
 from admin.support import admin_client, login, rpc
@@ -17,8 +18,6 @@ from admin.support import admin_client, login, rpc
 
 async def panel(http, page, selection):
     """index_panel takes a Bag: the payload travels as TYTX, as the browser sends it."""
-    from genro_tytx import to_tytx
-
     payload = to_tytx(
         {
             "id": "panel",
