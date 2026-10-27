@@ -16,6 +16,8 @@ import json
 from genro_bag import Bag
 from genro_bag.resolver import BagCbResolver
 from kajenn_press.rendering.engines import make_builder, validate_static_source
+from kajenn_press.site.source import plain_source, replay
+from kajenn_press.site.slots import template_slots
 
 
 def author(source):
@@ -26,20 +28,6 @@ def author(source):
     hero.p("Hello & <b>")
     body.section(node_label="main").div(node_label="info", kpress_slot=True)
     body.table().tr().td(kpress_slot="cell")
-
-
-def replay(target, loaded):
-    # Rebuild a loaded Source through the target builder's grammar: loaded nodes carry
-    # tag, label and attributes but no builder, so they cannot be rendered directly.
-    for node in loaded:
-        value = node.value
-        attributes = dict(node.attr)
-        if node.label != node.node_tag:
-            attributes["node_label"] = node.label
-        args = () if value is None or isinstance(value, Bag) else (value,)
-        child = getattr(target, node.node_tag)(*args, **attributes)
-        if isinstance(value, Bag):
-            replay(child, value)
 
 
 def render(builder):
@@ -110,3 +98,30 @@ def test_loaded_source_renders_the_same_html_after_replay(engine):
 def test_cached_resolver_fills_a_slot_as_escaped_text(engine):
     result = run_in_render_profile(engine, RESOLVER)
     assert result == {"calls": 1, "escaped": True, "stable": True}
+
+
+PLAIN = """
+original = make_builder(ENGINE)
+author(original.source)
+before = render(original)
+loaded = Bag.from_tytx(plain_source(original.source).to_tytx(transport="json"))
+rebuilt = make_builder(ENGINE)
+replay(rebuilt.source, loaded)
+print(json.dumps({
+    "plain_class": type(loaded).__name__,
+    "same_html": render(rebuilt) == before,
+    "slots": [[s.name, s.path, s.tag] for s in template_slots(loaded)],
+}))
+"""
+
+
+@pytest.mark.parametrize("engine", ["gramlot", "htmlbuilder"])
+def test_plain_source_keeps_slots_and_renders_the_same_html(engine):
+    result = run_in_render_profile(engine, PLAIN)
+    assert result["plain_class"] == "Bag"
+    assert result["same_html"] is True
+    assert result["slots"] == [
+        ["hero", "html_0.body.hero", "div"],
+        ["html_0.body.main.info", "html_0.body.main.info", "div"],
+        ["cell", "html_0.body.table_0.tr_0.td_0", "td"],
+    ]

@@ -46,7 +46,11 @@ Starting point (main `937cd52`): templates are Python source with `build(source,
   - Details: site Bag with `templates`, `contents`, `assets`, `pages`; page Bag with its template copy, slot assignments (slot name → content copy), unplaced contents, assets; ids stable across saves; save and load of a site as TYTX JSON files in a private local directory, reusing `catalog/filesystem.py` for atomic writes and fsync.
   - Done: a site with two pages, two templates, contents and a binary asset survives save, close and load byte for byte; a malformed or partial directory fails closed.
 
-- [ ] **Phase 3**: Template slots
+- [x] **Phase 3**: Template slots
+  > Done: `src/kajenn_press/site/source.py` (`plain_source`, `replay`, moved out of the Phase 1 test) and `src/kajenn_press/site/slots.py` (`template_slots`, `Slot`, `HOSTING_TAGS`); `tests/site/test_slots.py` (9 tests) and 2 more render-profile tests. A builder Source copied with `plain_source` loads as a plain `Bag` with both engines, keeps its slots and renders the same HTML after `replay`. Slot name = the `kpress_slot` string, or the full label path from the root (`html_0.body.main.info`) when it is `True`. Duplicate names are refused with their paths; tags outside `HOSTING_TAGS` (16 tags, all in `STATIC_TAGS`) are refused. An iframe slot is marked by `kpress_iframe="<url>"` beside `kpress_slot`; its content is the static fallback.
+  > Deviation: the Kajenn Press example template is not converted here. It reads Data at build time (page title, resource URLs), so its conversion to a plain Source with pointers belongs to Phase 7, where Data and rendering change together. The render-profile tests use a template with the same structure (header, main slots, table cell).
+  > For review: the attribute name `kpress_iframe`; the full label path as the name of `kpress_slot=True` slots. The render environment now installs kajenn-press in editable mode.
+  > Suite: 135 passed, 19 skipped, the same 11 failures needing `KAJENN_RELEASE_S3`.
   - Run: opus / high
   - Files: `src/kajenn_press/site/`, `tests/site/`.
   - Details: read the slots of a template Source: every node with `kpress_slot`; name = the value when it is a string, the label path when it is `True`; names unique per template, duplicates refused with the paths; tag checked against the hosting tags of the static profile; the iframe slot kind with its static fallback (d-dynamic-seo) marked on the node.
