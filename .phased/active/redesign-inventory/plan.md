@@ -1,0 +1,79 @@
+# Context: docs/redesign-inventory
+Parent: main
+Mode: manual
+Must not break: No file under `src/`, `tests/`, `deploy/` or `examples/` changes. This macro reads and writes documents only.
+Must not break: Every statement about existing code is a `fact` with `source="path:line"`, `method` and `verified` date, checked with tools in the same phase. A statement not verified is written as a `p` saying so, never as a fact.
+Must not break: Sibling repositories (Kajenn, Gramlot, Genro Storage, Genro Bag) are read, never edited. A missing capability becomes an upstream item with a reproducer, not a workaround.
+Must not break: The decisions marked `decided` in `xmldocs/proposal/site-tab-redesign.xml` are not reopened. Only `open` and `proposed` decisions are put to the owner.
+Must not break: The Hetzner installation is not touched; its catalog is read through the MCP read operations only.
+
+## Objective
+
+Map the redesign of `xmldocs/proposal/site-tab-redesign.xml` onto the existing code before any code changes. For every module of `src/kajenn_press/`, every REST/MCP operation, every test suite and every deployment file, state what stays, what changes and what is removed, and why. Check which upstream capabilities the redesign needs and which exist. Close the open decisions with the owner. Write the entry contract of N2.
+
+Deliverable: one public document, `xmldocs/proposal/redesign-inventory.xml` (with its generated `.md` and `.html`), filled one section per phase, plus the updated decisions in `xmldocs/proposal/site-tab-redesign.xml`.
+
+Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758, services 785, rendering 894, publication 2 112, admin 3 074, application 757, child 162, domain/objects 180); 44 REST/MCP operations; 133 tests in 9 suites under `tests/`; 15 examples; the Docker composition with external S3 on Hetzner holding one site, "Kajenn Press", with three pages.
+
+## Decisions shared by all phases
+
+- Classification: every item gets one of `keep` (unchanged), `change` (kept and adapted; the change is named), `replace` (removed, a new part takes its role; the part is named), `remove` (removed with no successor).
+- Each classification cites the decision of the proposal that motivates it (`d-content-copy`, `d-publish-unit`, ...).
+- Each phase writes one `section` of the inventory document, regenerates the HTML/MD and ends with one commit on `docs/redesign-inventory`.
+- Every phase runs on Opus, never Fable.
+- No mockups in this macro; the UI mockups come with N5–N8.
+
+## Work Plan
+
+- [ ] **Phase 1**: Upstream capabilities the redesign needs
+  - Run: opus / high
+  - Files: new `xmldocs/proposal/redesign-inventory.xml` (section "Upstream capabilities").
+  - Details: For each need, read the sibling source and record a fact or a limit:
+    - Genro Storage: S3 object versioning (list versions, read a version, restore), on Hetzner Object Storage as well; zip handling.
+    - Genro Bag: serialization of a Bag with nested Bags and binary assets to one file, zipped; reading it back.
+    - Gramlot: which source nodes can host content (content pane, div, grid and table cells); custom attributes such as `kpress_slot` kept on the node; `node_label` explicit and automatic; finding nodes by attribute.
+    - Gramlot/Kajenn: resolvers at render time, with a time-based cache.
+    - Kajenn: serving a page from a Bag read from storage, with a local filesystem cache; maintenance mode.
+    - Gramlot editors: floating window with CodeMirror, Jodit and preview; drag and drop between a tree and a rendered page.
+  - Done: one row per need with `exists`, `partial` or `missing`, each backed by a fact or a limit; every `missing` has an upstream item with a reproducer.
+
+- [ ] **Phase 2**: Catalog, editorial services and domain
+  - Run: opus / high
+  - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Catalog and services").
+  - Details: classify `catalog/local.py`, `catalog/filesystem.py`, `catalog/errors.py`, `services/editorial.py`, `domain.py`, `objects.py` against the page Bag (`d-content-copy`), the site source zip and S3 versioning (`d-publish-unit`), one editor at a time (`d-editing-lock`). State what happens to generations, receipts, idempotency keys and immutable revisions.
+  - Done: every file and every public class of these modules classified, with the motivating decision.
+
+- [ ] **Phase 3**: Rendering
+  - Run: opus / high
+  - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Rendering").
+  - Details: classify `rendering/` (contract, engines, inputs, preparation, process, service, worker) against the page Bag rendering itself, slots declared with `kpress_slot`, resolvers at render time, and `render_draft` for the Visual editor.
+  - Done: every file classified; the render input of a page Bag described against the current frozen inputs.
+
+- [ ] **Phase 4**: Publication, serving and deployment
+  - Run: opus / high
+  - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Publication and serving").
+  - Details: classify `publication/` (artifacts, deployments, export, gateway, grants, jobs, releases, routes, service, serving), `child.py`, `deploy/docker/` and `examples/` against per-page published objects versioned by S3, the local re-render cache (`d-rerender-cache`), Publish of changed pages (`d-publish-select`), sitemap/robots/redirects, maintenance mode, private preview before going public.
+  - Done: every file classified; the fate of channels, routes, candidates, builds, releases, grants and the websites registry stated.
+
+- [ ] **Phase 5**: Administration
+  - Run: opus / high
+  - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Administration").
+  - Details: classify `admin/host.py`, `admin/views.py` and every page in `admin/pages/` against the navigation Sites/Library (`d-nav`), the three tabs of the site tab, the drawer and the floating editor. Name the parts reused as they are (login, shell, editors, preview container).
+  - Done: every file classified; the reused parts listed with file and line.
+
+- [ ] **Phase 6**: API surface, tests and existing data
+  - Run: opus / high
+  - Files: `xmldocs/proposal/redesign-inventory.xml` (sections "Operations", "Tests", "Existing data").
+  - Details: one row per REST/MCP operation (44) with its classification and its successor; one row per test suite (9 suites, 133 tests) with its classification; the migration of the Hetzner catalog (one site, three pages) to the new model, or the decision to rebuild it.
+  - Done: 44 operations and 9 suites classified; a migration path or a rebuild decision for the existing site.
+
+- [ ] **Phase 7**: Open decisions and the N2 entry contract
+  - Run: opus / high
+  - Files: `xmldocs/proposal/site-tab-redesign.xml` (decisions), `xmldocs/proposal/redesign-inventory.xml` (section "N2 entry contract"), `.phased/roadmap.md`.
+  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
+  - Owner actions: one answer per decision.
+  - Done: no decision `open` or `proposed` in the proposal; the N2 entry contract written; the roadmap N1 section marked completed; PR opened.
+
+## Notes
+
+- The inventory is a proposal-type document because it describes changes not made yet; it carries no implementation steps. Implementation plans start at N2.
