@@ -5,8 +5,11 @@ import json
 import sys
 from contextlib import redirect_stdout
 
+from genro_bag import Bag
+
 from .contract import CONTRACT, RenderProblem, canonical, sha256
 from .engines import installed_profile, render_template
+from .page import page_data_bag, plain_template, render_page
 from .preparation import prepare_blocks
 
 
@@ -14,6 +17,25 @@ def run_request(request):
     profile = installed_profile()
     if request["action"] == "profile":
         return {"ok": True, "profile": profile}
+    if request["action"] == "plain_template":
+        template = plain_template(request["engine"], request["source"])
+        return {"ok": True, "template": template.to_tytx(transport="json")}
+    if request["action"] == "render_page":
+        html, diagnostics = render_page(
+            request["engine"],
+            Bag.from_tytx(request["template"]),
+            request["slots"],
+            request["data"],
+            page_data_bag(request["page_data"]),
+            request["connections"],
+            request["resource_id"],
+        )
+        return {
+            "ok": True,
+            "html": html,
+            "digest": sha256(html.encode()),
+            "diagnostics": diagnostics,
+        }
     if request["action"] != "render":
         raise RenderProblem("invalid_request", "Unknown worker action")
     value = request["input"]

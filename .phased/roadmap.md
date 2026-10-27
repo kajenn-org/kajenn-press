@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N2, whose entry contract is in `xmldocs/proposal/redesign-inventory.xml`.
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N3 (site source zip and S3 versioning), which needs bucket versioning enabled first.
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -46,7 +46,9 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Delivers: for each module of `src/kajenn_press/` (catalog, services, rendering, publication, admin, child) and for `deploy/`, what stays, what changes and what is removed; the REST/MCP operations that survive, change or go; the migration of existing catalogs, if any.
 - Closes the open decisions of the proposal: Update on a locally changed copy, Library/site template conflicts, a removed slot, a template switch, SEO of dynamic iframe content.
 
-### N2: Page Bag, template slots and copies
+### N2 (completed 2026-10-27, branch feat/page-bag): Page Bag, template slots and copies
+
+- Result: library `src/kajenn_press/site/` and the page entry of `src/kajenn_press/rendering/`, with 58 tests in `tests/site/`; no REST/MCP change. Archived plan: [page-bag](done/page-bag/plan.md).
 
 - Objective: the page as a Bag holding a template Bag, a contents Bag and assets, able to produce its static HTML.
 - Delivers: the `kpress_slot` contract on hosting source nodes (`True` or a unique name); templates on Library, site and page level, linked or independent; copies carrying the original id; the Update operation with the list of affected pages and differences; slot kinds HTML, Markdown, dynamic iframe, resolver.

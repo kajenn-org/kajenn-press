@@ -22,7 +22,7 @@ ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
 ASSET_KINDS = {"css", "javascript", "media"}
 SECTIONS = ("templates", "template_bases", "contents", "assets", "pages")
-PAGE_SECTIONS = ("template", "slots", "unplaced", "assets")
+PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data")
 
 
 def new_id():

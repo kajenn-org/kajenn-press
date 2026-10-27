@@ -11,6 +11,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory, TemporaryFile
 from uuid import uuid4
 
+from genro_bag import Bag
+
 from .contract import CONTRACT, RenderProblem, canonical, sha256
 
 
@@ -126,6 +128,36 @@ class RenderWorker:
         ):
             raise RenderProblem("unqualified_profile", "Worker did not report a qualified profile")
         return response["profile"]
+
+    def plain_template(self, engine, python_source):
+        """The plain Source Bag of a Python template, built in the worker."""
+        response = self._call(
+            {"action": "plain_template", "engine": engine, "source": python_source}
+        )
+        if not response["ok"]:
+            raise RenderProblem(
+                "invalid_template", "Template did not build", diagnostics=response["diagnostics"]
+            )
+        return Bag.from_tytx(response["template"])
+
+    def render_page(self, request):
+        """Render a page request built by `kajenn_press.site.render.page_request`."""
+        response = self._call({"action": "render_page", **request})
+        if not response["ok"]:
+            return {"status": "failed", "diagnostics": response["diagnostics"]}
+        if (
+            set(response) != {"ok", "html", "digest", "diagnostics"}
+            or not isinstance(response["html"], str)
+            or not response["html"].lower().startswith("<!doctype html><html")
+            or response["digest"] != sha256(response["html"].encode())
+            or not self._diagnostics_valid(response["diagnostics"])
+        ):
+            raise RenderProblem("invalid_output", "Worker result failed validation")
+        return {
+            "status": "succeeded",
+            "html": response["html"],
+            "diagnostics": response["diagnostics"],
+        }
 
     def render(self, frozen):
         """Coordinator-internal execution. Public callers use RenderService authorization."""
