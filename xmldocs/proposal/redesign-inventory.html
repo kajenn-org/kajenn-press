@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<!-- generated from redesign-inventory.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kajenn Press: inventory of the code against the site tab redesign</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press: inventory of the code against the site tab redesign</h1><div class="doc-meta"><span>redesign-inventory</span><span>2026-10-27</span><span>Giovanni Porcari</span><span class="tag tag-draft">draft</span></div></header><section class="part problem"><h2>Problem</h2>
+    <p><a class="ref" href="../proposal/site-tab-redesign.html#site-tab-redesign"></a> changes the administration and the publication model. Before any code changes, every part of the existing code, every REST/MCP operation, every test suite and every deployment file needs a stated fate, and the upstream capabilities the redesign relies on need to be checked.</p>
+    <p>Classification used throughout: <code>keep</code> (unchanged), <code>change</code> (kept and adapted), <code>replace</code> (removed, a named new part takes its role), <code>remove</code> (removed with no successor). Capabilities are <code>exists</code>, <code>partial</code> or <code>missing</code>.</p>
+  </section><section class="part solution"><h2>Proposed solution</h2>
+    <section class="section" id="upstream"><h3>Upstream capabilities</h3>
+      <p>Repositories read on 2026-10-27: genro-storage <code>dd62bfd</code>, genro-bag <code>2293047</code>, kajenn <code>6ac7e58</code>, gramlot <code>d01bf3d</code>; genro-builders 0.30.0 as installed in the kajenn-press environment. The kajenn-press environment installs genro-storage 0.8.4, genro-bag 0.28.0 and kajenn 0.5.0 from PyPI; the checkouts read here can differ from those releases. Gramlot is not installed in the kajenn-press development environment; the Gramlot checks ran in the Gramlot checkout's own environment.</p>
+
+      <div class="table-wrap"><table><caption>Summary</caption>
+        <tr><th>Need</th><th>Status</th><th>Gap</th></tr>
+        <tr><td>S3 object versioning: list, read a version</td><td>exists</td><td>—</td></tr>
+        <tr><td>S3 object versioning: restore a version as current</td><td>missing</td><td>no restore API</td></tr>
+        <tr><td>Zip archive as a mount, zip export of a node</td><td>exists</td><td>writing a zip over S3 not verified</td></tr>
+        <tr><td>Bag with nested Bags and bytes to one file and back</td><td>partial</td><td>lossless in TYTX JSON and pickle only; no zip</td></tr>
+        <tr><td>Zipped Bag file</td><td>missing</td><td>no <code>Bag.to_zip</code> / <code>from_zip</code></td></tr>
+        <tr><td>Resolvers with a time-based cache</td><td>exists</td><td>synchronous <code>load()</code> only</td></tr>
+        <tr><td>Custom <code>kpress_slot</code> attribute on source nodes</td><td>exists</td><td>client renderer not checked</td></tr>
+        <tr><td><code>node_label</code>, dotted paths, find by attribute</td><td>exists</td><td>—</td></tr>
+        <tr><td>Hosting containers in static rendering</td><td>partial</td><td>layout widgets need the JS runtime</td></tr>
+        <tr><td>Editors CodeMirror, Jodit, HTML preview</td><td>exists</td><td>—</td></tr>
+        <tr><td>Detachable floating window with tabs</td><td>missing</td><td>investigated (GC-185), not implemented</td></tr>
+        <tr><td>Drag from a tree onto a node of the same page</td><td>exists</td><td>—</td></tr>
+        <tr><td>Drop into a rendered page inside an iframe</td><td>missing</td><td>excluded by design</td></tr>
+        <tr><td>Kajenn serving of storage content, response cache</td><td>partial</td><td>no storage response, no cache</td></tr>
+        <tr><td>Maintenance mode for one site</td><td>missing</td><td>only whole-server 503 outside RUNNING</td></tr>
+      </table></div>
+
+      <section class="section"><h4>Genro Storage</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:180</code><span class="muted">2026-10-27</span></div><div>The S3 backend sets <code>version_aware=True</code> by default.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:549</code><span class="muted">2026-10-27</span></div><div>The versioning capability is derived from the s3fs client only; the bucket's versioning state is never queried.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:788</code><span class="muted">2026-10-27</span></div><div><code>get_versions(path)</code> lists versions with id, latest flag, date, size and etag; any exception returns an empty list.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:847</code><span class="muted">2026-10-27</span></div><div><code>open_version(path, version_id)</code> opens a version for reading; <code>delete_version</code> follows at line 886.</div></div>
+        <p>No restore, rollback or promote function exists in genro-storage: a search for them in <code>src/</code> found nothing. Restoring today means reading a version and writing it as the current object; this was not tried against S3.</p>
+        <div class="box limit"><div>S3-compatible servers without ListObjectVersions need <code>version_aware=False</code>. Whether the Hetzner bucket <code>kpress-releases</code> has versioning enabled was not checked.</div><div class="box-foot"><code class="source">genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:151</code></div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:256</code><span class="muted">2026-10-27</span></div><div>A <code>zip</code> mount addresses a ZIP archive as a filesystem, with <code>file</code>, <code>mode</code> and a target protocol.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/node.py:1621</code><span class="muted">2026-10-27</span></div><div><code>node.zip()</code> returns deflated ZIP bytes of a file, a directory or an iterator of nodes.</div></div>
+      </section>
+
+      <section class="section"><h4>Genro Bag</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/bag/_serialize.py:270</code><span class="muted">2026-10-27</span></div><div><code>to_tytx(transport="json"|"msgpack")</code> serializes a Bag, optionally to a file.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">kajenn-press .venv, genro-bag 0.28.0</code><span class="muted">2026-10-27</span></div><div>A Bag with a nested Bag holding bytes survives <code>to_tytx</code>/<code>from_tytx</code> in JSON: the value comes back as the same bytes. Through <code>to_xml</code>/<code>from_xml</code> the bytes come back as a string.</div></div>
+        <p>Pickle is also lossless, as reported by the research run; the msgpack transport needs the <code>msgpack</code> package, which the environment lacks. Neither was re-run here.</p>
+        <p>No zipped Bag format exists: a search for <code>to_zip</code>/<code>from_zip</code> in genro-bag found nothing. A zipped site source needs TYTX plus Python <code>zipfile</code>, or the genro-storage zip mount.</p>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/resolver.py:15</code><span class="muted">2026-10-27</span></div><div><code>BagResolver</code> (line 89) takes <code>cache_time</code>: 0 no cache, positive a TTL in seconds, negative until <code>reset()</code>.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/resolver.py:646</code><span class="muted">2026-10-27</span></div><div><code>BagCbResolver</code> wraps a callback as a resolver with the same cache options.</div></div>
+      </section>
+
+      <section class="section"><h4>Gramlot and HtmlBuilder</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">gramlot@d01bf3d checkout environment</code><span class="muted">2026-10-27</span></div><div><code>div(node_label='info', kpress_slot='main')</code> and <code>td(kpress_slot=True)</code> keep the attribute in the source Bag; <code>getNode('html_0.body.center.info')</code> reaches the node by its label path; <code>findNodeByAttr('kpress_slot', 'main')</code> returns it; server rendering emits <code>&lt;div kpress_slot="main"&gt;</code> and <code>&lt;td kpress_slot="true"&gt;</code>.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:src/gramlot/renderer/html_renderer.py:91</code><span class="muted">2026-10-27</span></div><div>Unknown attribute names pass to the output; names starting with <code>gramlot_</code> are an error.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/engines.py:13</code><span class="muted">2026-10-27</span></div><div>The kajenn-press static profile accepts the HTML tags of <code>STATIC_TAGS</code> only; other nodes fail with <code>unsupported_static_node</code> (line 204).</div></div>
+        <p>Layout widgets such as <code>contentPane</code> render as custom elements that need the Gramlot JS runtime, as reported by the research run. In static HTML a slot is therefore a plain element: <code>div</code>, <code>section</code>, <code>td</code> and similar.</p>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:src/gramlot/collections/editors.json:14</code><span class="muted">2026-10-27</span></div><div>The editor collection defines <code>codeMirror</code>, <code>htmlEditor</code> (line 2599, Jodit) and <code>htmlPreview</code> (line 4754).</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:docs_llm/internal/185-legacy-detachable.md</code><span class="muted">2026-10-27</span></div><div>Detachable panes and floating palettes of legacy GenroPy are investigated (GC-185, 2026-09-25) and marked "not implemented".</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:js/src/components/tree.js:9</code><span class="muted">2026-10-27</span></div><div>The tree component is a drag source.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:js/src/renderer/drag-drop.js:6</code><span class="muted">2026-10-27</span></div><div>Drag and drop works within one renderer; other windows and instances are not admitted.</div></div>
+        <p>The HTML preview renders through <code>srcdoc</code> in a sandboxed iframe, so a content dragged from the drawer cannot be dropped on a slot of the rendered page as the preview works today.</p>
+      </section>
+
+      <section class="section"><h4>Kajenn</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">kajenn@6ac7e58:src/kajenn/response.py:195</code><span class="muted">2026-10-27</span></div><div><code>set_result</code> handles paths, bytes, strings and JSON values; there is no support for storage nodes.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">kajenn@6ac7e58:src/kajenn/server.py:406</code><span class="muted">2026-10-27</span></div><div>The server answers 503 while its lifespan is not running; there is no per-site maintenance state.</div></div>
+        <p>Kajenn has no response cache; kajenn-press keeps its own in-memory cache of the release manifest in <code>child.py</code>.</p>
+      </section>
+
+      <section class="section"><h4>Upstream items</h4>
+        <ul>
+          <li><b>genro-storage</b>: restore a version as current, through a server-side copy with <code>VersionId</code>; query the bucket's versioning state. Reproducer: <code>node.restore_version(vid)</code> raises <code>AttributeError</code>.</li>
+          <li><b>genro-bag</b>: a zipped Bag file holding nested Bags and binary values. Reproducer: <code>Bag.from_xml(b.to_xml(doc_header=True))['a.bin']</code> is a string, and no <code>to_zip</code> exists.</li>
+          <li><b>gramlot</b>: a detachable floating pane holding a tab container (GC-185). Reproducer: no <code>floatingPane</code> in the layout collection.</li>
+          <li><b>gramlot</b>: drop onto nodes of a rendered page shown inside the editor. Reproducer: a tree with <code>draggable=True</code> and a <code>dropTarget</code> div inside <code>htmlPreview</code>; the drop is not delivered. An alternative that needs no upstream change: render the preview in the same document instead of a sandboxed iframe; to be decided in Phase 5.</li>
+          <li><b>kajenn</b>: per-site maintenance state and a response cache on the local filesystem, or both kept in kajenn-press; to be decided in Phase 4.</li>
+        </ul>
+      </section>
+    </section>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>
+  </ul></section></main></body></html>

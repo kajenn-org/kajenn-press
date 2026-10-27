@@ -25,7 +25,9 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
 
 ## Work Plan
 
-- [ ] **Phase 1**: Upstream capabilities the redesign needs
+- [x] **Phase 1**: Upstream capabilities the redesign needs
+  > Done: 15 needs classified in `xmldocs/proposal/redesign-inventory.xml` (section "Upstream capabilities"): 7 exist, 3 partial, 5 missing. Five upstream items written with reproducers: genro-storage version restore, genro-bag zipped Bag, gramlot floating pane (GC-185), gramlot drop into the rendered page, kajenn per-site maintenance and response cache.
+  > Open for later phases: the Hetzner bucket's versioning state is not checked (Phase 4); preview in the same document instead of a sandboxed iframe (Phase 5).
   - Run: opus / high
   - Files: new `xmldocs/proposal/redesign-inventory.xml` (section "Upstream capabilities").
   - Details: For each need, read the sibling source and record a fact or a limit:

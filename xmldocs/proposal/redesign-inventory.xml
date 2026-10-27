@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<proposal id="redesign-inventory" title="Kajenn Press: inventory of the code against the site tab redesign" date="2026-10-27" lang="en" author="Giovanni Porcari" status="draft">
+
+  <problem>
+    <p><ref to="site-tab-redesign" doc="proposal/site-tab-redesign"/> changes the administration and the publication model. Before any code changes, every part of the existing code, every REST/MCP operation, every test suite and every deployment file needs a stated fate, and the upstream capabilities the redesign relies on need to be checked.</p>
+    <p>Classification used throughout: <c>keep</c> (unchanged), <c>change</c> (kept and adapted), <c>replace</c> (removed, a named new part takes its role), <c>remove</c> (removed with no successor). Capabilities are <c>exists</c>, <c>partial</c> or <c>missing</c>.</p>
+  </problem>
+
+  <solution>
+    <section title="Upstream capabilities" id="upstream">
+      <p>Repositories read on 2026-10-27: genro-storage <c>dd62bfd</c>, genro-bag <c>2293047</c>, kajenn <c>6ac7e58</c>, gramlot <c>d01bf3d</c>; genro-builders 0.30.0 as installed in the kajenn-press environment. The kajenn-press environment installs genro-storage 0.8.4, genro-bag 0.28.0 and kajenn 0.5.0 from PyPI; the checkouts read here can differ from those releases. Gramlot is not installed in the kajenn-press development environment; the Gramlot checks ran in the Gramlot checkout's own environment.</p>
+
+      <table title="Summary">
+        <row head="true"><cell>Need</cell><cell>Status</cell><cell>Gap</cell></row>
+        <row><cell>S3 object versioning: list, read a version</cell><cell>exists</cell><cell>—</cell></row>
+        <row><cell>S3 object versioning: restore a version as current</cell><cell>missing</cell><cell>no restore API</cell></row>
+        <row><cell>Zip archive as a mount, zip export of a node</cell><cell>exists</cell><cell>writing a zip over S3 not verified</cell></row>
+        <row><cell>Bag with nested Bags and bytes to one file and back</cell><cell>partial</cell><cell>lossless in TYTX JSON and pickle only; no zip</cell></row>
+        <row><cell>Zipped Bag file</cell><cell>missing</cell><cell>no <c>Bag.to_zip</c> / <c>from_zip</c></cell></row>
+        <row><cell>Resolvers with a time-based cache</cell><cell>exists</cell><cell>synchronous <c>load()</c> only</cell></row>
+        <row><cell>Custom <c>kpress_slot</c> attribute on source nodes</cell><cell>exists</cell><cell>client renderer not checked</cell></row>
+        <row><cell><c>node_label</c>, dotted paths, find by attribute</cell><cell>exists</cell><cell>—</cell></row>
+        <row><cell>Hosting containers in static rendering</cell><cell>partial</cell><cell>layout widgets need the JS runtime</cell></row>
+        <row><cell>Editors CodeMirror, Jodit, HTML preview</cell><cell>exists</cell><cell>—</cell></row>
+        <row><cell>Detachable floating window with tabs</cell><cell>missing</cell><cell>investigated (GC-185), not implemented</cell></row>
+        <row><cell>Drag from a tree onto a node of the same page</cell><cell>exists</cell><cell>—</cell></row>
+        <row><cell>Drop into a rendered page inside an iframe</cell><cell>missing</cell><cell>excluded by design</cell></row>
+        <row><cell>Kajenn serving of storage content, response cache</cell><cell>partial</cell><cell>no storage response, no cache</cell></row>
+        <row><cell>Maintenance mode for one site</cell><cell>missing</cell><cell>only whole-server 503 outside RUNNING</cell></row>
+      </table>
+
+      <section title="Genro Storage">
+        <fact source="genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:180" method="read" verified="2026-10-27">The S3 backend sets <c>version_aware=True</c> by default.</fact>
+        <fact source="genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:549" method="read" verified="2026-10-27">The versioning capability is derived from the s3fs client only; the bucket's versioning state is never queried.</fact>
+        <fact source="genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:788" method="read" verified="2026-10-27"><c>get_versions(path)</c> lists versions with id, latest flag, date, size and etag; any exception returns an empty list.</fact>
+        <fact source="genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:847" method="read" verified="2026-10-27"><c>open_version(path, version_id)</c> opens a version for reading; <c>delete_version</c> follows at line 886.</fact>
+        <p>No restore, rollback or promote function exists in genro-storage: a search for them in <c>src/</c> found nothing. Restoring today means reading a version and writing it as the current object; this was not tried against S3.</p>
+        <limit source="genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:151">S3-compatible servers without ListObjectVersions need <c>version_aware=False</c>. Whether the Hetzner bucket <c>kpress-releases</c> has versioning enabled was not checked.</limit>
+        <fact source="genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:256" method="read" verified="2026-10-27">A <c>zip</c> mount addresses a ZIP archive as a filesystem, with <c>file</c>, <c>mode</c> and a target protocol.</fact>
+        <fact source="genro-storage@dd62bfd:src/genro_storage/node.py:1621" method="read" verified="2026-10-27"><c>node.zip()</c> returns deflated ZIP bytes of a file, a directory or an iterator of nodes.</fact>
+      </section>
+
+      <section title="Genro Bag">
+        <fact source="genro-bag@2293047:src/genro_bag/bag/_serialize.py:270" method="read" verified="2026-10-27"><c>to_tytx(transport="json"|"msgpack")</c> serializes a Bag, optionally to a file.</fact>
+        <fact source="kajenn-press .venv, genro-bag 0.28.0" method="run" verified="2026-10-27">A Bag with a nested Bag holding bytes survives <c>to_tytx</c>/<c>from_tytx</c> in JSON: the value comes back as the same bytes. Through <c>to_xml</c>/<c>from_xml</c> the bytes come back as a string.</fact>
+        <p>Pickle is also lossless, as reported by the research run; the msgpack transport needs the <c>msgpack</c> package, which the environment lacks. Neither was re-run here.</p>
+        <p>No zipped Bag format exists: a search for <c>to_zip</c>/<c>from_zip</c> in genro-bag found nothing. A zipped site source needs TYTX plus Python <c>zipfile</c>, or the genro-storage zip mount.</p>
+        <fact source="genro-bag@2293047:src/genro_bag/resolver.py:15" method="read" verified="2026-10-27"><c>BagResolver</c> (line 89) takes <c>cache_time</c>: 0 no cache, positive a TTL in seconds, negative until <c>reset()</c>.</fact>
+        <fact source="genro-bag@2293047:src/genro_bag/resolver.py:646" method="read" verified="2026-10-27"><c>BagCbResolver</c> wraps a callback as a resolver with the same cache options.</fact>
+      </section>
+
+      <section title="Gramlot and HtmlBuilder">
+        <fact source="gramlot@d01bf3d checkout environment" method="run" verified="2026-10-27"><c>div(node_label='info', kpress_slot='main')</c> and <c>td(kpress_slot=True)</c> keep the attribute in the source Bag; <c>getNode('html_0.body.center.info')</c> reaches the node by its label path; <c>findNodeByAttr('kpress_slot', 'main')</c> returns it; server rendering emits <c>&lt;div kpress_slot="main"&gt;</c> and <c>&lt;td kpress_slot="true"&gt;</c>.</fact>
+        <fact source="gramlot@d01bf3d:src/gramlot/renderer/html_renderer.py:91" method="read" verified="2026-10-27">Unknown attribute names pass to the output; names starting with <c>gramlot_</c> are an error.</fact>
+        <fact source="src/kajenn_press/rendering/engines.py:13" method="read" verified="2026-10-27">The kajenn-press static profile accepts the HTML tags of <c>STATIC_TAGS</c> only; other nodes fail with <c>unsupported_static_node</c> (line 204).</fact>
+        <p>Layout widgets such as <c>contentPane</c> render as custom elements that need the Gramlot JS runtime, as reported by the research run. In static HTML a slot is therefore a plain element: <c>div</c>, <c>section</c>, <c>td</c> and similar.</p>
+        <fact source="gramlot@d01bf3d:src/gramlot/collections/editors.json:14" method="read" verified="2026-10-27">The editor collection defines <c>codeMirror</c>, <c>htmlEditor</c> (line 2599, Jodit) and <c>htmlPreview</c> (line 4754).</fact>
+        <fact source="gramlot@d01bf3d:docs_llm/internal/185-legacy-detachable.md" method="read" verified="2026-10-27">Detachable panes and floating palettes of legacy GenroPy are investigated (GC-185, 2026-09-25) and marked "not implemented".</fact>
+        <fact source="gramlot@d01bf3d:js/src/components/tree.js:9" method="read" verified="2026-10-27">The tree component is a drag source.</fact>
+        <fact source="gramlot@d01bf3d:js/src/renderer/drag-drop.js:6" method="read" verified="2026-10-27">Drag and drop works within one renderer; other windows and instances are not admitted.</fact>
+        <p>The HTML preview renders through <c>srcdoc</c> in a sandboxed iframe, so a content dragged from the drawer cannot be dropped on a slot of the rendered page as the preview works today.</p>
+      </section>
+
+      <section title="Kajenn">
+        <fact source="kajenn@6ac7e58:src/kajenn/response.py:195" method="read" verified="2026-10-27"><c>set_result</c> handles paths, bytes, strings and JSON values; there is no support for storage nodes.</fact>
+        <fact source="kajenn@6ac7e58:src/kajenn/server.py:406" method="read" verified="2026-10-27">The server answers 503 while its lifespan is not running; there is no per-site maintenance state.</fact>
+        <p>Kajenn has no response cache; kajenn-press keeps its own in-memory cache of the release manifest in <c>child.py</c>.</p>
+      </section>
+
+      <section title="Upstream items">
+        <list>
+          <item><b>genro-storage</b>: restore a version as current, through a server-side copy with <c>VersionId</c>; query the bucket's versioning state. Reproducer: <c>node.restore_version(vid)</c> raises <c>AttributeError</c>.</item>
+          <item><b>genro-bag</b>: a zipped Bag file holding nested Bags and binary values. Reproducer: <c>Bag.from_xml(b.to_xml(doc_header=True))['a.bin']</c> is a string, and no <c>to_zip</c> exists.</item>
+          <item><b>gramlot</b>: a detachable floating pane holding a tab container (GC-185). Reproducer: no <c>floatingPane</c> in the layout collection.</item>
+          <item><b>gramlot</b>: drop onto nodes of a rendered page shown inside the editor. Reproducer: a tree with <c>draggable=True</c> and a <c>dropTarget</c> div inside <c>htmlPreview</c>; the drop is not delivered. An alternative that needs no upstream change: render the preview in the same document instead of a sandboxed iframe; to be decided in Phase 5.</item>
+          <item><b>kajenn</b>: per-site maintenance state and a response cache on the local filesystem, or both kept in kajenn-press; to be decided in Phase 4.</item>
+        </list>
+      </section>
+    </section>
+  </solution>
+
+  <related>
+    <doc id="proposal/site-tab-redesign">Kajenn Press: the site tab, page Bags and per-page publication</doc>
+  </related>
+</proposal>
