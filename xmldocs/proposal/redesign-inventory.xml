@@ -113,6 +113,35 @@
         <row><cell>Handler <c>readiness</c></cell><cell>change</cell><cell>Empty slots and SEO checks before publishing</cell><cell>d-publish-select, d-seo-inherit</cell></row>
       </table>
     </section>
+
+    <section title="Rendering" id="rendering">
+      <p>Today a template is Python source that authors a Gramlot or HtmlBuilder Source; blocks reach it as prepared HTML in Data. A disposable worker process renders one frozen input built from a pinned catalog snapshot. In the redesign a page Bag holds a template copy, its contents and assets, contents fill slots marked with <c>kpress_slot</c>, and a template may use resolvers at render time with a cache.</p>
+
+      <fact source="src/kajenn_press/rendering/engines.py:242" method="read" verified="2026-10-27"><c>render_template</c> executes the trusted template source, calls <c>build(source, data)</c>, validates the static Source and renders HTML with a doctype.</fact>
+      <fact source="examples/kajenn_press_site/template.py:38" method="read" verified="2026-10-27">Blocks are placed by Data pointers: <c>main.div("^blocks.hero")</c>, <c>main.div("^blocks.body")</c>.</fact>
+      <fact source="src/kajenn_press/rendering/engines.py:210" method="read" verified="2026-10-27">Static validation refuses <c>==</c> expressions and pointers that do not resolve in Data (line 220).</fact>
+      <fact source="src/kajenn_press/rendering/inputs.py:14" method="read" verified="2026-10-27"><c>RenderInputs.freeze</c> builds the input from one catalog snapshot: the variant, its exact dependency closure and resource sources, up to 32 MiB (line 90); a draft replaces block and resource sources and can use <c>data:</c> URLs (line 114).</fact>
+      <fact source="src/kajenn_press/rendering/preparation.py:104" method="read" verified="2026-10-27"><c>prepare_blocks</c> converts Markdown and filters HTML with nh3; <c>script</c>, <c>style</c>, <c>iframe</c>, <c>object</c>, <c>embed</c>, <c>svg</c> and <c>math</c> are removed with their content.</fact>
+      <fact source="src/kajenn_press/rendering/process.py:39" method="read" verified="2026-10-27"><c>RenderWorker</c> runs each render in a new process with only <c>PATH</c>, <c>LANG</c> and <c>TZ</c> in its environment, a timeout of 15 seconds by default (line 18) and a validated result (line 141).</fact>
+      <fact source="src/kajenn_press/application.py:24" method="read" verified="2026-10-27"><c>render_preview</c> and <c>render_draft</c> are the two render operations; <c>render_draft</c> renders unsaved sources without writing.</fact>
+
+      <table title="Classification">
+        <row head="true"><cell>Item</cell><cell>Fate</cell><cell>Successor or change</cell><cell>Decision</cell></row>
+        <row><cell><c>contract.py</c>: <c>RenderProblem</c>, <c>PreparedHTML</c></cell><cell>keep</cell><cell>Same diagnostics and the same type boundary for prepared content</cell><cell>—</cell></row>
+        <row><cell><c>contract.py</c>: <c>RenderInput</c></cell><cell>change</cell><cell>Carries the page Bag in TYTX JSON (lossless with bytes, see Upstream capabilities) instead of catalog references</cell><cell>d-content-copy</cell></row>
+        <row><cell><c>engines.py</c>: <c>render_template</c></cell><cell>change</cell><cell>The template Bag (or the Python template that authors it) is filled slot by slot: each node with <c>kpress_slot</c> receives the prepared content assigned to it, found with <c>findNodeByAttr</c>; <c>^blocks.*</c> pointers go</cell><cell>d-slot-id</cell></row>
+        <row><cell><c>engines.py</c>: <c>STATIC_TAGS</c>, <c>validate_static_source</c></cell><cell>change</cell><cell>Plain HTML slots stay; validation also checks that every slot name is unique; pointers to resolver nodes must be allowed to resolve at render time</cell><cell>d-slot-id</cell></row>
+        <row><cell><c>engines.py</c>: <c>installed_profile</c>, <c>make_builder</c>, <c>populate_data</c></cell><cell>keep</cell><cell>Same qualified engines</cell><cell>—</cell></row>
+        <row><cell><c>inputs.py</c>: <c>RenderInputs.freeze</c></cell><cell>replace</cell><cell>The page Bag is already closed over its copies: freezing becomes serializing the page Bag, with the same 32 MiB limit; <c>data:</c> URLs stay for the Visual editor</cell><cell>d-content-copy</cell></row>
+        <row><cell><c>inputs.py</c>: <c>RenderInputs.authorize</c></cell><cell>change</cell><cell>Authorization on the site scope instead of each dependency revision</cell><cell>d-nav</cell></row>
+        <row><cell><c>preparation.py</c>: <c>prepare_blocks</c></cell><cell>keep</cell><cell>HTML and Markdown contents are filtered the same way. A dynamic iframe cannot come from a content, because <c>iframe</c> is removed: it is a slot kind authored in the template</cell><cell>—</cell></row>
+        <row><cell><c>process.py</c>: <c>RenderWorker</c></cell><cell>change</cell><cell>Resolvers that read a database need configuration the worker does not receive today; the re-render on the serving server reuses the worker with the 10-minute cache in front</cell><cell>d-rerender-cache</cell></row>
+        <row><cell><c>worker.py</c>: <c>run_request</c></cell><cell>change</cell><cell>Reads the page Bag: template, contents by slot, assets</cell><cell>d-content-copy</cell></row>
+        <row><cell><c>service.py</c>: <c>RenderService</c></cell><cell>change</cell><cell>Entry point takes a page of the site instead of a variant revision</cell><cell>d-content-copy</cell></row>
+        <row><cell>Operations <c>render_preview</c>, <c>render_draft</c></cell><cell>change</cell><cell><c>render_draft</c> renders the unsaved page for the Visual editor and the floating editor; <c>render_preview</c> renders the saved page</cell><cell>—</cell></row>
+      </table>
+      <p>Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.</p>
+    </section>
   </solution>
 
   <related>

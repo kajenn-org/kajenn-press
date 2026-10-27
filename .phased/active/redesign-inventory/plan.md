@@ -47,7 +47,9 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
   - Details: classify `catalog/local.py`, `catalog/filesystem.py`, `catalog/errors.py`, `services/editorial.py`, `domain.py`, `objects.py` against the page Bag (`d-content-copy`), the site source zip and S3 versioning (`d-publish-unit`), one editor at a time (`d-editing-lock`). State what happens to generations, receipts, idempotency keys and immutable revisions.
   - Done: every file and every public class of these modules classified, with the motivating decision.
 
-- [ ] **Phase 3**: Rendering
+- [x] **Phase 3**: Rendering
+  > Done: 12 items classified in section "Rendering": 4 keep, 7 change, 1 replace. Slots are filled by `kpress_slot` instead of `^blocks.*` pointers; freezing a catalog closure is replaced by serializing the page Bag in TYTX JSON; nh3 filtering stays, so a dynamic iframe is a slot kind authored in the template, not a content.
+  > Open for Phase 7: configuration given to resolvers in the worker (database address, credentials); filtering of resolver output.
   - Run: opus / high
   - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Rendering").
   - Details: classify `rendering/` (contract, engines, inputs, preparation, process, service, worker) against the page Bag rendering itself, slots declared with `kpress_slot`, resolvers at render time, and `render_draft` for the Visual editor.
@@ -74,7 +76,7 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
 - [ ] **Phase 7**: Open decisions and the N2 entry contract
   - Run: opus / high
   - Files: `xmldocs/proposal/site-tab-redesign.xml` (decisions), `xmldocs/proposal/redesign-inventory.xml` (section "N2 entry contract"), `.phased/roadmap.md`.
-  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
+  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
   - Owner actions: one answer per decision.
   - Done: no decision `open` or `proposed` in the proposal; the N2 entry contract written; the roadmap N1 section marked completed; PR opened.
 

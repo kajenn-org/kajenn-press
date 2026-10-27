@@ -127,6 +127,37 @@ Today one local catalog holds every record of an installation as immutable JSON 
 | Handler `dependencies` | change | Where a content, template or asset is copied: pages and slots | d-content-copy |
 | Handler `readiness` | change | Empty slots and SEO checks before publishing | d-publish-select, d-seo-inherit |
 
+#### Rendering
+
+Today a template is Python source that authors a Gramlot or HtmlBuilder Source; blocks reach it as prepared HTML in Data. A disposable worker process renders one frozen input built from a pinned catalog snapshot. In the redesign a page Bag holds a template copy, its contents and assets, contents fill slots marked with `kpress_slot`, and a template may use resolvers at render time with a cache.
+
+- `READ` `src/kajenn_press/rendering/engines.py:242` · 2026-10-27 — `render_template` executes the trusted template source, calls `build(source, data)`, validates the static Source and renders HTML with a doctype.
+- `READ` `examples/kajenn_press_site/template.py:38` · 2026-10-27 — Blocks are placed by Data pointers: `main.div("^blocks.hero")`, `main.div("^blocks.body")`.
+- `READ` `src/kajenn_press/rendering/engines.py:210` · 2026-10-27 — Static validation refuses `==` expressions and pointers that do not resolve in Data (line 220).
+- `READ` `src/kajenn_press/rendering/inputs.py:14` · 2026-10-27 — `RenderInputs.freeze` builds the input from one catalog snapshot: the variant, its exact dependency closure and resource sources, up to 32 MiB (line 90); a draft replaces block and resource sources and can use `data:` URLs (line 114).
+- `READ` `src/kajenn_press/rendering/preparation.py:104` · 2026-10-27 — `prepare_blocks` converts Markdown and filters HTML with nh3; `script`, `style`, `iframe`, `object`, `embed`, `svg` and `math` are removed with their content.
+- `READ` `src/kajenn_press/rendering/process.py:39` · 2026-10-27 — `RenderWorker` runs each render in a new process with only `PATH`, `LANG` and `TZ` in its environment, a timeout of 15 seconds by default (line 18) and a validated result (line 141).
+- `READ` `src/kajenn_press/application.py:24` · 2026-10-27 — `render_preview` and `render_draft` are the two render operations; `render_draft` renders unsaved sources without writing.
+
+*Classification*
+
+| Item | Fate | Successor or change | Decision |
+|---|---|---|---|
+| `contract.py`: `RenderProblem`, `PreparedHTML` | keep | Same diagnostics and the same type boundary for prepared content | — |
+| `contract.py`: `RenderInput` | change | Carries the page Bag in TYTX JSON (lossless with bytes, see Upstream capabilities) instead of catalog references | d-content-copy |
+| `engines.py`: `render_template` | change | The template Bag (or the Python template that authors it) is filled slot by slot: each node with `kpress_slot` receives the prepared content assigned to it, found with `findNodeByAttr`; `^blocks.*` pointers go | d-slot-id |
+| `engines.py`: `STATIC_TAGS`, `validate_static_source` | change | Plain HTML slots stay; validation also checks that every slot name is unique; pointers to resolver nodes must be allowed to resolve at render time | d-slot-id |
+| `engines.py`: `installed_profile`, `make_builder`, `populate_data` | keep | Same qualified engines | — |
+| `inputs.py`: `RenderInputs.freeze` | replace | The page Bag is already closed over its copies: freezing becomes serializing the page Bag, with the same 32 MiB limit; `data:` URLs stay for the Visual editor | d-content-copy |
+| `inputs.py`: `RenderInputs.authorize` | change | Authorization on the site scope instead of each dependency revision | d-nav |
+| `preparation.py`: `prepare_blocks` | keep | HTML and Markdown contents are filtered the same way. A dynamic iframe cannot come from a content, because `iframe` is removed: it is a slot kind authored in the template | — |
+| `process.py`: `RenderWorker` | change | Resolvers that read a database need configuration the worker does not receive today; the re-render on the serving server reuses the worker with the 10-minute cache in front | d-rerender-cache |
+| `worker.py`: `run_request` | change | Reads the page Bag: template, contents by slot, assets | d-content-copy |
+| `service.py`: `RenderService` | change | Entry point takes a page of the site instead of a variant revision | d-content-copy |
+| Operations `render_preview`, `render_draft` | change | `render_draft` renders the unsaved page for the Visual editor and the floating editor; `render_preview` renders the saved page | — |
+
+Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.
+
 ### Related documents
 
 - `proposal/site-tab-redesign` — Kajenn Press: the site tab, page Bags and per-page publication
