@@ -77,6 +77,42 @@
         </list>
       </section>
     </section>
+
+    <section title="Catalog and services" id="catalog">
+      <p>Today one local catalog holds every record of an installation as immutable JSON revisions with generations, receipts, audit and content-addressed payloads. The redesign keeps a site's source as one zipped Bag on S3, versioned by S3 (<ref to="d-publish-unit" doc="proposal/site-tab-redesign"/>), and pages hold autonomous copies carrying the original id (<ref to="d-content-copy" doc="proposal/site-tab-redesign"/>).</p>
+
+      <fact source="src/kajenn_press/catalog/local.py:54" method="read" verified="2026-10-27"><c>LocalCatalog</c> is a single-owner, thread-serialized store with an <c>owner.lock</c>; <c>commit</c> (line 347) writes changes under authorization and an idempotency key, <c>recover</c> (line 538) repairs an interrupted publication.</fact>
+      <fact source="src/kajenn_press/catalog/local.py:43" method="read" verified="2026-10-27"><c>Snapshot</c> carries generation, records, revisions, receipts, audit and events; <c>Change</c> (line 27) carries scope, record id, expected generation, data and payloads.</fact>
+      <fact source="src/kajenn_press/objects.py:39" method="read" verified="2026-10-27"><c>ObjectStore</c> keeps immutable payloads addressed by <c>ObjectRef</c> (key, sha256, size) through Genro Storage on a local root.</fact>
+      <fact source="src/kajenn_press/services/editorial.py:28" method="read" verified="2026-10-27"><c>EditorialService.execute</c> checks identity, binds arguments, authorizes, and for mutations enforces a key of at most 256 characters, returning the prior receipt when the key and input repeat.</fact>
+      <fact source="src/kajenn_press/services/editorial.py:643" method="read" verified="2026-10-27"><c>resource_copy</c> records <c>copied_from</c> with the source revision; updates keep it (lines 583 and 628).</fact>
+      <fact source="src/kajenn_press/publication/service.py:225" method="read" verified="2026-10-27">The publication service commits to the same catalog; jobs and releases read payloads from it (<c>publication/jobs.py:114</c>, <c>publication/releases.py:102</c>). Replacing the catalog affects Phase 4.</fact>
+      <fact source="src/kajenn_press/domain.py:5" method="read" verified="2026-10-27"><c>EDITORIAL_KINDS</c> are site, content, variant, template, css, javascript, media.</fact>
+      <fact source="src/kajenn_press/domain.py:62" method="read" verified="2026-10-27"><c>AccessPolicy</c> maps identity to scopes (installation, library, <c>site:&lt;id&gt;</c>, <c>*</c>) and permission names, supplied by the host.</fact>
+
+      <table title="Classification">
+        <row head="true"><cell>Item</cell><cell>Fate</cell><cell>Successor or change</cell><cell>Decision</cell></row>
+        <row><cell><c>catalog/local.py</c>: <c>LocalCatalog</c>, <c>Snapshot</c>, <c>Change</c></cell><cell>replace</cell><cell>Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions</cell><cell>d-publish-unit</cell></row>
+        <row><cell>Generations and <c>expected_generation</c></cell><cell>replace</cell><cell>The editing lock of one editor per site; a stale editor cannot save</cell><cell>d-editing-lock</cell></row>
+        <row><cell>Immutable JSON revisions, <c>revision_*</c> history</cell><cell>replace</cell><cell>S3 versions of the source zip and of each published page</cell><cell>d-publish-unit</cell></row>
+        <row><cell>Receipts and idempotency keys</cell><cell>open</cell><cell>Retries from MCP clients (Help me) still need a rule; decided in Phase 7</cell><cell>—</cell></row>
+        <row><cell>Audit and events</cell><cell>open</cell><cell>No audit appears in the redesign; decided in Phase 7</cell><cell>—</cell></row>
+        <row><cell><c>catalog/filesystem.py</c> (fsync, private directory, atomic JSON publish)</cell><cell>change</cell><cell>Reused for the unpacked working copy and the local re-render cache</cell><cell>d-rerender-cache</cell></row>
+        <row><cell><c>catalog/errors.py</c></cell><cell>change</cell><cell><c>Conflict</c>, <c>OwnershipError</c>, <c>IntegrityError</c> kept for the lock and the zip; <c>CommitUncertain</c> and <c>UnsupportedProfile</c> follow the catalog</cell><cell>d-editing-lock</cell></row>
+        <row><cell><c>objects.py</c>: <c>ObjectStore</c>, <c>ObjectRef</c></cell><cell>replace</cell><cell>Assets stored inside the site and page Bags</cell><cell>d-content-copy</cell></row>
+        <row><cell><c>domain.py</c>: <c>EDITORIAL_KINDS</c></cell><cell>change</cell><cell>site, page, template, content, asset (css, javascript, media); variant reduced to one per page until N9</cell><cell>d-content-copy</cell></row>
+        <row><cell><c>domain.py</c>: <c>OPERATIONS</c>, <c>MUTATIONS</c></cell><cell>change</cell><cell>Operation by operation in Phase 6</cell><cell>—</cell></row>
+        <row><cell><c>domain.py</c>: <c>DomainError</c>, <c>AccessPolicy</c></cell><cell>keep</cell><cell>Scopes <c>site:&lt;id&gt;</c> and library remain</cell><cell>d-nav</cell></row>
+        <row><cell><c>EditorialService.execute</c> (identity, binding, authorization)</cell><cell>keep</cell><cell>Same entry point for UI, REST and MCP</cell><cell>—</cell></row>
+        <row><cell>Handlers <c>site_*</c>, <c>records_*</c>, <c>scope_capabilities</c></cell><cell>change</cell><cell>Read from the site Bag instead of the catalog snapshot</cell><cell>d-publish-unit</cell></row>
+        <row><cell>Handlers <c>content_create</c>, <c>variant_create</c>, <c>draft_save</c></cell><cell>change</cell><cell>Create a page from a template; save a content; assign a content copy to a slot</cell><cell>d-content-copy, d-slot-id</cell></row>
+        <row><cell>Handlers <c>resource_save</c>, <c>media_save</c></cell><cell>change</cell><cell>Save templates and assets in the site or Library Bag</cell><cell>d-template-inherit</cell></row>
+        <row><cell>Handler <c>resource_copy</c> and <c>copied_from</c></cell><cell>change</cell><cell>Copy carrying the original id, extended to contents and templates; base of Update and of the use count</cell><cell>d-content-copy</cell></row>
+        <row><cell>Handlers <c>revision_history</c>, <c>revision_compare</c>, <c>revision_checkpoint</c>, <c>revision_restore</c>, <c>revision_index</c></cell><cell>replace</cell><cell>Version list and restore over S3 versions; restore needs the genro-storage upstream item</cell><cell>d-publish-unit</cell></row>
+        <row><cell>Handler <c>dependencies</c></cell><cell>change</cell><cell>Where a content, template or asset is copied: pages and slots</cell><cell>d-content-copy</cell></row>
+        <row><cell>Handler <c>readiness</c></cell><cell>change</cell><cell>Empty slots and SEO checks before publishing</cell><cell>d-publish-select, d-seo-inherit</cell></row>
+      </table>
+    </section>
   </solution>
 
   <related>

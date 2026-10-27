@@ -90,6 +90,43 @@ Kajenn has no response cache; kajenn-press keeps its own in-memory cache of the 
 - **gramlot**: drop onto nodes of a rendered page shown inside the editor. Reproducer: a tree with `draggable=True` and a `dropTarget` div inside `htmlPreview`; the drop is not delivered. An alternative that needs no upstream change: render the preview in the same document instead of a sandboxed iframe; to be decided in Phase 5.
 - **kajenn**: per-site maintenance state and a response cache on the local filesystem, or both kept in kajenn-press; to be decided in Phase 4.
 
+#### Catalog and services
+
+Today one local catalog holds every record of an installation as immutable JSON revisions with generations, receipts, audit and content-addressed payloads. The redesign keeps a site's source as one zipped Bag on S3, versioned by S3 ( (→ proposal/site-tab-redesign#d-publish-unit)), and pages hold autonomous copies carrying the original id ( (→ proposal/site-tab-redesign#d-content-copy)).
+
+- `READ` `src/kajenn_press/catalog/local.py:54` · 2026-10-27 — `LocalCatalog` is a single-owner, thread-serialized store with an `owner.lock`; `commit` (line 347) writes changes under authorization and an idempotency key, `recover` (line 538) repairs an interrupted publication.
+- `READ` `src/kajenn_press/catalog/local.py:43` · 2026-10-27 — `Snapshot` carries generation, records, revisions, receipts, audit and events; `Change` (line 27) carries scope, record id, expected generation, data and payloads.
+- `READ` `src/kajenn_press/objects.py:39` · 2026-10-27 — `ObjectStore` keeps immutable payloads addressed by `ObjectRef` (key, sha256, size) through Genro Storage on a local root.
+- `READ` `src/kajenn_press/services/editorial.py:28` · 2026-10-27 — `EditorialService.execute` checks identity, binds arguments, authorizes, and for mutations enforces a key of at most 256 characters, returning the prior receipt when the key and input repeat.
+- `READ` `src/kajenn_press/services/editorial.py:643` · 2026-10-27 — `resource_copy` records `copied_from` with the source revision; updates keep it (lines 583 and 628).
+- `READ` `src/kajenn_press/publication/service.py:225` · 2026-10-27 — The publication service commits to the same catalog; jobs and releases read payloads from it (`publication/jobs.py:114`, `publication/releases.py:102`). Replacing the catalog affects Phase 4.
+- `READ` `src/kajenn_press/domain.py:5` · 2026-10-27 — `EDITORIAL_KINDS` are site, content, variant, template, css, javascript, media.
+- `READ` `src/kajenn_press/domain.py:62` · 2026-10-27 — `AccessPolicy` maps identity to scopes (installation, library, `site:<id>`, `*`) and permission names, supplied by the host.
+
+*Classification*
+
+| Item | Fate | Successor or change | Decision |
+|---|---|---|---|
+| `catalog/local.py`: `LocalCatalog`, `Snapshot`, `Change` | replace | Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions | d-publish-unit |
+| Generations and `expected_generation` | replace | The editing lock of one editor per site; a stale editor cannot save | d-editing-lock |
+| Immutable JSON revisions, `revision_*` history | replace | S3 versions of the source zip and of each published page | d-publish-unit |
+| Receipts and idempotency keys | open | Retries from MCP clients (Help me) still need a rule; decided in Phase 7 | — |
+| Audit and events | open | No audit appears in the redesign; decided in Phase 7 | — |
+| `catalog/filesystem.py` (fsync, private directory, atomic JSON publish) | change | Reused for the unpacked working copy and the local re-render cache | d-rerender-cache |
+| `catalog/errors.py` | change | `Conflict`, `OwnershipError`, `IntegrityError` kept for the lock and the zip; `CommitUncertain` and `UnsupportedProfile` follow the catalog | d-editing-lock |
+| `objects.py`: `ObjectStore`, `ObjectRef` | replace | Assets stored inside the site and page Bags | d-content-copy |
+| `domain.py`: `EDITORIAL_KINDS` | change | site, page, template, content, asset (css, javascript, media); variant reduced to one per page until N9 | d-content-copy |
+| `domain.py`: `OPERATIONS`, `MUTATIONS` | change | Operation by operation in Phase 6 | — |
+| `domain.py`: `DomainError`, `AccessPolicy` | keep | Scopes `site:<id>` and library remain | d-nav |
+| `EditorialService.execute` (identity, binding, authorization) | keep | Same entry point for UI, REST and MCP | — |
+| Handlers `site_*`, `records_*`, `scope_capabilities` | change | Read from the site Bag instead of the catalog snapshot | d-publish-unit |
+| Handlers `content_create`, `variant_create`, `draft_save` | change | Create a page from a template; save a content; assign a content copy to a slot | d-content-copy, d-slot-id |
+| Handlers `resource_save`, `media_save` | change | Save templates and assets in the site or Library Bag | d-template-inherit |
+| Handler `resource_copy` and `copied_from` | change | Copy carrying the original id, extended to contents and templates; base of Update and of the use count | d-content-copy |
+| Handlers `revision_history`, `revision_compare`, `revision_checkpoint`, `revision_restore`, `revision_index` | replace | Version list and restore over S3 versions; restore needs the genro-storage upstream item | d-publish-unit |
+| Handler `dependencies` | change | Where a content, template or asset is copied: pages and slots | d-content-copy |
+| Handler `readiness` | change | Empty slots and SEO checks before publishing | d-publish-select, d-seo-inherit |
+
 ### Related documents
 
 - `proposal/site-tab-redesign` — Kajenn Press: the site tab, page Bags and per-page publication

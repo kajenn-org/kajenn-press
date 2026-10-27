@@ -152,6 +152,42 @@ th { background: var(--panel); }
         </ul>
       </section>
     </section>
+
+    <section class="section" id="catalog"><h3>Catalog and services</h3>
+      <p>Today one local catalog holds every record of an installation as immutable JSON revisions with generations, receipts, audit and content-addressed payloads. The redesign keeps a site's source as one zipped Bag on S3, versioned by S3 (<a class="ref" href="../proposal/site-tab-redesign.html#d-publish-unit"></a>), and pages hold autonomous copies carrying the original id (<a class="ref" href="../proposal/site-tab-redesign.html#d-content-copy"></a>).</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/catalog/local.py:54</code><span class="muted">2026-10-27</span></div><div><code>LocalCatalog</code> is a single-owner, thread-serialized store with an <code>owner.lock</code>; <code>commit</code> (line 347) writes changes under authorization and an idempotency key, <code>recover</code> (line 538) repairs an interrupted publication.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/catalog/local.py:43</code><span class="muted">2026-10-27</span></div><div><code>Snapshot</code> carries generation, records, revisions, receipts, audit and events; <code>Change</code> (line 27) carries scope, record id, expected generation, data and payloads.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/objects.py:39</code><span class="muted">2026-10-27</span></div><div><code>ObjectStore</code> keeps immutable payloads addressed by <code>ObjectRef</code> (key, sha256, size) through Genro Storage on a local root.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/services/editorial.py:28</code><span class="muted">2026-10-27</span></div><div><code>EditorialService.execute</code> checks identity, binds arguments, authorizes, and for mutations enforces a key of at most 256 characters, returning the prior receipt when the key and input repeat.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/services/editorial.py:643</code><span class="muted">2026-10-27</span></div><div><code>resource_copy</code> records <code>copied_from</code> with the source revision; updates keep it (lines 583 and 628).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/service.py:225</code><span class="muted">2026-10-27</span></div><div>The publication service commits to the same catalog; jobs and releases read payloads from it (<code>publication/jobs.py:114</code>, <code>publication/releases.py:102</code>). Replacing the catalog affects Phase 4.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/domain.py:5</code><span class="muted">2026-10-27</span></div><div><code>EDITORIAL_KINDS</code> are site, content, variant, template, css, javascript, media.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/domain.py:62</code><span class="muted">2026-10-27</span></div><div><code>AccessPolicy</code> maps identity to scopes (installation, library, <code>site:&lt;id&gt;</code>, <code>*</code>) and permission names, supplied by the host.</div></div>
+
+      <div class="table-wrap"><table><caption>Classification</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>catalog/local.py</code>: <code>LocalCatalog</code>, <code>Snapshot</code>, <code>Change</code></td><td>replace</td><td>Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions</td><td>d-publish-unit</td></tr>
+        <tr><td>Generations and <code>expected_generation</code></td><td>replace</td><td>The editing lock of one editor per site; a stale editor cannot save</td><td>d-editing-lock</td></tr>
+        <tr><td>Immutable JSON revisions, <code>revision_*</code> history</td><td>replace</td><td>S3 versions of the source zip and of each published page</td><td>d-publish-unit</td></tr>
+        <tr><td>Receipts and idempotency keys</td><td>open</td><td>Retries from MCP clients (Help me) still need a rule; decided in Phase 7</td><td>—</td></tr>
+        <tr><td>Audit and events</td><td>open</td><td>No audit appears in the redesign; decided in Phase 7</td><td>—</td></tr>
+        <tr><td><code>catalog/filesystem.py</code> (fsync, private directory, atomic JSON publish)</td><td>change</td><td>Reused for the unpacked working copy and the local re-render cache</td><td>d-rerender-cache</td></tr>
+        <tr><td><code>catalog/errors.py</code></td><td>change</td><td><code>Conflict</code>, <code>OwnershipError</code>, <code>IntegrityError</code> kept for the lock and the zip; <code>CommitUncertain</code> and <code>UnsupportedProfile</code> follow the catalog</td><td>d-editing-lock</td></tr>
+        <tr><td><code>objects.py</code>: <code>ObjectStore</code>, <code>ObjectRef</code></td><td>replace</td><td>Assets stored inside the site and page Bags</td><td>d-content-copy</td></tr>
+        <tr><td><code>domain.py</code>: <code>EDITORIAL_KINDS</code></td><td>change</td><td>site, page, template, content, asset (css, javascript, media); variant reduced to one per page until N9</td><td>d-content-copy</td></tr>
+        <tr><td><code>domain.py</code>: <code>OPERATIONS</code>, <code>MUTATIONS</code></td><td>change</td><td>Operation by operation in Phase 6</td><td>—</td></tr>
+        <tr><td><code>domain.py</code>: <code>DomainError</code>, <code>AccessPolicy</code></td><td>keep</td><td>Scopes <code>site:&lt;id&gt;</code> and library remain</td><td>d-nav</td></tr>
+        <tr><td><code>EditorialService.execute</code> (identity, binding, authorization)</td><td>keep</td><td>Same entry point for UI, REST and MCP</td><td>—</td></tr>
+        <tr><td>Handlers <code>site_*</code>, <code>records_*</code>, <code>scope_capabilities</code></td><td>change</td><td>Read from the site Bag instead of the catalog snapshot</td><td>d-publish-unit</td></tr>
+        <tr><td>Handlers <code>content_create</code>, <code>variant_create</code>, <code>draft_save</code></td><td>change</td><td>Create a page from a template; save a content; assign a content copy to a slot</td><td>d-content-copy, d-slot-id</td></tr>
+        <tr><td>Handlers <code>resource_save</code>, <code>media_save</code></td><td>change</td><td>Save templates and assets in the site or Library Bag</td><td>d-template-inherit</td></tr>
+        <tr><td>Handler <code>resource_copy</code> and <code>copied_from</code></td><td>change</td><td>Copy carrying the original id, extended to contents and templates; base of Update and of the use count</td><td>d-content-copy</td></tr>
+        <tr><td>Handlers <code>revision_history</code>, <code>revision_compare</code>, <code>revision_checkpoint</code>, <code>revision_restore</code>, <code>revision_index</code></td><td>replace</td><td>Version list and restore over S3 versions; restore needs the genro-storage upstream item</td><td>d-publish-unit</td></tr>
+        <tr><td>Handler <code>dependencies</code></td><td>change</td><td>Where a content, template or asset is copied: pages and slots</td><td>d-content-copy</td></tr>
+        <tr><td>Handler <code>readiness</code></td><td>change</td><td>Empty slots and SEO checks before publishing</td><td>d-publish-select, d-seo-inherit</td></tr>
+      </table></div>
+    </section>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>
   </ul></section></main></body></html>
