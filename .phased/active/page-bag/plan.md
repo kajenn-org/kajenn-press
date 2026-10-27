@@ -72,7 +72,9 @@ Starting point (main `937cd52`): templates are Python source with `build(source,
   - Details: a site template is independent (a copy) or linked: the Library Bag version it is based on plus node changes (add, remove, change) addressed by label path. Rebasing on a new Library version applies cleanly or stops with the list of conflicting nodes, including renamed labels; per node the operator keeps the site version or takes the Library one (d-template-conflict).
   - Done: a clean rebase, a conflict on a changed node, a conflict on a removed node and a renamed label each produce the expected result or conflict list.
 
-- [ ] **Phase 6**: Unplaced contents and template switch
+- [x] **Phase 6**: Unplaced contents and template switch
+  > Done: `update_plan`/`apply_update` now cover template copies: after a page takes the new template copy, contents of slots it no longer declares move to `unplaced`; a page with a locally changed template copy is not selected. New `Site.switch_plan` (mapping by name), `switch_template` (validated mapping, unmapped to unplaced), `place_unplaced` (into a free slot only) and `page_check` (empty slots, unplaced keys). `tests/site/test_unplaced_and_switch.py` (9 tests); the Phase 4 test that refused template updates is removed.
+  > Suite: 163 passed, 19 skipped, the same 11 failures needing `KAJENN_RELEASE_S3`.
   - Run: opus / high
   - Files: `src/kajenn_press/site/`, `tests/site/`.
   - Details: when a template update removes a slot, its content copy moves to the page's unplaced contents (d-slot-removed); a template switch proposes a mapping matched by name, accepts the operator's corrections and moves unmatched contents to unplaced (d-template-switch); a check lists empty slots and unplaced contents for the later Publish check.

@@ -242,9 +242,7 @@ class Site:
             raise DomainError("invalid_input", f"The page template has no slot {slot_name}")
         for node in list(page.slots.nodes):
             if node.attr["slot"] == slot_name:
-                page.slots.pop(node.label)
-                attributes = {k: v for k, v in node.attr.items() if k != "slot"}
-                page.unplaced.set_item(node.label, node.value, _attributes=attributes)
+                self._unplace(page, node)
         original = self.node("contents", content_id)
         return self._place_copy(page.slots, content_id, original, slot=slot_name)
 
@@ -268,10 +266,8 @@ class Site:
         return len(self.uses(original_id))
 
     def update_plan(self, original_id):
-        """What Update would do for each copy of a content or asset (d-update-local)."""
-        section, original = self.original(original_id)
-        if section == "templates":
-            raise DomainError("invalid_input", "Template copies are updated with slot mapping")
+        """What Update would do for each copy of an original (d-update-local)."""
+        _section, original = self.original(original_id)
         current = value_digest(original.value)
         plan = []
         for page_id, path in self.uses(original_id):
@@ -291,8 +287,12 @@ class Site:
         return plan
 
     def apply_update(self, original_id, selected):
-        """Replace the selected copies, given as (page id, path), with the current original."""
-        _section, original = self.original(original_id)
+        """Replace the selected copies, given as (page id, path), with the current original.
+
+        A page whose new template copy no longer declares a slot keeps that slot's content
+        copy among its unplaced contents (d-slot-removed).
+        """
+        section, original = self.original(original_id)
         known = set(self.uses(original_id))
         for page_id, path in selected:
             if (page_id, path) not in known:
@@ -300,6 +300,80 @@ class Site:
             copy = self.page(page_id).bag.get_node(path)
             copy.value = copy_value(original.value)
             copy.attr.update(self.copy_attributes(original_id, original))
+            if section == "templates":
+                self._unplace_missing_slots(self.page(page_id))
+
+    def switch_plan(self, page_id, template_id):
+        """Proposed mapping from the page's slots to the new template's slots, by name."""
+        page = self.page(page_id)
+        new_names = {
+            slot.name for slot in template_slots(self.node("templates", template_id).value)
+        }
+        return {
+            slot.name: (slot.name if slot.name in new_names else None)
+            for slot in template_slots(page.template.value)
+        }
+
+    def switch_template(self, page_id, template_id, mapping):
+        """Give the page a copy of another template; contents follow the confirmed mapping.
+
+        `mapping` sends each old slot name to a new slot name or None; contents of slots
+        mapped to None, or not mapped, become unplaced (d-template-switch).
+        """
+        page = self.page(page_id)
+        original = self.node("templates", template_id)
+        new_names = {slot.name for slot in template_slots(original.value)}
+        targets = [name for name in mapping.values() if name is not None]
+        if not set(targets) <= new_names:
+            raise DomainError("invalid_input", "Mapping targets a slot the template lacks")
+        if len(targets) != len(set(targets)):
+            raise DomainError("invalid_input", "Two slots are mapped to the same slot")
+        page.bag.set_item(
+            "template",
+            copy_value(original.value),
+            _attributes={**original.attr, **self.copy_attributes(template_id, original)},
+        )
+        for node in list(page.slots.nodes):
+            target = mapping.get(node.attr["slot"])
+            if target is None:
+                self._unplace(page, node)
+            else:
+                node.attr["slot"] = target
+
+    def place_unplaced(self, page_id, key, slot_name):
+        """Move an unplaced content copy into a free slot of the page."""
+        page = self.page(page_id)
+        node = page.unplaced.get_node(key)
+        if node is None:
+            raise DomainError("not_found", f"No unplaced content {key}")
+        if slot_name not in {slot.name for slot in template_slots(page.template.value)}:
+            raise DomainError("invalid_input", f"The page template has no slot {slot_name}")
+        if any(n.attr["slot"] == slot_name for n in page.slots.nodes):
+            raise DomainError("conflict", f"Slot {slot_name} already holds a content")
+        page.unplaced.pop(key)
+        page.slots.set_item(key, node.value, _attributes={**node.attr, "slot": slot_name})
+
+    def page_check(self, page_id):
+        """Empty slots and unplaced contents of a page, for the check before Publish."""
+        page = self.page(page_id)
+        filled = {node.attr["slot"] for node in page.slots.nodes}
+        return {
+            "empty_slots": [
+                slot.name for slot in template_slots(page.template.value) if slot.name not in filled
+            ],
+            "unplaced": [node.label for node in page.unplaced.nodes],
+        }
+
+    def _unplace(self, page, node):
+        page.slots.pop(node.label)
+        attributes = {k: v for k, v in node.attr.items() if k != "slot"}
+        page.unplaced.set_item(node.label, node.value, _attributes=attributes)
+
+    def _unplace_missing_slots(self, page):
+        names = {slot.name for slot in template_slots(page.template.value)}
+        for node in list(page.slots.nodes):
+            if node.attr["slot"] not in names:
+                self._unplace(page, node)
 
     def _place_copy(self, target, original_id, original, **extra):
         key = new_id()

@@ -116,11 +116,3 @@ def test_invalid_requests_are_refused(call, message):
     site, pages, ids = site_with_pages()
     with pytest.raises(DomainError, match=message):
         call(site, pages, ids)
-
-
-def test_template_update_is_not_a_content_update():
-    site, _pages, _ids = site_with_pages()
-    template = next(iter(site.section("templates").keys()))
-    assert site.use_count(template) == 3
-    with pytest.raises(DomainError, match="slot mapping"):
-        site.update_plan(template)
