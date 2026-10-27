@@ -55,7 +55,9 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
   - Details: classify `rendering/` (contract, engines, inputs, preparation, process, service, worker) against the page Bag rendering itself, slots declared with `kpress_slot`, resolvers at render time, and `render_draft` for the Visual editor.
   - Done: every file classified; the render input of a page Bag described against the current frozen inputs.
 
-- [ ] **Phase 4**: Publication, serving and deployment
+- [x] **Phase 4**: Publication, serving and deployment
+  > Done: 14 src items (2 keep, 7 change, 5 replace) and 9 deploy/example groups classified in section "Publication and serving". Channels, candidates, builds, bundles, pointers and in-process serving are replaced by per-page objects on S3; `qualify`, `PreviewGateway` and the manager deployment stay; the child becomes the Kajenn server with the local re-render cache and per-site maintenance, kept in kajenn-press.
+  > Owner action found: versioning is not enabled on the Hetzner bucket `kpress-releases` (checked 2026-10-27); it is a precondition of N3 and N4.
   - Run: opus / high
   - Files: `xmldocs/proposal/redesign-inventory.xml` (section "Publication and serving").
   - Details: classify `publication/` (artifacts, deployments, export, gateway, grants, jobs, releases, routes, service, serving), `child.py`, `deploy/docker/` and `examples/` against per-page published objects versioned by S3, the local re-render cache (`d-rerender-cache`), Publish of changed pages (`d-publish-select`), sitemap/robots/redirects, maintenance mode, private preview before going public.

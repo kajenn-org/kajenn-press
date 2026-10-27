@@ -158,6 +158,53 @@ Today a template is Python source that authors a Gramlot or HtmlBuilder Source; 
 
 Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.
 
+#### Publication and serving
+
+Today a build renders a candidate (a set of exact variant revisions) into a sealed, content-addressed bundle; a channel activates one bundle at a time and can roll back; activated bundles are exported to Genro Storage with one pointer per channel; a child application serves the active bundle. In the redesign every page is one published object on S3, versioned by S3; Publish sends the changed pages; Kajenn serves them and re-renders pages with resolvers into a local cache.
+
+- `RUN` `Hetzner installation, websites container, 2026-10-27` · 2026-10-27 — `get_bucket_versioning` on bucket `kpress-releases` returns no `Status`: versioning has never been enabled on the bucket. Enabling it is an owner action on the bucket and a precondition of N3 and N4.
+- `READ` `src/kajenn_press/publication/service.py:53` · 2026-10-27 — `PublicationService` composes `BuildJobs`, `PreviewGrants`, `Releases`, `Deployments` and `PublicServing` over the editorial catalog.
+- `READ` `src/kajenn_press/publication/artifacts.py:257` · 2026-10-27 — `build_artifacts` renders every page of a candidate, rewrites links through `LinkResolver` (line 73), adds canonical and alternate links (line 328) and a sitemap (line 350), and seals the bundle; `verify_png` (line 17) checks PNG media.
+- `READ` `src/kajenn_press/publication/export.py:4` · 2026-10-27 — `ReleaseStorage` writes artifacts and manifests once, then one pointer per channel last (line 143); `qualify` (line 33) refuses a backend that loses bytes or exposes a partial object.
+- `READ` `src/kajenn_press/publication/gateway.py:44` · 2026-10-27 — `PreviewGateway` refuses a preview origin equal to the management origin.
+- `READ` `src/kajenn_press/child.py:74` · 2026-10-27 — `StaticSiteServerApplication` binds public origins to channel pointers and serves the active bundle without catalog, Gramlot or render worker; `ReleaseReader` (line 27) caches the manifest for `cache_seconds`.
+- `READ` `deploy/docker/storage-init.sh:2` · 2026-10-27 — The RustFS path creates the bucket and users with `mc`; on Hetzner it is replaced by `compose.external-s3.yaml`, because `minio/mc` is no longer pullable (recorded in the archived kpress-deployment plan).
+
+*Classification: src*
+
+| Item | Fate | Successor or change | Decision |
+|---|---|---|---|
+| `publication/releases.py`: channels, `release_activate`, `release_rollback`, history | replace | Per-page published objects; rollback of a page through its S3 versions; site rollback through the source zip | d-publish-unit |
+| `publication/jobs.py`: `BuildJobs`, candidates | replace | Publish of the changed pages: render each selected page Bag and write its object; one worker slot kept | d-publish-select |
+| `publication/artifacts.py`: `build_artifacts`, `verify_bundle` | replace | The page object holds its sources and pre-rendered HTML; no bundle or manifest | d-publish-unit |
+| `publication/artifacts.py`: `LinkResolver`, `PageHTML`, `validate_references`, `verify_png` | change | Link rewriting and checks per page; broken internal links feed the SEO checks | d-seo-inherit |
+| `publication/artifacts.py`: canonical, alternate, sitemap | change | Generated at Publish from the SEO tab: `sitemap.xml`, `robots.txt`, 301 redirects | d-seo-inherit |
+| `publication/routes.py` | change | URL per page from the SEO tab; language prefixes reduced to one language until N9 | d-seo-inherit |
+| `publication/export.py`: `ReleaseStorage` export and pointers | replace | Writing page objects to S3 directly; the bucket's versioning keeps the history | d-publish-unit |
+| `publication/export.py`: `qualify` | keep | Same qualification of the storage backend, plus a check that versioning is enabled | d-publish-unit |
+| `publication/grants.py`: `PreviewGrants` | change | Private links for the optional private publication before going public and for the editor in maintenance | — |
+| `publication/gateway.py`: `PreviewGateway` | keep | Management and preview stay on separate origins | — |
+| `publication/serving.py`: `PublicServing` | replace | Serving from page objects by the Kajenn server | d-publish-unit |
+| `publication/deployments.py`: `Deployments` (children registry) | change | Registry of Kajenn servers the first Publish chooses from | — |
+| `publication/service.py`: `PublicationService` | change | Composes Publish, rollback, maintenance, private links and the server registry over the site Bag | d-publish-unit |
+| `child.py`: `StaticSiteServerApplication`, `ReleaseReader` | change | Serves page objects; re-renders pages with resolvers into a local filesystem cache; adds per-site maintenance (missing upstream in Kajenn) | d-rerender-cache |
+
+*Classification: deploy and examples*
+
+| Item | Fate | Successor or change |
+|---|---|---|
+| `deploy/docker/compose.yaml`, `compose.external-s3.yaml`, `websites.py`, `nginx-kpress.conf`, `HETZNER.md`, `credentials.py`, `lock.sh`, requirements files | keep | The manager deployment stays as installed on 2026-10-27 |
+| `deploy/docker/child.py`, `Dockerfile.child`, profile `demo` | change | The child becomes the Kajenn server serving page objects, with the render profile when resolvers are used |
+| `deploy/docker/storage-init.sh`, profile `rustfs`, `compose.volume.yaml` | change | Local development storage; needs `rustfs/rc` instead of `minio/mc`, and versioning enabled on the local bucket |
+| `examples/persistence.py`, `editorial.py`, `serve.py` | replace | One example of the site Bag editing cycle over REST and MCP |
+| `examples/private_preview.py`, `verify_private_preview.py`, `publication_cycle.py`, `verify_publication_cycle.py` | replace | One example of Publish, private link and rollback per page |
+| `examples/static_rendering.py`, `static_template.py`, `qualify_renderers.py` | change | Templates with `kpress_slot` instead of `^blocks.*` |
+| `examples/child_serve.py` | change | Follows `child.py` |
+| `examples/admin_demo.py` | change | Follows the administration (Phase 5) |
+| `examples/kajenn_org/`, `examples/kajenn_press_site/` | change | Converted to site Bags; their fate is tied to the existing data (Phase 6) |
+
+Decided here for the upstream item of Phase 1: per-site maintenance and the local re-render cache belong to the Kajenn server application of kajenn-press, not to Kajenn, until another Kajenn application needs them.
+
 ### Related documents
 
 - `proposal/site-tab-redesign` — Kajenn Press: the site tab, page Bags and per-page publication
