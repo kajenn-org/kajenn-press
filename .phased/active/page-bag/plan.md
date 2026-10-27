@@ -29,7 +29,9 @@ Starting point (main `937cd52`): templates are Python source with `build(source,
 
 ## Work Plan
 
-- [ ] **Phase 1**: Qualification of the Source Bag path
+- [x] **Phase 1**: Qualification of the Source Bag path
+  > Done: `tests/site/test_source_qualification.py` (4 tests, both engines, run in the render interpreter). A Source with `kpress_slot` nodes saved with `to_tytx` and loaded with `from_tytx` renders the same HTML after it is rebuilt through the target builder's grammar (each node replayed with its tag, label and attributes); this is the public way to attach a loaded Source, since loaded nodes carry no builder. Slots are found by `findNodeByAttr` and by label path after loading. A `BagCbResolver` with `cache_time=60` fills a slot during a static render, runs once for two renders, and its HTML comes out escaped as text. No upstream item needed.
+  > Baseline: with only `KAJENN_RENDER_PYTHON` set, 11 existing tests fail before and after this phase, all in `tests/publication` and `tests/child` (plus one installed full-cycle contract), because they need `KAJENN_RELEASE_S3` (an S3 test endpoint); 108 pass, 19 skip.
   - Run: opus / high
   - Files: new `tests/site/test_source_qualification.py`; `pyproject.toml` only if a dependency bound is needed.
   - Details: with the qualified engines of the render profile, check: a Gramlot and an HtmlBuilder Source with `kpress_slot` nodes serialized to TYTX JSON and rendered after loading, with the same HTML as before serialization; slot nodes found by `kpress_slot` after loading; a `BagCbResolver` in Data with `cache_time` resolved during a static render; the worker accepting a Source Bag instead of Python source. Find the public way to attach a loaded Source to a builder.
