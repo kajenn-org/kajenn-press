@@ -204,25 +204,84 @@ Library
       <option id="d-help-budget-limit" title="Budget with a limit"/>
       <choice option="d-help-budget-info" by="GP" date="2026-10-27">The tool is used internally for now.</choice>
     </decision>
-    <decision id="d-editing-lock" status="proposed">
+    <decision id="d-editing-lock" status="decided">
       <question>How do two people edit the same site?</question>
-      <option id="d-editing-lock-one" title="One editor at a time per site"/>
-      <option id="d-editing-lock-merge" title="Concurrent editing with merge of the source zip"/>
+      <option id="d-editing-lock-one" title="One editor at a time per site"><p>The lock expires after inactivity (for example 30 minutes); another user can take the site with an explicit command, warning the holder, whose unsaved changes are lost; Help me works under the lock of the user who opened it.</p></option>
+      <option id="d-editing-lock-merge" title="Concurrent editing with merge of the source zip"><p>Needs a merge of the same Bag and conflict resolution per node; nothing provides it today.</p></option>
+      <choice option="d-editing-lock-one" by="GP" date="2026-10-27">The source is one zip; a merge mechanism does not exist.</choice>
     </decision>
-    <decision id="d-update-local" status="open">
+    <decision id="d-update-local" status="decided">
       <question>When a page changed its copy of a content, does Update overwrite it, skip it or ask?</question>
+      <option id="d-update-local-overwrite" title="Always overwrite"/>
+      <option id="d-update-local-skip" title="Always skip"/>
+      <option id="d-update-local-ask" title="Flag and let the operator choose"><p>Pages with local changes are flagged and start unselected; selecting one shows the differences and overwrites on confirmation. Each copy carries the original id and the digest of the original at copy time; a different current digest means a local change.</p></option>
+      <choice option="d-update-local-ask" by="GP" date="2026-10-27">Nothing is lost without the operator seeing it.</choice>
     </decision>
-    <decision id="d-template-conflict" status="open">
+    <decision id="d-template-conflict" status="decided">
       <question>When a Library template changes a node that a linked site template changed or removed, which version wins?</question>
+      <option id="d-template-conflict-site" title="The site wins"/>
+      <option id="d-template-conflict-library" title="The Library wins"/>
+      <option id="d-template-conflict-ask" title="Report and let the operator choose per node"><p>The update of that template stops and lists the conflicting nodes, including renamed labels; per node the operator keeps the site version or takes the Library one. Until then the site template stays on the Library version it records.</p></option>
+      <choice option="d-template-conflict-ask" by="GP" date="2026-10-27">Same rule as Update of copies.</choice>
     </decision>
-    <decision id="d-slot-removed" status="open">
+    <decision id="d-slot-removed" status="decided">
       <question>What do pages show when their template no longer declares a slot that held a content?</question>
+      <option id="d-slot-removed-drop" title="The copy is discarded"/>
+      <option id="d-slot-removed-unplaced" title="The copy stays without a slot"><p>The page does not show it; the Pages tree lists it under the page as without slot, with a warning; the check before Publish reports it; the operator moves or deletes it.</p></option>
+      <option id="d-slot-removed-block" title="The template cannot be saved while pages use the slot"/>
+      <choice option="d-slot-removed-unplaced" by="GP" date="2026-10-27">Nothing is lost and templates stay free to change.</choice>
     </decision>
-    <decision id="d-template-switch" status="open">
+    <decision id="d-template-switch" status="decided">
       <question>When a page switches template, do slots with the same name keep their contents?</question>
+      <option id="d-template-switch-name" title="By name"/>
+      <option id="d-template-switch-clear" title="All contents become without slot"/>
+      <option id="d-template-switch-map" title="Guided mapping"><p>A panel shows old and new slots matched by name; the operator corrects and confirms; unmatched contents become without slot.</p></option>
+      <choice option="d-template-switch-map" by="GP" date="2026-10-27">Equal names need one confirmation; renamed slots are seen before contents are detached.</choice>
     </decision>
-    <decision id="d-dynamic-seo" status="open">
-      <question>Content in dynamic iframes is not indexed. Must content that matters for SEO always come from resolvers in the static HTML?</question>
+    <decision id="d-dynamic-seo" status="decided">
+      <question>Content in dynamic iframes is not indexed. How does a page with dynamic slots stay indexable?</question>
+      <option id="d-dynamic-seo-accept" title="Accept: iframe content is not indexed"/>
+      <option id="d-dynamic-seo-noindex" title="Dynamic iframes only on noindex pages"/>
+      <option id="d-dynamic-seo-fallback" title="Static fallback content in the iframe slot"><p>Written by hand or produced by a resolver, rendered in the page HTML and indexed; the iframe replaces it when the browser loads it. The SEO tab warns when an indexed page has an iframe slot without fallback.</p></option>
+      <choice option="d-dynamic-seo-fallback" by="GP" date="2026-10-27">Iframes stay free and pages do not reach search engines or no-JS readers empty.</choice>
+    </decision>
+    <decision id="d-resolver-config" status="decided">
+      <question>How does a resolver in the render worker reach a database?</question>
+      <option id="d-resolver-config-named" title="Named connections in the server deployment"><p>The Kajenn server's <c>.env</c> and secrets define named connections; the page Bag names the connection only; the worker receives it per render. Credentials never enter a Bag or S3.</p></option>
+      <option id="d-resolver-config-inprocess" title="Resolvers in the server process"/>
+      <option id="d-resolver-config-http" title="Resolvers call HTTP APIs with a token"/>
+      <choice option="d-resolver-config-named" by="GP" date="2026-10-27">Credentials stay out of files that move and are versioned.</choice>
+    </decision>
+    <decision id="d-resolver-output" status="decided">
+      <question>Is resolver output filtered?</question>
+      <option id="d-resolver-output-text" title="Text by default, HTML through nh3"/>
+      <option id="d-resolver-output-trusted" title="Trusted like the template"/>
+      <choice option="d-resolver-output-text" by="GP" date="2026-10-27">Database values can hold text written by users.</choice>
+    </decision>
+    <decision id="d-idempotency" status="decided">
+      <question>Do mutations keep idempotency keys?</question>
+      <option id="d-idempotency-keep" title="Keep keys; receipts kept 24 hours in the site working copy"/>
+      <option id="d-idempotency-drop" title="Drop keys; clients re-read before retrying"/>
+      <choice option="d-idempotency-keep" by="GP" date="2026-10-27">Help me makes many MCP calls and may retry them.</choice>
+    </decision>
+    <decision id="d-audit" status="decided">
+      <question>Is there an audit of changes?</question>
+      <option id="d-audit-minimal" title="Minimal log in the site Bag"><p>Who, when and what for each save, Publish, rollback and lock take; Help me actions are recorded as made by the user through Help me; the log travels with the zip.</p></option>
+      <option id="d-audit-none" title="No audit"/>
+      <choice option="d-audit-minimal" by="GP" date="2026-10-27">An S3 version does not say who changed what.</choice>
+    </decision>
+    <decision id="d-preview-interaction" status="decided">
+      <question>How do clicks and drops reach slots in the sandboxed preview?</question>
+      <option id="d-preview-interaction-script" title="A script in the preview with postMessage"><p><c>sandbox="allow-scripts"</c> without <c>allow-same-origin</c>; the script is added to the preview HTML only, never to published HTML. Verified as the first step of N5; if native drag into the sandboxed iframe fails, the first version keeps click-to-select in the preview and drop on the Pages tree.</p></option>
+      <option id="d-preview-interaction-shadow" title="Page in the administration document inside a shadow DOM"/>
+      <option id="d-preview-interaction-upstream" title="Cross-window drag and drop in Gramlot"/>
+      <choice option="d-preview-interaction-script" by="GP" date="2026-10-27">The administration stays isolated from the page.</choice>
+    </decision>
+    <decision id="d-site-rebuild" status="decided">
+      <question>What happens to the Kajenn Press site in the Hetzner catalog?</question>
+      <option id="d-site-rebuild-rebuild" title="Rebuild from the example sources"><p>No migration code; the catalog volume is archived with the backup command of <c>deploy/docker/HETZNER.md</c> before the new version is installed.</p></option>
+      <option id="d-site-rebuild-migrate" title="Migrate with a converter"/>
+      <choice option="d-site-rebuild-rebuild" by="GP" date="2026-10-27">The site comes from <c>examples/kajenn_press_site</c> and its text must be rewritten anyway.</choice>
     </decision>
   </decisions>
 

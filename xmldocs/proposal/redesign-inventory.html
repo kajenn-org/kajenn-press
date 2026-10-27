@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<!-- generated from redesign-inventory.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kajenn Press: inventory of the code against the site tab redesign</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press: inventory of the code against the site tab redesign</h1><div class="doc-meta"><span>redesign-inventory</span><span>2026-10-27</span><span>Giovanni Porcari</span><span class="tag tag-accepted">accepted</span></div></header><section class="part problem"><h2>Problem</h2>
+    <p><a class="ref" href="../proposal/site-tab-redesign.html#site-tab-redesign"></a> changes the administration and the publication model. Before any code changes, every part of the existing code, every REST/MCP operation, every test suite and every deployment file needs a stated fate, and the upstream capabilities the redesign relies on need to be checked.</p>
+    <p>Classification used throughout: <code>keep</code> (unchanged), <code>change</code> (kept and adapted), <code>replace</code> (removed, a named new part takes its role), <code>remove</code> (removed with no successor). Capabilities are <code>exists</code>, <code>partial</code> or <code>missing</code>.</p>
+  </section><section class="part solution"><h2>Proposed solution</h2>
+    <section class="section" id="upstream"><h3>Upstream capabilities</h3>
+      <p>Repositories read on 2026-10-27: genro-storage <code>dd62bfd</code>, genro-bag <code>2293047</code>, kajenn <code>6ac7e58</code>, gramlot <code>d01bf3d</code>; genro-builders 0.30.0 as installed in the kajenn-press environment. The kajenn-press environment installs genro-storage 0.8.4, genro-bag 0.28.0 and kajenn 0.5.0 from PyPI; the checkouts read here can differ from those releases. Gramlot is not installed in the kajenn-press development environment; the Gramlot checks ran in the Gramlot checkout's own environment.</p>
+
+      <div class="table-wrap"><table><caption>Summary</caption>
+        <tr><th>Need</th><th>Status</th><th>Gap</th></tr>
+        <tr><td>S3 object versioning: list, read a version</td><td>exists</td><td>—</td></tr>
+        <tr><td>S3 object versioning: restore a version as current</td><td>missing</td><td>no restore API</td></tr>
+        <tr><td>Zip archive as a mount, zip export of a node</td><td>exists</td><td>writing a zip over S3 not verified</td></tr>
+        <tr><td>Bag with nested Bags and bytes to one file and back</td><td>partial</td><td>lossless in TYTX JSON and pickle only; no zip</td></tr>
+        <tr><td>Zipped Bag file</td><td>missing</td><td>no <code>Bag.to_zip</code> / <code>from_zip</code></td></tr>
+        <tr><td>Resolvers with a time-based cache</td><td>exists</td><td>synchronous <code>load()</code> only</td></tr>
+        <tr><td>Custom <code>kpress_slot</code> attribute on source nodes</td><td>exists</td><td>client renderer not checked</td></tr>
+        <tr><td><code>node_label</code>, dotted paths, find by attribute</td><td>exists</td><td>—</td></tr>
+        <tr><td>Hosting containers in static rendering</td><td>partial</td><td>layout widgets need the JS runtime</td></tr>
+        <tr><td>Editors CodeMirror, Jodit, HTML preview</td><td>exists</td><td>—</td></tr>
+        <tr><td>Detachable floating window with tabs</td><td>missing</td><td>investigated (GC-185), not implemented</td></tr>
+        <tr><td>Drag from a tree onto a node of the same page</td><td>exists</td><td>—</td></tr>
+        <tr><td>Drop into a rendered page inside an iframe</td><td>missing</td><td>excluded by design</td></tr>
+        <tr><td>Kajenn serving of storage content, response cache</td><td>partial</td><td>no storage response, no cache</td></tr>
+        <tr><td>Maintenance mode for one site</td><td>missing</td><td>only whole-server 503 outside RUNNING</td></tr>
+      </table></div>
+
+      <section class="section"><h4>Genro Storage</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:180</code><span class="muted">2026-10-27</span></div><div>The S3 backend sets <code>version_aware=True</code> by default.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:549</code><span class="muted">2026-10-27</span></div><div>The versioning capability is derived from the s3fs client only; the bucket's versioning state is never queried.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:788</code><span class="muted">2026-10-27</span></div><div><code>get_versions(path)</code> lists versions with id, latest flag, date, size and etag; any exception returns an empty list.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/backends/fsspec.py:847</code><span class="muted">2026-10-27</span></div><div><code>open_version(path, version_id)</code> opens a version for reading; <code>delete_version</code> follows at line 886.</div></div>
+        <p>No restore, rollback or promote function exists in genro-storage: a search for them in <code>src/</code> found nothing. Restoring today means reading a version and writing it as the current object; this was not tried against S3.</p>
+        <div class="box limit"><div>S3-compatible servers without ListObjectVersions need <code>version_aware=False</code>. Whether the Hetzner bucket <code>kpress-releases</code> has versioning enabled was not checked.</div><div class="box-foot"><code class="source">genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:151</code></div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/storage_grammar.py:256</code><span class="muted">2026-10-27</span></div><div>A <code>zip</code> mount addresses a ZIP archive as a filesystem, with <code>file</code>, <code>mode</code> and a target protocol.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-storage@dd62bfd:src/genro_storage/node.py:1621</code><span class="muted">2026-10-27</span></div><div><code>node.zip()</code> returns deflated ZIP bytes of a file, a directory or an iterator of nodes.</div></div>
+      </section>
+
+      <section class="section"><h4>Genro Bag</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/bag/_serialize.py:270</code><span class="muted">2026-10-27</span></div><div><code>to_tytx(transport="json"|"msgpack")</code> serializes a Bag, optionally to a file.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">kajenn-press .venv, genro-bag 0.28.0</code><span class="muted">2026-10-27</span></div><div>A Bag with a nested Bag holding bytes survives <code>to_tytx</code>/<code>from_tytx</code> in JSON: the value comes back as the same bytes. Through <code>to_xml</code>/<code>from_xml</code> the bytes come back as a string.</div></div>
+        <p>Pickle is also lossless, as reported by the research run; the msgpack transport needs the <code>msgpack</code> package, which the environment lacks. Neither was re-run here.</p>
+        <p>No zipped Bag format exists: a search for <code>to_zip</code>/<code>from_zip</code> in genro-bag found nothing. A zipped site source needs TYTX plus Python <code>zipfile</code>, or the genro-storage zip mount.</p>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/resolver.py:15</code><span class="muted">2026-10-27</span></div><div><code>BagResolver</code> (line 89) takes <code>cache_time</code>: 0 no cache, positive a TTL in seconds, negative until <code>reset()</code>.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">genro-bag@2293047:src/genro_bag/resolver.py:646</code><span class="muted">2026-10-27</span></div><div><code>BagCbResolver</code> wraps a callback as a resolver with the same cache options.</div></div>
+      </section>
+
+      <section class="section"><h4>Gramlot and HtmlBuilder</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">gramlot@d01bf3d checkout environment</code><span class="muted">2026-10-27</span></div><div><code>div(node_label='info', kpress_slot='main')</code> and <code>td(kpress_slot=True)</code> keep the attribute in the source Bag; <code>getNode('html_0.body.center.info')</code> reaches the node by its label path; <code>findNodeByAttr('kpress_slot', 'main')</code> returns it; server rendering emits <code>&lt;div kpress_slot="main"&gt;</code> and <code>&lt;td kpress_slot="true"&gt;</code>.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:src/gramlot/renderer/html_renderer.py:91</code><span class="muted">2026-10-27</span></div><div>Unknown attribute names pass to the output; names starting with <code>gramlot_</code> are an error.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/engines.py:13</code><span class="muted">2026-10-27</span></div><div>The kajenn-press static profile accepts the HTML tags of <code>STATIC_TAGS</code> only; other nodes fail with <code>unsupported_static_node</code> (line 204).</div></div>
+        <p>Layout widgets such as <code>contentPane</code> render as custom elements that need the Gramlot JS runtime, as reported by the research run. In static HTML a slot is therefore a plain element: <code>div</code>, <code>section</code>, <code>td</code> and similar.</p>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:src/gramlot/collections/editors.json:14</code><span class="muted">2026-10-27</span></div><div>The editor collection defines <code>codeMirror</code>, <code>htmlEditor</code> (line 2599, Jodit) and <code>htmlPreview</code> (line 4754).</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:docs_llm/internal/185-legacy-detachable.md</code><span class="muted">2026-10-27</span></div><div>Detachable panes and floating palettes of legacy GenroPy are investigated (GC-185, 2026-09-25) and marked "not implemented".</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:js/src/components/tree.js:9</code><span class="muted">2026-10-27</span></div><div>The tree component is a drag source.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot@d01bf3d:js/src/renderer/drag-drop.js:6</code><span class="muted">2026-10-27</span></div><div>Drag and drop works within one renderer; other windows and instances are not admitted.</div></div>
+        <p>The HTML preview renders through <code>srcdoc</code> in a sandboxed iframe, so a content dragged from the drawer cannot be dropped on a slot of the rendered page as the preview works today.</p>
+      </section>
+
+      <section class="section"><h4>Kajenn</h4>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">kajenn@6ac7e58:src/kajenn/response.py:195</code><span class="muted">2026-10-27</span></div><div><code>set_result</code> handles paths, bytes, strings and JSON values; there is no support for storage nodes.</div></div>
+        <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">kajenn@6ac7e58:src/kajenn/server.py:406</code><span class="muted">2026-10-27</span></div><div>The server answers 503 while its lifespan is not running; there is no per-site maintenance state.</div></div>
+        <p>Kajenn has no response cache; kajenn-press keeps its own in-memory cache of the release manifest in <code>child.py</code>.</p>
+      </section>
+
+      <section class="section"><h4>Upstream items</h4>
+        <ul>
+          <li><b>genro-storage</b>: restore a version as current, through a server-side copy with <code>VersionId</code>; query the bucket's versioning state. Reproducer: <code>node.restore_version(vid)</code> raises <code>AttributeError</code>.</li>
+          <li><b>genro-bag</b>: a zipped Bag file holding nested Bags and binary values. Reproducer: <code>Bag.from_xml(b.to_xml(doc_header=True))['a.bin']</code> is a string, and no <code>to_zip</code> exists.</li>
+          <li><b>gramlot</b>: a detachable floating pane holding a tab container (GC-185). Reproducer: no <code>floatingPane</code> in the layout collection.</li>
+          <li><b>gramlot</b>: drop onto nodes of a rendered page shown inside the editor. Reproducer: a tree with <code>draggable=True</code> and a <code>dropTarget</code> div inside <code>htmlPreview</code>; the drop is not delivered. An alternative that needs no upstream change: render the preview in the same document instead of a sandboxed iframe; to be decided in Phase 5.</li>
+          <li><b>kajenn</b>: per-site maintenance state and a response cache on the local filesystem, or both kept in kajenn-press; to be decided in Phase 4.</li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="section" id="catalog"><h3>Catalog and services</h3>
+      <p>Today one local catalog holds every record of an installation as immutable JSON revisions with generations, receipts, audit and content-addressed payloads. The redesign keeps a site's source as one zipped Bag on S3, versioned by S3 (<a class="ref" href="../proposal/site-tab-redesign.html#d-publish-unit"></a>), and pages hold autonomous copies carrying the original id (<a class="ref" href="../proposal/site-tab-redesign.html#d-content-copy"></a>).</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/catalog/local.py:54</code><span class="muted">2026-10-27</span></div><div><code>LocalCatalog</code> is a single-owner, thread-serialized store with an <code>owner.lock</code>; <code>commit</code> (line 347) writes changes under authorization and an idempotency key, <code>recover</code> (line 538) repairs an interrupted publication.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/catalog/local.py:43</code><span class="muted">2026-10-27</span></div><div><code>Snapshot</code> carries generation, records, revisions, receipts, audit and events; <code>Change</code> (line 27) carries scope, record id, expected generation, data and payloads.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/objects.py:39</code><span class="muted">2026-10-27</span></div><div><code>ObjectStore</code> keeps immutable payloads addressed by <code>ObjectRef</code> (key, sha256, size) through Genro Storage on a local root.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/services/editorial.py:28</code><span class="muted">2026-10-27</span></div><div><code>EditorialService.execute</code> checks identity, binds arguments, authorizes, and for mutations enforces a key of at most 256 characters, returning the prior receipt when the key and input repeat.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/services/editorial.py:643</code><span class="muted">2026-10-27</span></div><div><code>resource_copy</code> records <code>copied_from</code> with the source revision; updates keep it (lines 583 and 628).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/service.py:225</code><span class="muted">2026-10-27</span></div><div>The publication service commits to the same catalog; jobs and releases read payloads from it (<code>publication/jobs.py:114</code>, <code>publication/releases.py:102</code>). Replacing the catalog affects Phase 4.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/domain.py:5</code><span class="muted">2026-10-27</span></div><div><code>EDITORIAL_KINDS</code> are site, content, variant, template, css, javascript, media.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/domain.py:62</code><span class="muted">2026-10-27</span></div><div><code>AccessPolicy</code> maps identity to scopes (installation, library, <code>site:&lt;id&gt;</code>, <code>*</code>) and permission names, supplied by the host.</div></div>
+
+      <div class="table-wrap"><table><caption>Classification</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>catalog/local.py</code>: <code>LocalCatalog</code>, <code>Snapshot</code>, <code>Change</code></td><td>replace</td><td>Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions</td><td>d-publish-unit</td></tr>
+        <tr><td>Generations and <code>expected_generation</code></td><td>replace</td><td>The editing lock of one editor per site; a stale editor cannot save</td><td>d-editing-lock</td></tr>
+        <tr><td>Immutable JSON revisions, <code>revision_*</code> history</td><td>replace</td><td>S3 versions of the source zip and of each published page</td><td>d-publish-unit</td></tr>
+        <tr><td>Receipts and idempotency keys</td><td>change</td><td>Keys kept; receipts kept 24 hours in the site working copy</td><td>d-idempotency</td></tr>
+        <tr><td>Audit and events</td><td>replace</td><td>Minimal log in the site Bag: who, when, what</td><td>d-audit</td></tr>
+        <tr><td><code>catalog/filesystem.py</code> (fsync, private directory, atomic JSON publish)</td><td>change</td><td>Reused for the unpacked working copy and the local re-render cache</td><td>d-rerender-cache</td></tr>
+        <tr><td><code>catalog/errors.py</code></td><td>change</td><td><code>Conflict</code>, <code>OwnershipError</code>, <code>IntegrityError</code> kept for the lock and the zip; <code>CommitUncertain</code> and <code>UnsupportedProfile</code> follow the catalog</td><td>d-editing-lock</td></tr>
+        <tr><td><code>objects.py</code>: <code>ObjectStore</code>, <code>ObjectRef</code></td><td>replace</td><td>Assets stored inside the site and page Bags</td><td>d-content-copy</td></tr>
+        <tr><td><code>domain.py</code>: <code>EDITORIAL_KINDS</code></td><td>change</td><td>site, page, template, content, asset (css, javascript, media); variant reduced to one per page until N9</td><td>d-content-copy</td></tr>
+        <tr><td><code>domain.py</code>: <code>OPERATIONS</code>, <code>MUTATIONS</code></td><td>change</td><td>Operation by operation in Phase 6</td><td>—</td></tr>
+        <tr><td><code>domain.py</code>: <code>DomainError</code>, <code>AccessPolicy</code></td><td>keep</td><td>Scopes <code>site:&lt;id&gt;</code> and library remain</td><td>d-nav</td></tr>
+        <tr><td><code>EditorialService.execute</code> (identity, binding, authorization)</td><td>keep</td><td>Same entry point for UI, REST and MCP</td><td>—</td></tr>
+        <tr><td>Handlers <code>site_*</code>, <code>records_*</code>, <code>scope_capabilities</code></td><td>change</td><td>Read from the site Bag instead of the catalog snapshot</td><td>d-publish-unit</td></tr>
+        <tr><td>Handlers <code>content_create</code>, <code>variant_create</code>, <code>draft_save</code></td><td>change</td><td>Create a page from a template; save a content; assign a content copy to a slot</td><td>d-content-copy, d-slot-id</td></tr>
+        <tr><td>Handlers <code>resource_save</code>, <code>media_save</code></td><td>change</td><td>Save templates and assets in the site or Library Bag</td><td>d-template-inherit</td></tr>
+        <tr><td>Handler <code>resource_copy</code> and <code>copied_from</code></td><td>change</td><td>Copy carrying the original id, extended to contents and templates; base of Update and of the use count</td><td>d-content-copy</td></tr>
+        <tr><td>Handlers <code>revision_history</code>, <code>revision_compare</code>, <code>revision_checkpoint</code>, <code>revision_restore</code>, <code>revision_index</code></td><td>replace</td><td>Version list and restore over S3 versions; restore needs the genro-storage upstream item</td><td>d-publish-unit</td></tr>
+        <tr><td>Handler <code>dependencies</code></td><td>change</td><td>Where a content, template or asset is copied: pages and slots</td><td>d-content-copy</td></tr>
+        <tr><td>Handler <code>readiness</code></td><td>change</td><td>Empty slots and SEO checks before publishing</td><td>d-publish-select, d-seo-inherit</td></tr>
+      </table></div>
+    </section>
+
+    <section class="section" id="rendering"><h3>Rendering</h3>
+      <p>Today a template is Python source that authors a Gramlot or HtmlBuilder Source; blocks reach it as prepared HTML in Data. A disposable worker process renders one frozen input built from a pinned catalog snapshot. In the redesign a page Bag holds a template copy, its contents and assets, contents fill slots marked with <code>kpress_slot</code>, and a template may use resolvers at render time with a cache.</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/engines.py:242</code><span class="muted">2026-10-27</span></div><div><code>render_template</code> executes the trusted template source, calls <code>build(source, data)</code>, validates the static Source and renders HTML with a doctype.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">examples/kajenn_press_site/template.py:38</code><span class="muted">2026-10-27</span></div><div>Blocks are placed by Data pointers: <code>main.div("^blocks.hero")</code>, <code>main.div("^blocks.body")</code>.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/engines.py:210</code><span class="muted">2026-10-27</span></div><div>Static validation refuses <code>==</code> expressions and pointers that do not resolve in Data (line 220).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/inputs.py:14</code><span class="muted">2026-10-27</span></div><div><code>RenderInputs.freeze</code> builds the input from one catalog snapshot: the variant, its exact dependency closure and resource sources, up to 32 MiB (line 90); a draft replaces block and resource sources and can use <code>data:</code> URLs (line 114).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/preparation.py:104</code><span class="muted">2026-10-27</span></div><div><code>prepare_blocks</code> converts Markdown and filters HTML with nh3; <code>script</code>, <code>style</code>, <code>iframe</code>, <code>object</code>, <code>embed</code>, <code>svg</code> and <code>math</code> are removed with their content.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/process.py:39</code><span class="muted">2026-10-27</span></div><div><code>RenderWorker</code> runs each render in a new process with only <code>PATH</code>, <code>LANG</code> and <code>TZ</code> in its environment, a timeout of 15 seconds by default (line 18) and a validated result (line 141).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/application.py:24</code><span class="muted">2026-10-27</span></div><div><code>render_preview</code> and <code>render_draft</code> are the two render operations; <code>render_draft</code> renders unsaved sources without writing.</div></div>
+
+      <div class="table-wrap"><table><caption>Classification</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>contract.py</code>: <code>RenderProblem</code>, <code>PreparedHTML</code></td><td>keep</td><td>Same diagnostics and the same type boundary for prepared content</td><td>—</td></tr>
+        <tr><td><code>contract.py</code>: <code>RenderInput</code></td><td>change</td><td>Carries the page Bag in TYTX JSON (lossless with bytes, see Upstream capabilities) instead of catalog references</td><td>d-content-copy</td></tr>
+        <tr><td><code>engines.py</code>: <code>render_template</code></td><td>change</td><td>The template Bag (or the Python template that authors it) is filled slot by slot: each node with <code>kpress_slot</code> receives the prepared content assigned to it, found with <code>findNodeByAttr</code>; <code>^blocks.*</code> pointers go</td><td>d-slot-id</td></tr>
+        <tr><td><code>engines.py</code>: <code>STATIC_TAGS</code>, <code>validate_static_source</code></td><td>change</td><td>Plain HTML slots stay; validation also checks that every slot name is unique; pointers to resolver nodes must be allowed to resolve at render time</td><td>d-slot-id</td></tr>
+        <tr><td><code>engines.py</code>: <code>installed_profile</code>, <code>make_builder</code>, <code>populate_data</code></td><td>keep</td><td>Same qualified engines</td><td>—</td></tr>
+        <tr><td><code>inputs.py</code>: <code>RenderInputs.freeze</code></td><td>replace</td><td>The page Bag is already closed over its copies: freezing becomes serializing the page Bag, with the same 32 MiB limit; <code>data:</code> URLs stay for the Visual editor</td><td>d-content-copy</td></tr>
+        <tr><td><code>inputs.py</code>: <code>RenderInputs.authorize</code></td><td>change</td><td>Authorization on the site scope instead of each dependency revision</td><td>d-nav</td></tr>
+        <tr><td><code>preparation.py</code>: <code>prepare_blocks</code></td><td>keep</td><td>HTML and Markdown contents are filtered the same way. A dynamic iframe cannot come from a content, because <code>iframe</code> is removed: it is a slot kind authored in the template</td><td>—</td></tr>
+        <tr><td><code>process.py</code>: <code>RenderWorker</code></td><td>change</td><td>Resolvers that read a database need configuration the worker does not receive today; the re-render on the serving server reuses the worker with the 10-minute cache in front</td><td>d-rerender-cache</td></tr>
+        <tr><td><code>worker.py</code>: <code>run_request</code></td><td>change</td><td>Reads the page Bag: template, contents by slot, assets</td><td>d-content-copy</td></tr>
+        <tr><td><code>service.py</code>: <code>RenderService</code></td><td>change</td><td>Entry point takes a page of the site instead of a variant revision</td><td>d-content-copy</td></tr>
+        <tr><td>Operations <code>render_preview</code>, <code>render_draft</code></td><td>change</td><td><code>render_draft</code> renders the unsaved page for the Visual editor and the floating editor; <code>render_preview</code> renders the saved page</td><td>—</td></tr>
+      </table></div>
+      <p>Resolvers receive named connections from the server deployment (<a class="ref" href="../proposal/site-tab-redesign.html#d-resolver-config"></a>); their output is text by default and HTML goes through nh3 (<a class="ref" href="../proposal/site-tab-redesign.html#d-resolver-output"></a>).</p>
+    </section>
+
+    <section class="section" id="publication"><h3>Publication and serving</h3>
+      <p>Today a build renders a candidate (a set of exact variant revisions) into a sealed, content-addressed bundle; a channel activates one bundle at a time and can roll back; activated bundles are exported to Genro Storage with one pointer per channel; a child application serves the active bundle. In the redesign every page is one published object on S3, versioned by S3; Publish sends the changed pages; Kajenn serves them and re-renders pages with resolvers into a local cache.</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">Hetzner installation, websites container, 2026-10-27</code><span class="muted">2026-10-27</span></div><div><code>get_bucket_versioning</code> on bucket <code>kpress-releases</code> returns no <code>Status</code>: versioning has never been enabled on the bucket. Enabling it is an owner action on the bucket and a precondition of N3 and N4.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/service.py:53</code><span class="muted">2026-10-27</span></div><div><code>PublicationService</code> composes <code>BuildJobs</code>, <code>PreviewGrants</code>, <code>Releases</code>, <code>Deployments</code> and <code>PublicServing</code> over the editorial catalog.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/artifacts.py:257</code><span class="muted">2026-10-27</span></div><div><code>build_artifacts</code> renders every page of a candidate, rewrites links through <code>LinkResolver</code> (line 73), adds canonical and alternate links (line 328) and a sitemap (line 350), and seals the bundle; <code>verify_png</code> (line 17) checks PNG media.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/export.py:4</code><span class="muted">2026-10-27</span></div><div><code>ReleaseStorage</code> writes artifacts and manifests once, then one pointer per channel last (line 143); <code>qualify</code> (line 33) refuses a backend that loses bytes or exposes a partial object.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/publication/gateway.py:44</code><span class="muted">2026-10-27</span></div><div><code>PreviewGateway</code> refuses a preview origin equal to the management origin.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/child.py:74</code><span class="muted">2026-10-27</span></div><div><code>StaticSiteServerApplication</code> binds public origins to channel pointers and serves the active bundle without catalog, Gramlot or render worker; <code>ReleaseReader</code> (line 27) caches the manifest for <code>cache_seconds</code>.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">deploy/docker/storage-init.sh:2</code><span class="muted">2026-10-27</span></div><div>The RustFS path creates the bucket and users with <code>mc</code>; on Hetzner it is replaced by <code>compose.external-s3.yaml</code>, because <code>minio/mc</code> is no longer pullable (recorded in the archived kpress-deployment plan).</div></div>
+
+      <div class="table-wrap"><table><caption>Classification: src</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>publication/releases.py</code>: channels, <code>release_activate</code>, <code>release_rollback</code>, history</td><td>replace</td><td>Per-page published objects; rollback of a page through its S3 versions; site rollback through the source zip</td><td>d-publish-unit</td></tr>
+        <tr><td><code>publication/jobs.py</code>: <code>BuildJobs</code>, candidates</td><td>replace</td><td>Publish of the changed pages: render each selected page Bag and write its object; one worker slot kept</td><td>d-publish-select</td></tr>
+        <tr><td><code>publication/artifacts.py</code>: <code>build_artifacts</code>, <code>verify_bundle</code></td><td>replace</td><td>The page object holds its sources and pre-rendered HTML; no bundle or manifest</td><td>d-publish-unit</td></tr>
+        <tr><td><code>publication/artifacts.py</code>: <code>LinkResolver</code>, <code>PageHTML</code>, <code>validate_references</code>, <code>verify_png</code></td><td>change</td><td>Link rewriting and checks per page; broken internal links feed the SEO checks</td><td>d-seo-inherit</td></tr>
+        <tr><td><code>publication/artifacts.py</code>: canonical, alternate, sitemap</td><td>change</td><td>Generated at Publish from the SEO tab: <code>sitemap.xml</code>, <code>robots.txt</code>, 301 redirects</td><td>d-seo-inherit</td></tr>
+        <tr><td><code>publication/routes.py</code></td><td>change</td><td>URL per page from the SEO tab; language prefixes reduced to one language until N9</td><td>d-seo-inherit</td></tr>
+        <tr><td><code>publication/export.py</code>: <code>ReleaseStorage</code> export and pointers</td><td>replace</td><td>Writing page objects to S3 directly; the bucket's versioning keeps the history</td><td>d-publish-unit</td></tr>
+        <tr><td><code>publication/export.py</code>: <code>qualify</code></td><td>keep</td><td>Same qualification of the storage backend, plus a check that versioning is enabled</td><td>d-publish-unit</td></tr>
+        <tr><td><code>publication/grants.py</code>: <code>PreviewGrants</code></td><td>change</td><td>Private links for the optional private publication before going public and for the editor in maintenance</td><td>—</td></tr>
+        <tr><td><code>publication/gateway.py</code>: <code>PreviewGateway</code></td><td>keep</td><td>Management and preview stay on separate origins</td><td>—</td></tr>
+        <tr><td><code>publication/serving.py</code>: <code>PublicServing</code></td><td>replace</td><td>Serving from page objects by the Kajenn server</td><td>d-publish-unit</td></tr>
+        <tr><td><code>publication/deployments.py</code>: <code>Deployments</code> (children registry)</td><td>change</td><td>Registry of Kajenn servers the first Publish chooses from</td><td>—</td></tr>
+        <tr><td><code>publication/service.py</code>: <code>PublicationService</code></td><td>change</td><td>Composes Publish, rollback, maintenance, private links and the server registry over the site Bag</td><td>d-publish-unit</td></tr>
+        <tr><td><code>child.py</code>: <code>StaticSiteServerApplication</code>, <code>ReleaseReader</code></td><td>change</td><td>Serves page objects; re-renders pages with resolvers into a local filesystem cache; adds per-site maintenance (missing upstream in Kajenn)</td><td>d-rerender-cache</td></tr>
+      </table></div>
+
+      <div class="table-wrap"><table><caption>Classification: deploy and examples</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th></tr>
+        <tr><td><code>deploy/docker/compose.yaml</code>, <code>compose.external-s3.yaml</code>, <code>websites.py</code>, <code>nginx-kpress.conf</code>, <code>HETZNER.md</code>, <code>credentials.py</code>, <code>lock.sh</code>, requirements files</td><td>keep</td><td>The manager deployment stays as installed on 2026-10-27</td></tr>
+        <tr><td><code>deploy/docker/child.py</code>, <code>Dockerfile.child</code>, profile <code>demo</code></td><td>change</td><td>The child becomes the Kajenn server serving page objects, with the render profile when resolvers are used</td></tr>
+        <tr><td><code>deploy/docker/storage-init.sh</code>, profile <code>rustfs</code>, <code>compose.volume.yaml</code></td><td>change</td><td>Local development storage; needs <code>rustfs/rc</code> instead of <code>minio/mc</code>, and versioning enabled on the local bucket</td></tr>
+        <tr><td><code>examples/persistence.py</code>, <code>editorial.py</code>, <code>serve.py</code></td><td>replace</td><td>One example of the site Bag editing cycle over REST and MCP</td></tr>
+        <tr><td><code>examples/private_preview.py</code>, <code>verify_private_preview.py</code>, <code>publication_cycle.py</code>, <code>verify_publication_cycle.py</code></td><td>replace</td><td>One example of Publish, private link and rollback per page</td></tr>
+        <tr><td><code>examples/static_rendering.py</code>, <code>static_template.py</code>, <code>qualify_renderers.py</code></td><td>change</td><td>Templates with <code>kpress_slot</code> instead of <code>^blocks.*</code></td></tr>
+        <tr><td><code>examples/child_serve.py</code></td><td>change</td><td>Follows <code>child.py</code></td></tr>
+        <tr><td><code>examples/admin_demo.py</code></td><td>change</td><td>Follows the administration (Phase 5)</td></tr>
+        <tr><td><code>examples/kajenn_org/</code>, <code>examples/kajenn_press_site/</code></td><td>change</td><td>Converted to site Bags; their fate is tied to the existing data (Phase 6)</td></tr>
+      </table></div>
+      <p>Decided here for the upstream item of Phase 1: per-site maintenance and the local re-render cache belong to the Kajenn server application of kajenn-press, not to Kajenn, until another Kajenn application needs them.</p>
+    </section>
+
+    <section class="section" id="administration"><h3>Administration</h3>
+      <p>Today the shell is a Gramlot <code>IndexPage</code> with a site selector, a navigation tree grouped by record kind and one iframe tab per object; separate pages edit a new page, an existing page, a resource, publishing and deployments. The redesign has Sites and Library in the tree, one tab per site with Visual editor, SEO and Published site, a drawer with Pages and Contents, and a detachable floating editor.</p>
+
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/host.py:115</code><span class="muted">2026-10-27</span></div><div><code>ManagementGuard</code> admits management requests only on the management origin; the administration CSP is set at line 99, with <code>frame-ancestors 'self'</code> at line 101.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:238</code><span class="muted">2026-10-27</span></div><div><code>login_view</code> shows the Kajenn Press logo and signs in through <code>sign_in</code> (line 271) with the server's identity store.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:29</code><span class="muted">2026-10-27</span></div><div><code>scaled_preview</code> keeps a rendered page at 1280 or 375 px and scales it; the page is shown by <code>htmlPreview</code> (line 77).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/page.py:14</code><span class="muted">2026-10-27</span></div><div>The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; <code>page.js</code> calls <code>render_draft</code> for the live preview (line 177).</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:28</code><span class="muted">2026-10-27</span></div><div>The shell is <code>IndexPage</code>; <code>navigation_bag</code> (line 62) builds the tree of the selected site; <code>create_site</code> (line 325) creates a site from the dialog.</div></div>
+      <p>The HTML preview runs in an iframe with an empty <code>sandbox</code> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. Decided as <a class="ref" href="../proposal/site-tab-redesign.html#d-preview-interaction"></a>: a script in the preview with <code>postMessage</code>, verified first in N5.</p>
+
+      <div class="table-wrap"><table><caption>Classification</caption>
+        <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
+        <tr><td><code>host.py</code>: <code>AdminApplication</code>, <code>ManagementGuard</code>, CSP</td><td>keep</td><td>Same origin boundary; the CSP changes only if the preview interaction needs it</td><td>—</td></tr>
+        <tr><td><code>views.py</code>: <code>login_view</code>, <code>sign_in</code>, <code>sign_out</code>, <code>read</code>, <code>caption</code>, <code>literal_text</code></td><td>keep</td><td>Login, session and service reads unchanged</td><td>—</td></tr>
+        <tr><td><code>views.py</code>: <code>scaled_preview</code></td><td>change</td><td>Center of the Visual editor: rendered site with slot borders on command, navigable through its links</td><td>d-nav</td></tr>
+        <tr><td><code>views.py</code>: <code>workspace</code>, <code>detail</code>, <code>WorkspacePage</code>, <code>pages/library.py</code></td><td>replace</td><td>Library node of the tree with its own lists of templates, styles, scripts and media</td><td>d-nav, d-template-inherit</td></tr>
+        <tr><td><code>pages/index.py</code>: <code>IndexPage</code> shell, tabs</td><td>keep</td><td>Same shell with one tab per site</td><td>d-nav</td></tr>
+        <tr><td><code>pages/index.py</code>: <code>navigation_bag</code>, site selector, New site dialog</td><td>replace</td><td>Tree Sites (sites and "new site") and Library; "new site" opens an empty site tab</td><td>d-nav</td></tr>
+        <tr><td><code>pages/home.py</code></td><td>change</td><td>Guide rewritten on the new model, or removed when the site tab explains itself</td><td>—</td></tr>
+        <tr><td><code>pages/author.py</code>, <code>author.js</code></td><td>replace</td><td>Visual editor of the site tab; a new page is created from a template in the Pages tree</td><td>d-nav</td></tr>
+        <tr><td><code>pages/page.py</code>, <code>page.js</code></td><td>change</td><td>The block editors and the <code>render_draft</code> loop move into the floating editor of a slot (CodeMirror, Jodit, Preview); the floating pane is missing upstream (GC-185)</td><td>d-slot-id</td></tr>
+        <tr><td><code>pages/resource.py</code>, <code>resource.js</code></td><td>change</td><td>Template, CSS, JavaScript and media editors reached from Library and from the site's templates; block declarations become <code>kpress_slot</code> slots read from the template</td><td>d-slot-id, d-template-inherit</td></tr>
+        <tr><td><code>pages/publishing.py</code>, <code>publishing.js</code></td><td>replace</td><td>Published site tab: command bar with Publish, rollback and maintenance, iframe on the live site</td><td>d-publish-select</td></tr>
+        <tr><td><code>pages/deployments.py</code></td><td>change</td><td>Registry of Kajenn servers, used by the first Publish</td><td>—</td></tr>
+        <tr><td>New: drawer with Pages and Contents trees</td><td>—</td><td>Built on the Gramlot tree and its drag source</td><td>d-content-copy</td></tr>
+        <tr><td>New: SEO tab</td><td>—</td><td>Form per page with root defaults and search/social previews</td><td>d-seo-inherit</td></tr>
+        <tr><td>New: Help me chat</td><td>—</td><td>No existing part</td><td>d-help-budget</td></tr>
+      </table></div>
+    </section>
+
+    <section class="section" id="operations"><h3>Operations</h3>
+      <p>44 operations on REST and MCP today: 21 editorial (<code>src/kajenn_press/domain.py:7</code>), 2 render (<code>src/kajenn_press/application.py:24</code>), 21 publication (<code>src/kajenn_press/publication/service.py:32</code>). Successor names are fixed in N2–N4; here each successor is described.</p>
+      <div class="table-wrap"><table><caption>Editorial</caption>
+        <tr><th>Operation</th><th>Fate</th><th>Successor or change</th></tr>
+        <tr><td><code>capabilities</code></td><td>keep</td><td>Lists the new operations</td></tr>
+        <tr><td><code>scope_capabilities</code></td><td>keep</td><td>Same scopes</td></tr>
+        <tr><td><code>sites_list</code></td><td>keep</td><td>Feeds the Sites node of the tree</td></tr>
+        <tr><td><code>site_create</code></td><td>change</td><td>Empty site or from a starting site in Library; languages leave the input until N9</td></tr>
+        <tr><td><code>site_configure</code></td><td>change</td><td>Site name and root SEO defaults</td></tr>
+        <tr><td><code>records_list</code>, <code>records_index</code></td><td>change</td><td>Pages tree, Contents tree with use counts, templates and assets of the site or Library</td></tr>
+        <tr><td><code>record_read</code></td><td>change</td><td>Reads a page, content, template or asset from the site Bag</td></tr>
+        <tr><td><code>content_create</code></td><td>replace</td><td>Create a page from a site template</td></tr>
+        <tr><td><code>variant_create</code></td><td>remove</td><td>One variant per page until N9</td></tr>
+        <tr><td><code>draft_save</code></td><td>replace</td><td>Save a content; assign a content copy to a slot</td></tr>
+        <tr><td><code>resource_save</code>, <code>media_save</code></td><td>change</td><td>Save a template or an asset in the site or Library Bag</td></tr>
+        <tr><td><code>resource_copy</code></td><td>change</td><td>Copy with the original id, for templates, contents and assets; linked or independent for templates</td></tr>
+        <tr><td><code>dependencies</code></td><td>change</td><td>Where an original is copied: pages and slots</td></tr>
+        <tr><td><code>readiness</code></td><td>change</td><td>Checks before Publish: empty slots, SEO</td></tr>
+        <tr><td><code>revision_history</code>, <code>revision_index</code></td><td>replace</td><td>List S3 versions of the site source or of a published page</td></tr>
+        <tr><td><code>revision_restore</code></td><td>replace</td><td>Restore an S3 version (upstream item in genro-storage)</td></tr>
+        <tr><td><code>revision_compare</code></td><td>replace</td><td>Differences between a copy and its original, shown by Update</td></tr>
+        <tr><td><code>revision_checkpoint</code></td><td>remove</td><td>Every save is already a deliberate S3 version</td></tr>
+        <tr><td>New</td><td>—</td><td>Update the copies of an original in selected pages; take and release the editing lock of a site</td></tr>
+      </table></div>
+      <div class="table-wrap"><table><caption>Render and publication</caption>
+        <tr><th>Operation</th><th>Fate</th><th>Successor or change</th></tr>
+        <tr><td><code>render_preview</code>, <code>render_draft</code></td><td>change</td><td>Render a saved or unsaved page Bag</td></tr>
+        <tr><td><code>publication_settings_save</code></td><td>replace</td><td>First Publish settings: Kajenn server, domain, DNS</td></tr>
+        <tr><td><code>publication_route_save</code></td><td>replace</td><td>URL of a page in the SEO tab</td></tr>
+        <tr><td><code>release_activate</code>, <code>build_start</code></td><td>replace</td><td>Publish the selected changed pages</td></tr>
+        <tr><td><code>build_status</code></td><td>change</td><td>Progress of a Publish</td></tr>
+        <tr><td><code>release_rollback</code></td><td>replace</td><td>Restore a previous S3 version of a published page</td></tr>
+        <tr><td><code>release_history</code>, <code>channel_read</code></td><td>replace</td><td>Published state and version list per page</td></tr>
+        <tr><td><code>publication_overview</code></td><td>change</td><td>Feeds the Published site tab</td></tr>
+        <tr><td><code>preview_grant_create</code>, <code>preview_grant_revoke</code></td><td>change</td><td>Private links: private publication, maintenance</td></tr>
+        <tr><td><code>candidate_create</code>, <code>candidate_read</code>, <code>build_retry</code>, <code>channel_create</code>, <code>release_read</code>, <code>release_export</code></td><td>remove</td><td>No candidates, channels, bundles or export in the new model</td></tr>
+        <tr><td><code>child_save</code>, <code>child_read</code>, <code>child_list</code></td><td>change</td><td>Registry of Kajenn servers</td></tr>
+        <tr><td><code>child_channels</code></td><td>change</td><td>Sites served by a Kajenn server</td></tr>
+        <tr><td>New</td><td>—</td><td>Maintenance on and off for a site</td></tr>
+      </table></div>
+      <p>Totals over the 44 operations: 3 keep, 20 change, 13 replace, 8 remove.</p>
+    </section>
+
+    <section class="section" id="tests"><h3>Tests</h3>
+      <p>133 tests in 9 suites under <code>tests/</code>, counted on 2026-10-27 at <code>main</code> <code>1c49362</code>.</p>
+      <div class="table-wrap"><table><caption>Suites</caption>
+        <tr><th>Suite</th><th>Tests</th><th>Fate</th><th>Reason</th></tr>
+        <tr><td><code>tests/contracts/phase_1</code>, <code>phase_2</code></td><td>19</td><td>replace</td><td>Catalog and editorial contracts; new contracts on the site Bag, the lock and S3 versions</td></tr>
+        <tr><td><code>tests/contracts/rendering_publication</code></td><td>24</td><td>replace</td><td>Rendering contracts are rewritten for slots; publication contracts follow per-page objects</td></tr>
+        <tr><td><code>tests/catalog</code></td><td>15</td><td>replace</td><td>Follows <code>LocalCatalog</code> and <code>ObjectStore</code></td></tr>
+        <tr><td><code>tests/services</code></td><td>7</td><td>change</td><td><code>EditorialService.execute</code> stays, handlers change</td></tr>
+        <tr><td><code>tests/api</code></td><td>4</td><td>change</td><td>Authentication and POST rules stay; operations change</td></tr>
+        <tr><td><code>tests/rendering</code></td><td>6</td><td>change</td><td>Limits stay; inputs become the page Bag</td></tr>
+        <tr><td><code>tests/publication</code></td><td>20</td><td>replace</td><td>Except <code>test_gateway.py</code> (keep) and the qualification tests of <code>test_release_export_contract.py</code> (keep)</td></tr>
+        <tr><td><code>tests/child</code></td><td>4</td><td>change</td><td>Follows the Kajenn server application</td></tr>
+        <tr><td><code>tests/admin</code></td><td>23</td><td>replace</td><td>Except login and shell checks in <code>test_admin_phase_1_contract.py</code> and <code>test_site_editor_shell.py</code> (change)</td></tr>
+        <tr><td><code>tests/docker</code></td><td>11</td><td>keep</td><td>The manager deployment stays; <code>test_docker_composition_contract.py</code> changes with the <code>demo</code> profile</td></tr>
+      </table></div>
+    </section>
+
+    <section class="section" id="existing-data"><h3>Existing data</h3>
+      <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">kpress MCP sites_list and records_index, 2026-10-27</code><span class="muted">2026-10-27</span></div><div>The Hetzner catalog holds one site, "Kajenn Press" (language en), with three pages at <code>/en/</code>, <code>/en/features/</code>, <code>/en/get-started/</code>, each with blocks <code>hero</code> and <code>body</code> on one template. No release is active. The 2026-10-27 deployment check added channel settings <code>preview-check</code>, one candidate, one build and one preview grant.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">examples/kajenn_press_site/pages/home.body.html</code><span class="muted">2026-10-27</span></div><div>The home page blocks on Hetzner have the same SHA-256 as <code>examples/kajenn_press_site/pages/home.body.html</code> and <code>home.hero.html</code>: the site was loaded from the example sources.</div></div>
+      <p>The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.</p>
+      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <code>examples/kajenn_press_site/</code> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <code>deploy/docker/HETZNER.md</code> before the new version is installed. Decided as <a class="ref" href="../proposal/site-tab-redesign.html#d-site-rebuild"></a>.</p>
+    </section>
+    <section class="section" id="n2-entry"><h3>N2 entry contract</h3>
+      <p>N2 builds the page Bag, template slots and copies. It starts from main after N1 and from the decisions of <a class="ref" href="../proposal/site-tab-redesign.html#site-tab-redesign"></a>, none of which is open.</p>
+      <ul>
+        <li><b>Starts from</b>: <code>EditorialService.execute</code>, <code>AccessPolicy</code>, <code>DomainError</code>, <code>prepare_blocks</code>, the qualified engines and <code>RenderWorker</code>, all classified keep or change above.</li>
+        <li><b>Delivers</b>: the page Bag (template copy, contents, assets) serialized in TYTX JSON; slots read from <code>kpress_slot</code> with unique names; copies carrying the original id and the original's digest at copy time; Update with differences and unselected local changes (d-update-local); linked and independent site templates with per-node conflicts (d-template-conflict); contents without slot (d-slot-removed); template switch with guided mapping (d-template-switch); rendering of a page Bag to static HTML with slots filled; resolvers with named connections and filtered output.</li>
+        <li><b>Does not deliver</b>: the site source zip and S3 versions (N3), per-page publication and serving (N4), any UI (N5–N8).</li>
+        <li><b>Depends on upstream</b>: none of the missing items blocks N2. The zipped Bag is avoided by TYTX JSON; the genro-storage version restore is needed from N3.</li>
+        <li><b>Owner action before N3</b>: enable versioning on the Hetzner bucket <code>kpress-releases</code> and on the local development bucket.</li>
+      </ul>
+    </section>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>
+  </ul></section></main></body></html>
