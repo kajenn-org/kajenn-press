@@ -71,7 +71,9 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
   - Details: classify `admin/host.py`, `admin/views.py` and every page in `admin/pages/` against the navigation Sites/Library (`d-nav`), the three tabs of the site tab, the drawer and the floating editor. Name the parts reused as they are (login, shell, editors, preview container).
   - Done: every file classified; the reused parts listed with file and line.
 
-- [ ] **Phase 6**: API surface, tests and existing data
+- [x] **Phase 6**: API surface, tests and existing data
+  > Done: 44 operations classified (3 keep, 20 change, 13 replace, 8 remove) plus 3 new ones (update copies, editing lock, maintenance); 9 suites / 133 tests classified (1 keep, 4 change, 5 replace by suite; gateway and qualification tests kept). Existing data: the Hetzner site "Kajenn Press" was loaded from `examples/kajenn_press_site` (same SHA-256); its text describes the old model.
+  > Proposed for Phase 7: no migration code; rebuild the site in the new model from the example sources, after archiving the old catalog volume.
   - Run: opus / high
   - Files: `xmldocs/proposal/redesign-inventory.xml` (sections "Operations", "Tests", "Existing data").
   - Details: one row per REST/MCP operation (44) with its classification and its successor; one row per test suite (9 suites, 133 tests) with its classification; the migration of the Hetzner catalog (one site, three pages) to the new model, or the decision to rebuild it.
@@ -80,7 +82,7 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
 - [ ] **Phase 7**: Open decisions and the N2 entry contract
   - Run: opus / high
   - Files: `xmldocs/proposal/site-tab-redesign.xml` (decisions), `xmldocs/proposal/redesign-inventory.xml` (section "N2 entry contract"), `.phased/roadmap.md`.
-  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output) and in Phase 5 (`d-preview-interaction`: how clicks and drops reach slots in the preview), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
+  - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output) and in Phase 5 (`d-preview-interaction`: how clicks and drops reach slots in the preview) and in Phase 6 (rebuild instead of migrating the Hetzner site), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.
   - Owner actions: one answer per decision.
   - Done: no decision `open` or `proposed` in the proposal; the N2 entry contract written; the roadmap N1 section marked completed; PR opened.
 

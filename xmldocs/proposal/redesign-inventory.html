@@ -291,6 +291,73 @@ th { background: var(--panel); }
         <tr><td>New: Help me chat</td><td>—</td><td>No existing part</td><td>d-help-budget</td></tr>
       </table></div>
     </section>
+
+    <section class="section" id="operations"><h3>Operations</h3>
+      <p>44 operations on REST and MCP today: 21 editorial (<code>src/kajenn_press/domain.py:7</code>), 2 render (<code>src/kajenn_press/application.py:24</code>), 21 publication (<code>src/kajenn_press/publication/service.py:32</code>). Successor names are fixed in N2–N4; here each successor is described.</p>
+      <div class="table-wrap"><table><caption>Editorial</caption>
+        <tr><th>Operation</th><th>Fate</th><th>Successor or change</th></tr>
+        <tr><td><code>capabilities</code></td><td>keep</td><td>Lists the new operations</td></tr>
+        <tr><td><code>scope_capabilities</code></td><td>keep</td><td>Same scopes</td></tr>
+        <tr><td><code>sites_list</code></td><td>keep</td><td>Feeds the Sites node of the tree</td></tr>
+        <tr><td><code>site_create</code></td><td>change</td><td>Empty site or from a starting site in Library; languages leave the input until N9</td></tr>
+        <tr><td><code>site_configure</code></td><td>change</td><td>Site name and root SEO defaults</td></tr>
+        <tr><td><code>records_list</code>, <code>records_index</code></td><td>change</td><td>Pages tree, Contents tree with use counts, templates and assets of the site or Library</td></tr>
+        <tr><td><code>record_read</code></td><td>change</td><td>Reads a page, content, template or asset from the site Bag</td></tr>
+        <tr><td><code>content_create</code></td><td>replace</td><td>Create a page from a site template</td></tr>
+        <tr><td><code>variant_create</code></td><td>remove</td><td>One variant per page until N9</td></tr>
+        <tr><td><code>draft_save</code></td><td>replace</td><td>Save a content; assign a content copy to a slot</td></tr>
+        <tr><td><code>resource_save</code>, <code>media_save</code></td><td>change</td><td>Save a template or an asset in the site or Library Bag</td></tr>
+        <tr><td><code>resource_copy</code></td><td>change</td><td>Copy with the original id, for templates, contents and assets; linked or independent for templates</td></tr>
+        <tr><td><code>dependencies</code></td><td>change</td><td>Where an original is copied: pages and slots</td></tr>
+        <tr><td><code>readiness</code></td><td>change</td><td>Checks before Publish: empty slots, SEO</td></tr>
+        <tr><td><code>revision_history</code>, <code>revision_index</code></td><td>replace</td><td>List S3 versions of the site source or of a published page</td></tr>
+        <tr><td><code>revision_restore</code></td><td>replace</td><td>Restore an S3 version (upstream item in genro-storage)</td></tr>
+        <tr><td><code>revision_compare</code></td><td>replace</td><td>Differences between a copy and its original, shown by Update</td></tr>
+        <tr><td><code>revision_checkpoint</code></td><td>remove</td><td>Every save is already a deliberate S3 version</td></tr>
+        <tr><td>New</td><td>—</td><td>Update the copies of an original in selected pages; take and release the editing lock of a site</td></tr>
+      </table></div>
+      <div class="table-wrap"><table><caption>Render and publication</caption>
+        <tr><th>Operation</th><th>Fate</th><th>Successor or change</th></tr>
+        <tr><td><code>render_preview</code>, <code>render_draft</code></td><td>change</td><td>Render a saved or unsaved page Bag</td></tr>
+        <tr><td><code>publication_settings_save</code></td><td>replace</td><td>First Publish settings: Kajenn server, domain, DNS</td></tr>
+        <tr><td><code>publication_route_save</code></td><td>replace</td><td>URL of a page in the SEO tab</td></tr>
+        <tr><td><code>release_activate</code>, <code>build_start</code></td><td>replace</td><td>Publish the selected changed pages</td></tr>
+        <tr><td><code>build_status</code></td><td>change</td><td>Progress of a Publish</td></tr>
+        <tr><td><code>release_rollback</code></td><td>replace</td><td>Restore a previous S3 version of a published page</td></tr>
+        <tr><td><code>release_history</code>, <code>channel_read</code></td><td>replace</td><td>Published state and version list per page</td></tr>
+        <tr><td><code>publication_overview</code></td><td>change</td><td>Feeds the Published site tab</td></tr>
+        <tr><td><code>preview_grant_create</code>, <code>preview_grant_revoke</code></td><td>change</td><td>Private links: private publication, maintenance</td></tr>
+        <tr><td><code>candidate_create</code>, <code>candidate_read</code>, <code>build_retry</code>, <code>channel_create</code>, <code>release_read</code>, <code>release_export</code></td><td>remove</td><td>No candidates, channels, bundles or export in the new model</td></tr>
+        <tr><td><code>child_save</code>, <code>child_read</code>, <code>child_list</code></td><td>change</td><td>Registry of Kajenn servers</td></tr>
+        <tr><td><code>child_channels</code></td><td>change</td><td>Sites served by a Kajenn server</td></tr>
+        <tr><td>New</td><td>—</td><td>Maintenance on and off for a site</td></tr>
+      </table></div>
+      <p>Totals over the 44 operations: 3 keep, 20 change, 13 replace, 8 remove.</p>
+    </section>
+
+    <section class="section" id="tests"><h3>Tests</h3>
+      <p>133 tests in 9 suites under <code>tests/</code>, counted on 2026-10-27 at <code>main</code> <code>1c49362</code>.</p>
+      <div class="table-wrap"><table><caption>Suites</caption>
+        <tr><th>Suite</th><th>Tests</th><th>Fate</th><th>Reason</th></tr>
+        <tr><td><code>tests/contracts/phase_1</code>, <code>phase_2</code></td><td>19</td><td>replace</td><td>Catalog and editorial contracts; new contracts on the site Bag, the lock and S3 versions</td></tr>
+        <tr><td><code>tests/contracts/rendering_publication</code></td><td>24</td><td>replace</td><td>Rendering contracts are rewritten for slots; publication contracts follow per-page objects</td></tr>
+        <tr><td><code>tests/catalog</code></td><td>15</td><td>replace</td><td>Follows <code>LocalCatalog</code> and <code>ObjectStore</code></td></tr>
+        <tr><td><code>tests/services</code></td><td>7</td><td>change</td><td><code>EditorialService.execute</code> stays, handlers change</td></tr>
+        <tr><td><code>tests/api</code></td><td>4</td><td>change</td><td>Authentication and POST rules stay; operations change</td></tr>
+        <tr><td><code>tests/rendering</code></td><td>6</td><td>change</td><td>Limits stay; inputs become the page Bag</td></tr>
+        <tr><td><code>tests/publication</code></td><td>20</td><td>replace</td><td>Except <code>test_gateway.py</code> (keep) and the qualification tests of <code>test_release_export_contract.py</code> (keep)</td></tr>
+        <tr><td><code>tests/child</code></td><td>4</td><td>change</td><td>Follows the Kajenn server application</td></tr>
+        <tr><td><code>tests/admin</code></td><td>23</td><td>replace</td><td>Except login and shell checks in <code>test_admin_phase_1_contract.py</code> and <code>test_site_editor_shell.py</code> (change)</td></tr>
+        <tr><td><code>tests/docker</code></td><td>11</td><td>keep</td><td>The manager deployment stays; <code>test_docker_composition_contract.py</code> changes with the <code>demo</code> profile</td></tr>
+      </table></div>
+    </section>
+
+    <section class="section" id="existing-data"><h3>Existing data</h3>
+      <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">kpress MCP sites_list and records_index, 2026-10-27</code><span class="muted">2026-10-27</span></div><div>The Hetzner catalog holds one site, "Kajenn Press" (language en), with three pages at <code>/en/</code>, <code>/en/features/</code>, <code>/en/get-started/</code>, each with blocks <code>hero</code> and <code>body</code> on one template. No release is active. The 2026-10-27 deployment check added channel settings <code>preview-check</code>, one candidate, one build and one preview grant.</div></div>
+      <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">examples/kajenn_press_site/pages/home.body.html</code><span class="muted">2026-10-27</span></div><div>The home page blocks on Hetzner have the same SHA-256 as <code>examples/kajenn_press_site/pages/home.body.html</code> and <code>home.hero.html</code>: the site was loaded from the example sources.</div></div>
+      <p>The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.</p>
+      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <code>examples/kajenn_press_site/</code> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <code>deploy/docker/HETZNER.md</code> before the new version is installed. To confirm in Phase 7.</p>
+    </section>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>
   </ul></section></main></body></html>

@@ -237,6 +237,82 @@ The HTML preview runs in an iframe with an empty `sandbox` (see Upstream capabil
 | New: SEO tab | — | Form per page with root defaults and search/social previews | d-seo-inherit |
 | New: Help me chat | — | No existing part | d-help-budget |
 
+#### Operations
+
+44 operations on REST and MCP today: 21 editorial (`src/kajenn_press/domain.py:7`), 2 render (`src/kajenn_press/application.py:24`), 21 publication (`src/kajenn_press/publication/service.py:32`). Successor names are fixed in N2–N4; here each successor is described.
+
+*Editorial*
+
+| Operation | Fate | Successor or change |
+|---|---|---|
+| `capabilities` | keep | Lists the new operations |
+| `scope_capabilities` | keep | Same scopes |
+| `sites_list` | keep | Feeds the Sites node of the tree |
+| `site_create` | change | Empty site or from a starting site in Library; languages leave the input until N9 |
+| `site_configure` | change | Site name and root SEO defaults |
+| `records_list`, `records_index` | change | Pages tree, Contents tree with use counts, templates and assets of the site or Library |
+| `record_read` | change | Reads a page, content, template or asset from the site Bag |
+| `content_create` | replace | Create a page from a site template |
+| `variant_create` | remove | One variant per page until N9 |
+| `draft_save` | replace | Save a content; assign a content copy to a slot |
+| `resource_save`, `media_save` | change | Save a template or an asset in the site or Library Bag |
+| `resource_copy` | change | Copy with the original id, for templates, contents and assets; linked or independent for templates |
+| `dependencies` | change | Where an original is copied: pages and slots |
+| `readiness` | change | Checks before Publish: empty slots, SEO |
+| `revision_history`, `revision_index` | replace | List S3 versions of the site source or of a published page |
+| `revision_restore` | replace | Restore an S3 version (upstream item in genro-storage) |
+| `revision_compare` | replace | Differences between a copy and its original, shown by Update |
+| `revision_checkpoint` | remove | Every save is already a deliberate S3 version |
+| New | — | Update the copies of an original in selected pages; take and release the editing lock of a site |
+
+*Render and publication*
+
+| Operation | Fate | Successor or change |
+|---|---|---|
+| `render_preview`, `render_draft` | change | Render a saved or unsaved page Bag |
+| `publication_settings_save` | replace | First Publish settings: Kajenn server, domain, DNS |
+| `publication_route_save` | replace | URL of a page in the SEO tab |
+| `release_activate`, `build_start` | replace | Publish the selected changed pages |
+| `build_status` | change | Progress of a Publish |
+| `release_rollback` | replace | Restore a previous S3 version of a published page |
+| `release_history`, `channel_read` | replace | Published state and version list per page |
+| `publication_overview` | change | Feeds the Published site tab |
+| `preview_grant_create`, `preview_grant_revoke` | change | Private links: private publication, maintenance |
+| `candidate_create`, `candidate_read`, `build_retry`, `channel_create`, `release_read`, `release_export` | remove | No candidates, channels, bundles or export in the new model |
+| `child_save`, `child_read`, `child_list` | change | Registry of Kajenn servers |
+| `child_channels` | change | Sites served by a Kajenn server |
+| New | — | Maintenance on and off for a site |
+
+Totals over the 44 operations: 3 keep, 20 change, 13 replace, 8 remove.
+
+#### Tests
+
+133 tests in 9 suites under `tests/`, counted on 2026-10-27 at `main` `1c49362`.
+
+*Suites*
+
+| Suite | Tests | Fate | Reason |
+|---|---|---|---|
+| `tests/contracts/phase_1`, `phase_2` | 19 | replace | Catalog and editorial contracts; new contracts on the site Bag, the lock and S3 versions |
+| `tests/contracts/rendering_publication` | 24 | replace | Rendering contracts are rewritten for slots; publication contracts follow per-page objects |
+| `tests/catalog` | 15 | replace | Follows `LocalCatalog` and `ObjectStore` |
+| `tests/services` | 7 | change | `EditorialService.execute` stays, handlers change |
+| `tests/api` | 4 | change | Authentication and POST rules stay; operations change |
+| `tests/rendering` | 6 | change | Limits stay; inputs become the page Bag |
+| `tests/publication` | 20 | replace | Except `test_gateway.py` (keep) and the qualification tests of `test_release_export_contract.py` (keep) |
+| `tests/child` | 4 | change | Follows the Kajenn server application |
+| `tests/admin` | 23 | replace | Except login and shell checks in `test_admin_phase_1_contract.py` and `test_site_editor_shell.py` (change) |
+| `tests/docker` | 11 | keep | The manager deployment stays; `test_docker_composition_contract.py` changes with the `demo` profile |
+
+#### Existing data
+
+- `RUN` `kpress MCP sites_list and records_index, 2026-10-27` · 2026-10-27 — The Hetzner catalog holds one site, "Kajenn Press" (language en), with three pages at `/en/`, `/en/features/`, `/en/get-started/`, each with blocks `hero` and `body` on one template. No release is active. The 2026-10-27 deployment check added channel settings `preview-check`, one candidate, one build and one preview grant.
+- `RUN` `examples/kajenn_press_site/pages/home.body.html` · 2026-10-27 — The home page blocks on Hetzner have the same SHA-256 as `examples/kajenn_press_site/pages/home.body.html` and `home.hero.html`: the site was loaded from the example sources.
+
+The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.
+
+Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from `examples/kajenn_press_site/` with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of `deploy/docker/HETZNER.md` before the new version is installed. To confirm in Phase 7.
+
 ### Related documents
 
 - `proposal/site-tab-redesign` — Kajenn Press: the site tab, page Bags and per-page publication
