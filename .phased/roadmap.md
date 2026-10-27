@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. The active plan is `kpress-deployment` (Phase 3, waiting for the owner's checks).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N1.
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -26,12 +26,11 @@ The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.
 - Phase 1 (authenticated multisite administration) shipped with #1. The site editor of `xmldocs/proposal/site-editor.xml` (shell, `render_draft`, page editor, resource editor, publishing panel) shipped with #5.
 - Phases 2–4 and the deferred contracts are not carried forward: the redesign replaces navigation, editors and publication. Archived plan: [gramlot-administration](done/gramlot-administration/plan.md).
 
-## Active
+## Completed deployment
 
-### kpress deployment
+### kpress deployment (completed 2026-10-27)
 
-- Plan: [kpress-deployment](active/kpress-deployment/plan.md). Phases 1–2 done; Phase 3 (Hetzner installation) has its files on main (#2–#4, #6, #7).
-- Remaining: the owner's checks of the Done criterion: a preview opening on `https://preview.kpress.genro.com` and a `docker compose restart` keeping catalog, releases and password. Then the plan moves to `done/`.
+- Plan: [kpress-deployment](done/kpress-deployment/plan.md). The websites manager runs at `https://kpress.genro.com` with previews at `https://preview.kpress.genro.com`, releases on Hetzner Object Storage.
 - The installation stays useful after the redesign: Docker composition, nginx, TLS and the Hetzner bucket are the base of the Kajenn server that will serve sites.
 
 ## New macros
