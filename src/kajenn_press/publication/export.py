@@ -50,8 +50,10 @@ class ReleaseStorage:
             while not stop.is_set():
                 try:
                     body = self.node(probe).read_bytes()
-                except OSError:
+                except (OSError, TypeError):
                     # S3-compatible stores abort a read when the object changes; retry.
+                    # s3fs 2026.9.0 raises TypeError instead of OSError when the store
+                    # answers PreconditionFailed without a message (Hetzner Object Storage).
                     continue
                 reads[0] += 1
                 if body not in versions:
