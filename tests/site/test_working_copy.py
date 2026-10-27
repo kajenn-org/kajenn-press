@@ -4,6 +4,7 @@ import json
 
 import pytest
 from genro_bag import Bag
+from site_support import template_source
 
 from kajenn_press.catalog.errors import IntegrityError
 from kajenn_press.catalog.filesystem import encode
@@ -15,19 +16,6 @@ PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d4948445200000001000000010804000000b51c0c02"
     "0000000b4944415478da63fcff1f0003030200efa3459900000000"
 )
-
-
-def template_source(*slots):
-    source = Bag()
-    source.set_item("html_0", Bag(), node_tag="html", _attributes={"lang": "en"})
-    source.set_item("html_0.head", Bag(), node_tag="head")
-    source.set_item("html_0.head.title", "Title", node_tag="title")
-    source.set_item("html_0.body", Bag(), node_tag="body")
-    for name in slots:
-        source.set_item(
-            f"html_0.body.{name}", None, node_tag="div", _attributes={"kpress_slot": name}
-        )
-    return source
 
 
 def sample_site():

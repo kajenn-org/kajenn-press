@@ -7,12 +7,15 @@ apart. Template sources are plain Bags (tag, label and attributes on each node) 
 name of their engine; the render worker rebuilds them through that engine's grammar.
 """
 
+import difflib
 import hashlib
+from dataclasses import dataclass
 from uuid import uuid4
 
 from genro_bag import Bag
 
 from ..domain import DomainError
+from .slots import template_slots
 
 ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
@@ -40,6 +43,27 @@ def value_digest(value):
 
 def copy_value(value):
     return value.deepcopy() if isinstance(value, Bag) else value
+
+
+def text_difference(copy, original):
+    """Unified diff from a text copy to its original; None for bytes and Bags."""
+    if not (isinstance(copy, str) and isinstance(original, str)):
+        return None
+    return "".join(
+        difflib.unified_diff(
+            copy.splitlines(keepends=True), original.splitlines(keepends=True), "copy", "original"
+        )
+    )
+
+
+@dataclass(frozen=True)
+class UpdateItem:
+    page_id: str
+    path: str
+    locally_changed: bool
+    up_to_date: bool
+    selected: bool
+    difference: str | None
 
 
 def required_text(value, label):
@@ -166,6 +190,89 @@ class Site:
 
     def copy_attributes(self, original_id, original):
         return {"original_id": original_id, "original_digest": value_digest(original.value)}
+
+    def original(self, original_id):
+        """The site template, content or asset with this id, and its section."""
+        for section in ("templates", "contents", "assets"):
+            node = self.section(section).get_node(original_id)
+            if node is not None:
+                return section, node
+        raise DomainError("not_found", f"No original {original_id}", resource_id=original_id)
+
+    def assign_content(self, page_id, slot_name, content_id):
+        """Copy a content into a slot of the page; a copy already there becomes unplaced."""
+        page = self.page(page_id)
+        if slot_name not in {slot.name for slot in template_slots(page.template.value)}:
+            raise DomainError("invalid_input", f"The page template has no slot {slot_name}")
+        for node in list(page.slots.nodes):
+            if node.attr["slot"] == slot_name:
+                page.slots.pop(node.label)
+                attributes = {k: v for k, v in node.attr.items() if k != "slot"}
+                page.unplaced.set_item(node.label, node.value, _attributes=attributes)
+        original = self.node("contents", content_id)
+        return self._place_copy(page.slots, content_id, original, slot=slot_name)
+
+    def add_page_asset(self, page_id, asset_id):
+        return self._place_copy(self.page(page_id).assets, asset_id, self.node("assets", asset_id))
+
+    def uses(self, original_id):
+        """Every copy of an original: (page id, path of the copy inside the page Bag)."""
+        found = []
+        for page_node in self.section("pages").nodes:
+            page = page_node.value
+            if page.get_node("template").attr.get("original_id") == original_id:
+                found.append((page_node.label, "template"))
+            for section in PAGE_SECTIONS[1:]:
+                for node in page.get_item(section).nodes:
+                    if node.attr.get("original_id") == original_id:
+                        found.append((page_node.label, f"{section}.{node.label}"))
+        return found
+
+    def use_count(self, original_id):
+        return len(self.uses(original_id))
+
+    def update_plan(self, original_id):
+        """What Update would do for each copy of a content or asset (d-update-local)."""
+        section, original = self.original(original_id)
+        if section == "templates":
+            raise DomainError("invalid_input", "Template copies are updated with slot mapping")
+        current = value_digest(original.value)
+        plan = []
+        for page_id, path in self.uses(original_id):
+            copy = self.page(page_id).bag.get_node(path)
+            copy_digest = value_digest(copy.value)
+            changed = copy_digest != copy.attr["original_digest"]
+            plan.append(
+                UpdateItem(
+                    page_id=page_id,
+                    path=path,
+                    locally_changed=changed,
+                    up_to_date=copy_digest == current,
+                    selected=not changed and copy_digest != current,
+                    difference=text_difference(copy.value, original.value),
+                )
+            )
+        return plan
+
+    def apply_update(self, original_id, selected):
+        """Replace the selected copies, given as (page id, path), with the current original."""
+        _section, original = self.original(original_id)
+        known = set(self.uses(original_id))
+        for page_id, path in selected:
+            if (page_id, path) not in known:
+                raise DomainError("invalid_input", f"No copy of {original_id} at {page_id} {path}")
+            copy = self.page(page_id).bag.get_node(path)
+            copy.value = copy_value(original.value)
+            copy.attr.update(self.copy_attributes(original_id, original))
+
+    def _place_copy(self, target, original_id, original, **extra):
+        key = new_id()
+        target.set_item(
+            key,
+            copy_value(original.value),
+            _attributes={**original.attr, **self.copy_attributes(original_id, original), **extra},
+        )
+        return key
 
     def _add(self, section, value, **attributes):
         item_id = new_id()

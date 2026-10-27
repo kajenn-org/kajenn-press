@@ -56,7 +56,10 @@ Starting point (main `937cd52`): templates are Python source with `build(source,
   - Details: read the slots of a template Source: every node with `kpress_slot`; name = the value when it is a string, the label path when it is `True`; names unique per template, duplicates refused with the paths; tag checked against the hosting tags of the static profile; the iframe slot kind with its static fallback (d-dynamic-seo) marked on the node.
   - Done: slots listed with name, path, tag and kind for the converted `examples/kajenn_press_site` template; duplicate names and non-hosting tags refused with diagnostics.
 
-- [ ] **Phase 4**: Copies, use count and Update
+- [x] **Phase 4**: Copies, use count and Update
+  > Done: `Site` gains `assign_content`, `add_page_asset`, `original`, `uses`, `use_count`, `update_plan`, `apply_update`; `UpdateItem` and `text_difference` in `site/model.py`; `tests/site/test_copies.py` (12 tests); the plain-source helper moved to `tests/site_support.py`. A copy in a page records `original_id` and `original_digest`; slot copies are keyed by id with a `slot` attribute, because full-path slot names contain dots. Assigning an occupied slot moves the previous copy to `unplaced`. `update_plan` marks each copy up to date, locally changed (current digest differs from the recorded one; never selected) or outdated (selected), with a unified diff for text; `apply_update` replaces only the given copies and a second run changes nothing.
+  > Deviation: Update of template copies is refused here ("updated with slot mapping") and comes in Phase 6, where a template change also moves contents of removed slots to unplaced.
+  > Suite: 147 passed, 19 skipped, the same 11 failures needing `KAJENN_RELEASE_S3`.
   - Run: opus / high
   - Files: `src/kajenn_press/site/`, `tests/site/`.
   - Details: copying a content, template or asset into a page records the original id and the original's digest; use count and where-used per original; an Update plan lists the pages holding copies, the differences and the copies changed locally (current digest ≠ recorded digest), those unselected (d-update-local); applying the plan replaces only the selected copies.
