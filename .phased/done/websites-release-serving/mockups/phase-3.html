@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deployments mockup</title>
+<style>
+:root{--ink:#edf2fa;--bg:#111b29;--surface:#1b293b;--subtle:#24354b;--muted:#bdc9d9;--border:#44566d;--nav:#0f1724;--action:#7d9be0;--selected:#315f85;--ok:#7fd1ae;--ok-bg:#183a30;--warn:#ffd36b;--warn-bg:#3d3013;--err:#f3a1aa;--err-bg:#3d1d24;font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);display:grid;grid-template-rows:54px 1fr 28px;height:100vh}
+button{font:inherit;color:var(--ink);background:var(--surface);border:1px solid #7a8798;border-radius:6px;padding:5px 11px;cursor:pointer}
+.primary{background:var(--action);border-color:var(--action);color:#0f1724;font-weight:600}
+.quiet{background:transparent;border-color:transparent;color:var(--action)}
+header{display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--nav);border-bottom:2px solid #f2c94c}
+header select{background:var(--surface);color:var(--ink);border:1px solid #7a8798;border-radius:6px;padding:5px 8px;width:170px}
+header label{font-size:12px}.account{margin-left:auto;display:flex;gap:12px;align-items:center}
+.body{display:grid;grid-template-columns:225px 1fr;min-height:0}
+aside{background:var(--nav);padding:10px 4px;border-right:1px solid var(--border);font-size:13px}
+aside .row{padding:6px 10px;border-radius:6px}aside .branch{font-weight:600}aside .leaf{padding-left:30px}
+aside .active{background:var(--selected);color:#fff}
+.perm{border-top:1px solid #3e5163;margin:24px 6px 0;padding-top:12px;color:#c9d5e0;font-size:12px}
+main{display:grid;grid-template-rows:32px 1fr;min-height:0}
+.tabs{display:flex;gap:2px;background:#16233a;padding:4px 8px 0}.tabs span{padding:4px 10px;border-radius:6px 6px 0 0;color:var(--muted);font-size:12px}.tabs .on{background:var(--bg);color:var(--ink);font-weight:600}
+.page{overflow:auto;padding:22px 26px}
+.breadcrumb{color:var(--muted);font-size:13px;margin:0 0 6px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}.heading h1{margin:0;font-size:25px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:900px}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--subtle)}
+tr.sel td{background:#22364f}
+td small{display:block;color:var(--muted);font-size:12px}
+code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.ok{background:var(--ok-bg);color:var(--ok)}.warn{background:var(--warn-bg);color:var(--warn)}.err{background:var(--err-bg);color:var(--err)}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+.card h2{font-size:17px;margin:0 0 12px}
+dl{display:grid;grid-template-columns:170px 1fr;gap:8px 12px;margin:0}dt{color:var(--muted);font-size:12px}dd{margin:0}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.compare div{border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--subtle)}
+.compare h3{margin:0 0 6px;font-size:12px;color:var(--muted)}
+.note{border-left:3px solid var(--warn);padding:10px 14px;background:var(--warn-bg);color:var(--warn);font-size:13px;margin:10px 0}
+form label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+form input,form select{width:100%;background:var(--bg);color:var(--ink);border:1px solid #7a8798;border-radius:6px;padding:7px 9px;font:inherit}
+.actions{display:flex;gap:10px;margin-top:14px}
+footer{padding:6px 16px;font-size:11px;background:var(--surface);border-top:1px solid var(--border);color:var(--muted)}
+</style>
+</head>
+<body>
+<header><strong>kajenn public site</strong><label>Current site</label><select><option>Kajenn</option></select><button>New site</button><div class="account"><span>demo</span><button class="quiet">Sign out</button></div></header>
+<div class="body">
+<aside>
+<div class="row">Home · How it works</div>
+<div class="row branch">▾ Kajenn</div>
+<div class="row leaf">Create page</div><div class="row leaf">Content</div><div class="row leaf">Resources</div><div class="row leaf">Publishing · coming soon</div>
+<div class="row branch">▸ Shared across sites</div>
+<div class="row branch active">Deployments</div>
+<div class="perm">Permissions in the current scope<br>Read · Write · Use · Build · Publishing</div>
+</aside>
+<main>
+<div class="tabs"><span>Site Kajenn · Create page</span><span class="on">Deployments</span></div>
+<div class="page">
+<p class="breadcrumb">This installation</p>
+<div class="heading"><h1>Deployments</h1><button class="primary">Register child</button></div>
+<p class="lead">Children are servers that publish a site from release storage. For each child: the release the catalog has active, and the release found in storage, read back now. A difference is shown here and never corrected automatically.</p>
+<table>
+<thead><tr><th>Child</th><th>Site</th><th>Catalog release</th><th>Release in storage</th><th>State</th><th></th></tr></thead>
+<tbody>
+<tr><td><strong>kajenn-org</strong><small>http://kajenn.localhost:8876</small></td><td>kajenn.org</td><td><code>d0eb6f5a</code><small>channel generation 3</small></td><td><code>d0eb6f5a</code><small>channel generation 3</small></td><td><span class="badge ok">Up to date</span></td><td><button>Re-export</button></td></tr>
+<tr class="sel"><td><strong>gramlot-preview</strong><small>http://gramlot.localhost:8877</small></td><td>Gramlot</td><td><code>7c41e2b9</code><small>channel generation 2</small></td><td><code>94c3ae65</code><small>channel generation 1</small></td><td><span class="badge warn">Storage behind catalog</span></td><td><button>Re-export</button></td></tr>
+<tr><td><strong>asqueel-test</strong><small>http://asqueel.localhost:8878</small></td><td>Asqueel</td><td><code>—</code><small>no active release</small></td><td><code>—</code><small>no pointer</small></td><td><span class="badge err">Nothing to serve</span></td><td><button disabled>Re-export</button></td></tr>
+</tbody>
+</table>
+<div class="grid">
+<section class="card">
+<h2>gramlot-preview</h2>
+<dl>
+<dt>Bound site</dt><dd>Gramlot · settings <code>644111f5</code></dd>
+<dt>Public origin</dt><dd>http://gramlot.localhost:8877</dd>
+<dt>Serving address</dt><dd>http://127.0.0.1:8877 (declared)</dd>
+<dt>Release storage</dt><dd>releases · s3 bucket <code>releases</code></dd>
+<dt>Registry record</dt><dd>generation 1 · revision <code>5b20c1aa</code></dd>
+</dl>
+<div class="compare">
+<div><h3>CATALOG</h3><code>7c41e2b9</code><br>activated 10:42 · generation 2</div>
+<div><h3>STORAGE (READ BACK NOW)</h3><code>94c3ae65</code><br>exported · generation 1</div>
+</div>
+<p class="note">The catalog activated a newer release, but storage still names the previous one. The child keeps serving the previous release until storage is updated.</p>
+<div class="actions"><button class="primary">Re-export to storage</button><button>Edit child</button></div>
+</section>
+<section class="card">
+<h2>Register child</h2>
+<form>
+<label>Name</label><input value="asqueel-test">
+<label>Site</label><select><option>Asqueel</option></select>
+<label>Public origin</label><input value="http://asqueel.localhost:8878">
+<label>Release storage mount</label><input value="releases">
+<label>Serving address (declared)</label><input value="http://127.0.0.1:8878">
+<div class="actions"><button class="primary">Register</button><button class="quiet">Cancel</button></div>
+</form>
+</section>
+</div>
+</div>
+</main>
+</div>
+<footer>Kajenn public site · websites · Deployments read storage now; nothing here changes a child's configuration</footer>
+</body>
+</html>

@@ -15,6 +15,9 @@ from ..domain import DomainError
 from ..publication.routes import origin
 
 CURRENT_REQUEST = ContextVar("public_site_admin_request")
+LOGO_URL = "/assets/branding/kajenn-press-256.png"
+# Pages live below the administration mount, so they reference assets relatively.
+LOGO_SRC = LOGO_URL.removeprefix("/")
 READ_OPERATIONS = frozenset(
     {
         "sites_list",
@@ -24,6 +27,7 @@ READ_OPERATIONS = frozenset(
         "record_read",
         "child_list",
         "child_channels",
+        "publication_overview",
     }
 )
 
@@ -82,13 +86,17 @@ class AdminApplication(Application):
                         resource.suffix
                     ],
                 }
+        assets[LOGO_URL] = {
+            "file": Path(__file__).parent / "branding" / "kajenn-press-256.png",
+            "type": "image/png",
+        }
         super().__init__(
             Path(__file__).parent / "pages",
             collections=collections,
             assets=assets,
             content_security_policy=(
                 "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-{nonce}'; "
-                "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+                "style-src 'self' 'unsafe-inline' data:; img-src 'self' data:; "
                 "connect-src 'self'; frame-src 'self' about:; object-src 'none'; "
                 "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
             ),

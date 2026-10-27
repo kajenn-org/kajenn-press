@@ -1,0 +1,18 @@
+<div class="hero wrap">
+<div>
+<p class="eyebrow"><span class="dot"></span>Editorial publishing · Genro family</p>
+<h1>Write it. Review it. <em>Release</em> it.</h1>
+<p class="lead">Kajenn Press manages a website as editorial content with exact history. Every publication is a complete, immutable release. Returning to a previous release is one command.</p>
+<div class="actions"><a class="button" href="/en/features/">See the features →</a><a class="button secondary" href="/en/get-started/">Get started</a></div>
+</div>
+<div class="codebox"><div class="codebar"><span>template.py</span><span>Gramlot or HtmlBuilder</span></div><pre><code><span class="kw">def</span> build(source, data):
+    document = source.html(lang=<span class="str">"^language"</span>)
+    document.head().title(<span class="str">"^page.title"</span>)
+    body = document.body()
+    body.h1(<span class="str">"^page.title"</span>)
+    body.div(<span class="str">"^blocks.body"</span>)
+
+<span class="comment"># The template builds the page structure.</span>
+<span class="comment"># Editors fill the named blocks.</span>
+<span class="comment"># A build renders full static HTML.</span></code></pre></div>
+</div><div class="wrap"><div class="trustline"><span>Exact revisions</span><span>Gramlot and HtmlBuilder templates</span><span>Private previews</span><span>Atomic releases</span><span>Rollback</span><span>REST and MCP</span></div></div>

@@ -1,0 +1,30 @@
+<div class="section"><div class="wrap">
+<div class="section-heading"><p class="eyebrow">How it works</p><h2>Content, release, rollback.</h2><p>Kajenn Press separates three things: the identity of a piece of content, its editorial revisions, and the releases that put it online.</p></div>
+<div class="three">
+<div class="feature"><span class="number">01</span><h3>Content with history</h3><p>Every page, template and resource has a stable identity. Each save creates an immutable revision. Each language has its own draft, and concurrent edits are detected through the record generation.</p></div>
+<div class="feature"><span class="number">02</span><h3>A publication is a release</h3><p>A build renders a coherent set of pages and resources into a complete release. Activating it changes a single channel pointer, so the site never shows half of a change.</p></div>
+<div class="feature"><span class="number">03</span><h3>Rollback without rebuilding</h3><p>Rollback reactivates a release that was already published. It does not run Gramlot or HtmlBuilder again: the bytes that were online come back unchanged.</p></div>
+</div>
+</div></div>
+<div class="section dark"><div class="wrap split">
+<div><p class="eyebrow">One set of services</p><h2>For editors, scripts and LLMs.</h2><p class="lead">The same operations are exposed through REST with OpenAPI and through MCP. An authorized LLM can create a site, write templates and content, read diagnostics, check a preview and publish.</p><p class="muted">Every mutation carries an idempotency key. Updates carry the expected generation of the record. A retry with the same key returns the original result instead of creating more history.</p></div>
+<div class="codebox"><div class="codebar"><span>tools/call</span><span>MCP</span></div><pre><code>{
+  <span class="str">"name"</span>: <span class="str">"site_create"</span>,
+  <span class="str">"arguments"</span>: {
+    <span class="str">"key"</span>: <span class="str">"first-site"</span>,
+    <span class="str">"name"</span>: <span class="str">"Example"</span>,
+    <span class="str">"languages"</span>: [<span class="str">"it"</span>, <span class="str">"en"</span>]
+  }
+}</code></pre></div>
+</div></div>
+<div class="section"><div class="wrap split">
+<div class="section-heading"><p class="eyebrow">The publication cycle</p><h2>From a draft to a public site.</h2><p>Each step is an explicit operation. Nothing becomes public as a side effect of saving or building.</p></div>
+<div class="steps">
+<div class="step"><h3>Save a draft</h3><p><code>draft_save</code> stores the named blocks of a page against an exact template revision.</p></div>
+<div class="step"><h3>Build a candidate</h3><p><code>candidate_create</code> fixes the exact revisions to publish. <code>build_start</code> renders them in a separate worker process.</p></div>
+<div class="step"><h3>Preview it privately</h3><p><code>preview_grant_create</code> issues a time-limited preview link. <code>preview_grant_revoke</code> withdraws it.</p></div>
+<div class="step"><h3>Activate the release</h3><p><code>release_activate</code> makes the build public, on the condition that the channel has not changed in the meantime.</p></div>
+<div class="step"><h3>Roll back</h3><p><code>release_rollback</code> reactivates a previous release of the same channel.</p></div>
+</div>
+</div></div>
+<div class="cta-band"><div class="wrap"><h2>Read what is already implemented.</h2><div class="actions"><a class="button" href="/en/features/">Features →</a><a class="button secondary" href="/en/get-started/">Run it locally</a></div></div></div>

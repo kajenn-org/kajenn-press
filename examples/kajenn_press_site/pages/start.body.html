@@ -1,0 +1,20 @@
+<div class="section"><div class="wrap split">
+<div class="section-heading"><p class="eyebrow">Requirements</p><h2>Python 3.11 and a local filesystem.</h2><p>The qualified platform is macOS with Python 3.12.9. The catalog needs a local POSIX filesystem with <code>flock</code> and a private directory owned by the application.</p></div>
+<div class="steps">
+<div class="step"><h3>Install</h3><div class="codebox"><div class="codebar"><span>shell</span><span>kajenn-press</span></div><pre><code>python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e <span class="str">'.[dev]'</span></code></pre></div></div>
+<div class="step"><h3>Run the editorial example</h3><p>Two sites, a shared template, HTML and Markdown blocks, Italian and English drafts and a second server start, all through the real REST and MCP transports.</p><div class="codebox"><div class="codebar"><span>shell</span><span>examples/editorial.py</span></div><pre><code>python3 examples/editorial.py /tmp/kajenn-press-editorial-demo</code></pre></div></div>
+<div class="step"><h3>Start a loopback server</h3><p>The server admits one configured administrator with a private token.</p><div class="codebox"><div class="codebar"><span>shell</span><span>examples/serve.py</span></div><pre><code><span class="kw">export</span> KAJENN_PUBLIC_SITE_TOKEN=<span class="str">"$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"</span>
+python3 examples/serve.py /tmp/kajenn-press-server --port 8080</code></pre></div></div>
+<div class="step"><h3>Create a site</h3><div class="codebox"><div class="codebar"><span>shell</span><span>REST</span></div><pre><code>curl -sS -H <span class="str">"Authorization: Bearer $KAJENN_PUBLIC_SITE_TOKEN"</span> \
+  -H <span class="str">'Content-Type: application/json'</span> \
+  -d <span class="str">'{"key":"first-site","name":"Example","languages":["it","en"]}'</span> \
+  http://127.0.0.1:8080/site_create</code></pre></div></div>
+<div class="step"><h3>List the MCP tools</h3><p>OpenAPI is at <code>/_meta/schema_json</code> and MCP at <code>/mcp</code>, both with the same authorization header.</p><div class="codebox"><div class="codebar"><span>shell</span><span>MCP</span></div><pre><code>curl -sS -H <span class="str">"Authorization: Bearer $KAJENN_PUBLIC_SITE_TOKEN"</span> \
+  -H <span class="str">'Content-Type: application/json'</span> \
+  -d <span class="str">'{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</span> \
+  http://127.0.0.1:8080/mcp</code></pre></div></div>
+</div>
+</div></div>
+<div class="cta-band"><div class="wrap"><h2>Read the design documents.</h2><div class="actions"><a class="button" href="https://github.com/kajenn-org/kajenn-press">Source on GitHub ↗</a><a class="button secondary" href="/en/features/">Features</a></div></div></div>

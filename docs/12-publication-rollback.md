@@ -48,6 +48,8 @@ da `build` e `write`: l'operatore può pubblicare una build preparata da altri.
 | `release_activate` | `settings_id`, `build_id`, `expected_generation`, `key` | Canale aggiornato e record `activation` |
 | `release_rollback` | Come `release_activate` | Riattivazione completa della release conservata |
 
+`publication_overview(site_id)` is a read that needs `read` on the site. It returns, for one site, every channel's settings (`record_id`, `generation`, `channel`, `public_origin`, `primary_language`, `landing_variant`), the channel generation and active build, the 20 most recent builds with state and diagnostics, and the route of each variant (`record_id`, `generation`, `path`, `title`, `description`). It is how a client finds the record IDs and generations it needs to update settings and routes.
+
 Ogni comando è disponibile come POST REST e come tool MCP attraverso lo stesso
 servizio. Gli errori usano la busta strutturata già documentata. I risultati
 conservano `record_id`, `revision_id`, generazione e riferimenti immutabili;

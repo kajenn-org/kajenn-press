@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<!-- generated from site-editor.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kajenn Press administration as a site editor</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press administration as a site editor</h1><div class="doc-meta"><span>site-editor</span><span>2026-10-26</span><span>Giovanni Porcari</span><span class="tag tag-draft">draft</span></div></header><section class="part problem"><h2>Problem</h2>
+    <p>Kajenn Press must become the tool used to create and edit sites interactively. An author writes a Gramlot template, sees the rendered page next to the editor, and edits contents and CSS from the administration with Gramlot editors.</p>
+    <p>The administration today is mostly a browser. Its only editing workspace supports one template shape: one required HTML block named <code>body</code>. A site built with other blocks, such as the Kajenn Press presentation site with <code>hero</code> and <code>body</code>, can be edited only through MCP or REST.</p>
+    <p>The rendered preview shows saved revisions only, and without the CSS and images of the site.</p>
+  </section><section class="part current"><h2>Current state</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:13</code><span class="muted">2026-10-26</span></div><div>The administration shell is an <code>IndexPage</code> with a site selector in the top bar, a navigation tree on the left and retained iframe tabs in the center.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/author.py:9</code><span class="muted">2026-10-26</span></div><div>The authoring page declares <code>BLOCKS = {"body": {"format": "html", "required": True}}</code> and refuses templates whose blocks differ, with the message at line 107.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/author.py:239</code><span class="muted">2026-10-26</span></div><div>The authoring page shows the result of <code>render_preview</code> in an <code>htmlPreview</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/application.py:416</code><span class="muted">2026-10-26</span></div><div><code>render_preview</code> takes a <code>variant_id</code> and an exact saved <code>revision_id</code>: unsaved edits cannot be rendered.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/inputs.py:90</code><span class="muted">2026-10-26</span></div><div>Resource URLs in Data default to <code>/_resources/&lt;sha256&gt;.&lt;suffix&gt;</code>; <code>freeze</code> accepts a <code>resource_urls</code> override (line 22).</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">gramlot/js/src/components/html-preview.js:13</code><span class="muted">2026-10-26</span></div><div><code>htmlPreview</code> renders its value through <code>srcdoc</code> in an iframe with <code>sandbox=""</code> and has no zoom parameter.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/host.py:91</code><span class="muted">2026-10-26</span></div><div>The administration CSP allows <code>style-src 'self' 'unsafe-inline'</code> and <code>img-src 'self' data:</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:189</code><span class="muted">2026-10-26</span></div><div>The login view and the top bar still show the former name "kajenn public site"; the login has no logo.</div></div>
+    <p>A sandboxed iframe without <code>allow-same-origin</code> has an opaque origin, so <code>/_resources/</code> URLs and session cookies cannot serve the preview. This follows from the HTML specification and was not tested in the administration.</p>
+    <div class="box limit"><div>Publication from the administration is a later phase; build, activation and rollback are available through MCP and REST only.</div><div class="box-foot"><code class="source">docs/13-amministrazione.md</code></div></div>
+  </section><section class="part solution"><h2>Proposed solution</h2>
+    <section class="section"><h3>Shell and navigation</h3>
+      <p>The shell stays an <code>IndexPage</code>. Each opened object gets its own retained tab: a page, a template, a stylesheet, a script or a media item.</p>
+      <div class="table-wrap"><table><caption>Shell regions</caption>
+        <tr><th>Region</th><th>Content</th></tr>
+        <tr><td>top</td><td>Kajenn Press logo at 48 px with the text name, site selector, New site, account and Sign out</td></tr>
+        <tr><td>left</td><td>Navigation tree of the current site: Pages, Templates, Styles, Scripts, Media, Publishing; then Shared library and Deployments</td></tr>
+        <tr><td>center</td><td>One retained tab per opened object, closable</td></tr>
+        <tr><td>bottom</td><td>Status: save state of the active tab and permissions in the current scope</td></tr>
+      </table></div>
+      <p>Each tree group lists its records. Selecting a record opens its editor tab, or selects the tab when it is already open. A New command in each group creates a record of that kind.</p>
+      <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Behaviour uses Source, Data, bindings and components; no imperative DOM manipulation.</div><div class="muted why">Gramlot constitution</div></div>
+    </section>
+
+    <section class="section"><h3>Login and identity</h3>
+      <p>The login card shows the Kajenn Press logo, <code>assets/kajenn-press/logo/kajenn-press-256.png</code> displayed at 160 px, the minimum size for the full logo in the identity guide. Labels "kajenn public site" become "Kajenn Press".</p>
+      <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>The logo is never cropped, rotated, stretched, shadowed or recoloured.</div><div class="muted why">assets/kajenn-press/theme-guide.md</div></div>
+    </section>
+
+    <section class="section"><h3>Page editor</h3>
+      <p>The page editor opens one language variant.</p>
+      <ul>
+        <li>Toolbar: Save draft, Revert, Revisions, Open template, Readiness.</li>
+        <li>Left pane: one tab per block declared by the template. HTML blocks offer Jodit (<code>htmlEditor</code>) and the source (<code>codeMirror</code>, html). Markdown blocks offer <code>markdownEditor</code> and the source.</li>
+        <li>Right pane: the scaled preview. A splitter separates the panes.</li>
+      </ul>
+      <p>This removes the single-block limit of the current authoring page.</p>
+    </section>
+
+    <section class="section"><h3>Resource editor</h3>
+      <ul>
+        <li>Templates, CSS and JavaScript open in <code>codeMirror</code> with their language. Cmd+S saves a new revision.</li>
+        <li>Next to the code, the preview renders a sample page of the site with the resource being edited.</li>
+        <li>A template also shows a form for its block declarations and its dependencies.</li>
+        <li>Media show upload and a view of the file.</li>
+      </ul>
+    </section>
+
+    <section class="section"><h3>Live preview</h3>
+      <p>A new operation, <code>render_draft</code>, renders unsaved sources. It receives the variant and, optionally, unsaved block sources and unsaved resource sources that replace their saved revisions for this render. It freezes the inputs, runs the worker and returns HTML and diagnostics. It writes nothing to the catalog.</p>
+      <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>render_draft requires the same permissions as render_preview: build and read on the site, read and use on the resources.</div></div>
+      <p>The editor calls <code>render_draft</code> about 800 ms after the last edit. A newer call replaces an older one.</p>
+      <p>For the preview, <code>freeze</code> receives <code>resource_urls</code> with <code>data:</code> URLs of the exact resource bytes, so CSS and images load inside the sandboxed iframe. The administration CSP adds <code>data:</code> to <code>style-src</code><a class="ref" href="#d-css-policy"></a>.</p>
+      <p>The preview renders the page at a fixed width, 1280 px or 375 px, inside a container scaled with <code>transform: scale()</code>. A selector offers 0.5, 0.75 and 1.</p>
+      <figure class="diagram"><pre class="mermaid">sequenceDiagram
+    participant Editor as Editor tab
+    participant Admin as Admin endpoint
+    participant Service as Render service
+    participant Worker as Render worker
+    Editor-&gt;&gt;Admin: render_draft(variant, unsaved sources)
+    Admin-&gt;&gt;Service: freeze with overrides and data: URLs
+    Service-&gt;&gt;Worker: frozen inputs
+    Worker--&gt;&gt;Service: HTML and diagnostics
+    Service--&gt;&gt;Admin: result, catalog unchanged
+    Admin--&gt;&gt;Editor: HTML into the scaled preview</pre><figcaption>Live preview flow</figcaption></figure>
+    </section>
+
+    <section class="section"><h3>Phases</h3>
+      <ol>
+        <li>Shell, login and navigation: logo, names, navigation tree, one tab per object, status bar.</li>
+        <li>Preview infrastructure: <code>render_draft</code> on REST and MCP, <code>data:</code> resource URLs, <code>data:</code> in the administration <code>style-src</code>, scaled preview container.</li>
+        <li>Page editor with all declared blocks and the live preview.</li>
+        <li>Resource editor for templates, CSS, JavaScript and media with the live preview.</li>
+        <li>Publishing panel: candidate, build, preview grant, activation and rollback.</li>
+      </ol>
+    </section>
+  </section><section class="part decisions"><h2>Decisions</h2>
+    <div class="box decision decision-decided" id="d-render-draft"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-render-draft</span></div><div class="question">How does the preview show unsaved edits?</div><ol class="options"><li id="d-render-draft-op" class="chosen"><b>New render_draft operation</b><p>Renders unsaved sources without writing to the catalog.</p></li><li id="d-render-draft-autosave"><b>Save on every edit</b><p>Every save creates an immutable revision.</p></li></ol><div class="choice"><b>Choice: New render_draft operation</b><span class="muted"> (GP, 2026-10-26)</span><div>History holds only deliberate saves.</div></div></div>
+    <div class="box decision decision-decided" id="d-shell"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-shell</span></div><div class="question">Which shell hosts the editors?</div><ol class="options"><li id="d-shell-index" class="chosen"><b>IndexPage with one tab per object</b></li><li id="d-shell-ide"><b>Gramlot IdePage</b><p>Built on a filesystem tree, not on catalog records.</p></li></ol><div class="choice"><b>Choice: IndexPage with one tab per object</b><span class="muted"> (GP, 2026-10-26)</span><div>The current shell already uses it.</div></div></div>
+    <div class="box decision decision-decided" id="d-preview-resources"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-preview-resources</span></div><div class="question">How do CSS and media reach the sandboxed preview?</div><ol class="options"><li id="d-preview-resources-data" class="chosen"><b>data: URLs through resource_urls</b></li><li id="d-preview-resources-endpoint"><b>Admin endpoint serving resource revisions</b><p>The opaque origin of the sandboxed iframe sends no session cookie.</p></li></ol><div class="choice"><b>Choice: data: URLs through resource_urls</b><span class="muted"> (GP, 2026-10-26)</span><div>Needs no new endpoint and no cookie.</div></div></div>
+    <div class="box decision decision-decided" id="d-css-policy"><div class="box-head"><span class="tag tag-decided">decided</span><span class="muted">d-css-policy</span></div><div class="question">How is a data: stylesheet admitted by the administration CSP, which allows style-src 'self' 'unsafe-inline' only?</div><ol class="options"><li id="d-css-policy-extend" class="chosen"><b>Add data: to style-src</b><p>One change in <code>src/kajenn_press/admin/host.py</code>; templates keep their <code>link</code> elements.</p></li><li id="d-css-policy-inline"><b>Inline the stylesheet in the preview</b><p>The preview rewrites each stylesheet link into a <code>style</code> element; the rendered HTML differs from the release.</p></li></ol><div class="choice"><b>Choice: Add data: to style-src</b><span class="muted"> (GP, 2026-10-26)</span><div>The preview keeps the same HTML as the release.</div></div></div>
+  </section><section class="part consequences"><h2>Consequences</h2>
+    <p>Each <code>render_draft</code> call starts a worker process, with the configured timeout of 15 seconds by default. The delay of about 800 ms limits the calls while typing.</p>
+    <p>The <code>data:</code> URLs enlarge the preview HTML by the size of the CSS and media of the page, up to the existing input limit of 32 MiB.</p>
+    <p>The current authoring page and the browse pages are replaced by the new editors.</p>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../../docs/13-amministrazione.md">docs/13-amministrazione</a> — Gramlot administration, phase 1</li>
+    <li><a href="../../docs/10-rendering-statico.md">docs/10-rendering-statico</a> — Static rendering contract v1</li>
+  </ul></section></main><script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({ startOnLoad: true, theme: dark ? 'dark' : 'neutral' });
+          </script></body></html>

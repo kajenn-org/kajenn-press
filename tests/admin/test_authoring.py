@@ -76,9 +76,11 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):
             )
             assert "retained" in reopened["value"] and "htmlEditor" in reopened["value"]
             rendered = await command(
-                "render_preview",
+                "render_draft",
                 variant_id=variant["record_id"],
                 revision_id=variant["revision_id"],
+                blocks={},
+                resources={},
             )
             assert rendered["status"] == "succeeded", rendered
             assert (
@@ -89,7 +91,7 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):
                 http,
                 page,
                 "command",
-                operation="render_preview",
+                operation="render_draft",
                 arguments={
                     "variant_id": variant["record_id"],
                     "revision_id": variant["revision_id"],
@@ -141,9 +143,11 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):
             assert stale["value"]["error"]["code"] == "conflict"
             assert (
                 await command(
-                    "render_preview",
+                    "render_draft",
                     variant_id=variant["record_id"],
                     revision_id=variant["revision_id"],
+                    blocks={},
+                    resources={},
                 )
             )["html"] == rendered["html"]
             server.applications["press"].service.policy.grants["admin"] = {"*": ["read"]}
@@ -151,10 +155,12 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):
                 http,
                 page,
                 "command",
-                operation="render_preview",
+                operation="render_draft",
                 arguments={
                     "variant_id": variant["record_id"],
                     "revision_id": updated["revision_id"],
+                    "blocks": {},
+                    "resources": {},
                 },
             )
             assert denied["value"]["error"]["code"] == "forbidden"
@@ -166,5 +172,95 @@ def test_create_reopen_render_retry_and_revoke(tmp_path):
                 arguments={**args, "key": "denied"},
             )
             assert denied["value"]["error"]["code"] == "forbidden"
+
+    asyncio.run(check())
+
+
+STYLED = """def build(source, data):
+    page = source.html(lang="^language")
+    head = page.head()
+    for asset in data.get_item("resources").values():
+        if asset.get_item("kind") == "css":
+            head.link(rel="stylesheet", href=asset.get_item("url"))
+    page.body().main("^blocks.body")
+"""
+
+
+def test_draft_render_follows_unsaved_sources_with_inline_resources(tmp_path):
+    async def check():
+        grants = {"admin": {"*": ["read", "write", "use", "create_site", "build"]}}
+        async with admin_client(
+            tmp_path, grants, {**CONFIG, "render_python": os.environ["KAJENN_RENDER_PYTHON"]}
+        ) as (http, _server):
+            await login(http)
+            http.headers["Authorization"] = "Bearer test-admin-token"
+            site = await record(
+                http, "rest", "site_create", key="site", name="Drafts", languages=["en"]
+            )
+            scope = "site:" + site["record_id"]
+            css = await record(
+                http,
+                "rest",
+                "resource_save",
+                key="css",
+                scope=scope,
+                kind="css",
+                name="Styles",
+                source="main { color: #123; }",
+            )
+            template = await record(
+                http,
+                "rest",
+                "resource_save",
+                key="template",
+                scope=scope,
+                kind="template",
+                name="Styled",
+                source=STYLED,
+                engine="gramlot",
+                blocks=BLOCKS,
+                dependencies=[css["revision_id"]],
+            )
+            content = await record(
+                http, "rest", "content_create", key="page", site_id=site["record_id"], title="Page"
+            )
+            variant = await record(
+                http,
+                "rest",
+                "variant_create",
+                key="variant",
+                content_id=content["record_id"],
+                language="en",
+                template_revision=template["revision_id"],
+                blocks={"body": {"format": "html", "source": "<p>Saved</p>"}},
+            )
+            arguments = {
+                "variant_id": variant["record_id"],
+                "revision_id": variant["revision_id"],
+                "blocks": {"body": "<p>Live</p>"},
+                "resources": {template["revision_id"]: STYLED.replace("main(", "article(")},
+            }
+            for channel in ("rest", "mcp"):
+                status, reply = await call(http, channel, "render_draft", **arguments)
+                result = reply["result"]
+                assert result["status"] == "succeeded", (status, reply)
+                assert "<article><p>Live</p></article>" in result["html"]
+                assert "data:text/css;base64," in result["html"]
+            refused_get = await http.get(
+                "/render_draft",
+                params={"variant_id": variant["record_id"], "revision_id": variant["revision_id"]},
+            )
+            assert refused_get.status_code == 405
+            # Nothing was saved: the stored variant still renders its saved block.
+            saved = (
+                await call(
+                    http,
+                    "rest",
+                    "render_preview",
+                    variant_id=variant["record_id"],
+                    revision_id=variant["revision_id"],
+                )
+            )[1]["result"]
+            assert "<main><p>Saved</p></main>" in saved["html"]
 
     asyncio.run(check())

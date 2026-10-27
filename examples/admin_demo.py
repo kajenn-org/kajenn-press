@@ -15,6 +15,25 @@ from kajenn_press.catalog.local import LocalCatalog
 from kajenn_press.domain import AccessPolicy
 from kajenn_press.services.editorial import EditorialService
 
+LANDING = """def build(source, data):
+    page = source.html(lang="^language")
+    head = page.head()
+    head.meta(charset="utf-8")
+    head.title("^page.title")
+    head.style("body {font: 18px system-ui; margin: 0;} .hero {background: #172c43; color: #fff;"
+               " padding: 48px;} .notes {padding: 24px 48px;}")
+    for asset in data.get_item("resources").values():
+        if asset.get_item("kind") == "css":
+            head.link(rel="stylesheet", href=asset.get_item("url"))
+    body = page.body()
+    body.section("^blocks.hero", class_="hero")
+    body.section("^blocks.notes", class_="notes")
+"""
+LANDING_BLOCKS = {
+    "hero": {"format": "html", "required": True},
+    "notes": {"format": "markdown", "required": False},
+}
+
 
 class DemoUsers(UserStore):
     def __init__(self, storage):
@@ -47,7 +66,9 @@ def main():
     parser.add_argument("--render-python", default=os.environ.get("KAJENN_RENDER_PYTHON"))
     args = parser.parse_args()
     root = tempfile.mkdtemp(prefix="kajenn-admin-demo-")
-    grants = {"demo": {"*": ["read", "write", "use", "create_site", "build"]}}
+    grants = {
+        "demo": {"*": ["read", "write", "use", "create_site", "build", "preview_grant", "publish"]}
+    }
     service = EditorialService(LocalCatalog(root), AccessPolicy(grants))
     template = service.execute(
         "demo",
@@ -95,7 +116,7 @@ def main():
                         }
                     },
                 )
-        service.execute(
+        styles = service.execute(
             "demo",
             "resource_save",
             key=f"css-{index}",
@@ -103,6 +124,42 @@ def main():
             kind="css",
             name="Site styles",
             source="h1 { color: #192e42; }\n",
+        )["records"][0]
+        # A two-block page shows the page editor with an HTML and a Markdown block.
+        landing_template = service.execute(
+            "demo",
+            "resource_save",
+            key=f"landing-template-{index}",
+            scope="site:" + site["record_id"],
+            kind="template",
+            name="Landing page",
+            source=LANDING,
+            engine="gramlot",
+            blocks=LANDING_BLOCKS,
+            # The landing page links the site styles, so editing them shows in the preview.
+            dependencies=[styles["revision_id"]],
+        )["records"][0]
+        landing = service.execute(
+            "demo",
+            "content_create",
+            key=f"{index}-landing",
+            site_id=site["record_id"],
+            title="Landing",
+        )["records"][0]
+        service.execute(
+            "demo",
+            "variant_create",
+            key=f"{index}-landing-en",
+            content_id=landing["record_id"],
+            language="en",
+            template_revision=landing_template["revision_id"],
+            blocks={
+                "hero": {"format": "html", "source": f"<h1>{name}</h1><p>A landing page.</p>"},
+                "notes": {
+                    "format": "markdown",
+                    "source": "## Notes\n\n- written in **Markdown**\n",
+                },
+            },
         )
     service.catalog.close()
     server = create_server(

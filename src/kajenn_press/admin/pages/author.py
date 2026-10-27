@@ -3,7 +3,7 @@
 from gramlot import endpoint, source
 
 from kajenn_press.admin.host import CURRENT_REQUEST, execute_read, execute_service
-from kajenn_press.admin.views import AdminPage, literal_text
+from kajenn_press.admin.views import AdminPage, literal_text, scaled_preview
 from kajenn_press.domain import DomainError
 
 BLOCKS = {"body": {"format": "html", "required": True}}
@@ -17,13 +17,14 @@ TEMPLATE = """def build(source, data):
     body.h1("^page.title")
     body.main("^blocks.body")
 """
+LIVE_DELAY = 800  # ms after the last edit before a draft render
 COMMANDS = frozenset(
-    {"resource_save", "content_create", "variant_create", "draft_save", "render_preview"}
+    {"resource_save", "content_create", "variant_create", "draft_save", "render_draft"}
 )
 
 
 class Page(AdminPage):
-    title = "Create page"
+    title = "New page"
 
     async def main(self, root):
         avatar = CURRENT_REQUEST.get().avatar()
@@ -127,10 +128,20 @@ class Page(AdminPage):
                 "dirty": False,
                 "preview": "",
                 "refresh": 0,
+                "writable": writable,
+                "live_status": "The preview follows your edits after a short pause."
+                if draft["variant_id"]
+                else "Save the page once to see it update while you type.",
             }.items():
                 pane.dataSetter("author." + name, value)
             # _onBuilt: the parent pane is mounted, so initialize can register its dispose.
             pane.dataController(func="initialize", _onBuilt=True)
+            pane.dataController(
+                func="livePreview",
+                source="^draft.source",
+                body="^draft.body",
+                _delay=LIVE_DELAY,
+            )
             pane.dataController(
                 func="changed",
                 template_name="^draft.template_name",
@@ -233,10 +244,11 @@ class Page(AdminPage):
                 title="3 · Rendered page", pageName="preview", padding="18px", overflow="auto"
             )
             preview.p(
-                "Render uses the saved template and content revisions. Scripts and external resources are restricted in this quick preview; publication preview is a separate step.",
+                "Once the page is saved, the preview follows your unsaved template and content. "
+                "Scripts do not run here; publication preview is a separate step.",
                 class_="muted",
             )
-            preview.htmlPreview(value="^author.preview", height="550px")
+            scaled_preview(preview, "author", "author.live_status")
             page.h2("Your templates and pages")
             page.div().remote("saved_pages", site=site, refresh="^author.refresh")
         except DomainError as error:

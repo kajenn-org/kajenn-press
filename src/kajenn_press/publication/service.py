@@ -25,7 +25,10 @@ from .serving import PublicServing
 
 # Export writes release storage, never the catalog: no key, receipt or catalog commit.
 EXPORTS = {"release_export"}
-READS = {"candidate_read", "build_status"} | RELEASE_READS | EXPORTS | DEPLOYMENT_READS
+# One read of a site's publication state, for clients that manage it (administration, MCP).
+OVERVIEW = "publication_overview"
+OVERVIEW_BUILDS = 20  # most recent builds listed per channel
+READS = {"candidate_read", "build_status", OVERVIEW} | RELEASE_READS | EXPORTS | DEPLOYMENT_READS
 OPERATIONS = (
     {
         "publication_settings_save",
@@ -37,6 +40,7 @@ OPERATIONS = (
         "build_status",
         "preview_grant_create",
         "preview_grant_revoke",
+        OVERVIEW,
     }
     | RELEASE_READS
     | RELEASE_MUTATIONS
@@ -127,7 +131,7 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, Deployments, Public
         if operation in {"child_list", "child_channels"}:
             # Filtered per site by the handler: each child needs read on its own site.
             return None
-        if operation == "publication_settings_save":
+        if operation in {"publication_settings_save", OVERVIEW}:
             site_id = self.record(snapshot, arguments["site_id"], "site")["record_id"]
         elif operation == "publication_route_save":
             site_id = self.record(snapshot, arguments["variant_id"], "variant")["scope"][5:]
@@ -146,7 +150,7 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, Deployments, Public
             site_id = self.record(snapshot, arguments[key], kind)["data"]["attributes"]["site_id"]
         permission = (
             "read"
-            if operation in DEPLOYMENT_READS
+            if operation in DEPLOYMENT_READS | {OVERVIEW}
             else "publish"
             if operation in RELEASE_READS | RELEASE_MUTATIONS | EXPORTS | DEPLOYMENT_MUTATIONS
             else "write"
@@ -532,6 +536,65 @@ class PublicationService(BuildJobs, PreviewGrants, Releases, Deployments, Public
             },
             {"inputs": raw},
         )
+
+    def _publication_overview(self, snapshot, identity, site_id):
+        """Channel settings, routes, channel state and recent builds of one site."""
+        heads = [
+            snapshot.revisions[head["revision_id"]]
+            for head in snapshot.records.values()
+            if snapshot.revisions[head["revision_id"]]["data"]["attributes"].get("site_id")
+            == site_id
+        ]
+
+        def of(kind):
+            return [r for r in heads if r["data"].get("kind") == kind]
+
+        def view(revision, *names):
+            attrs = revision["data"]["attributes"]
+            return {
+                "record_id": revision["record_id"],
+                "generation": revision["generation"],
+                **{name: attrs[name] for name in names},
+            }
+
+        candidates = {r["record_id"]: r for r in of("publication_candidate")}
+        builds = sorted(of("publication_job"), key=lambda r: r["generation"], reverse=True)
+        channels = []
+        for settings in of("publication_settings"):
+            settings_id = settings["record_id"]
+            channel = self.find(snapshot, "publication_channel", settings_id=settings_id)
+            channels.append(
+                {
+                    **view(
+                        settings, "channel", "public_origin", "primary_language", "landing_variant"
+                    ),
+                    "channel_generation": channel["generation"] if channel else 0,
+                    "active_build": channel["data"]["attributes"]["active_build"]
+                    if channel
+                    else None,
+                    "builds": [
+                        {
+                            **view(job, "candidate_id", "state", "diagnostics"),
+                            "build_id": job["record_id"],
+                        }
+                        for job in builds
+                        if candidates[job["data"]["attributes"]["candidate_id"]]["data"][
+                            "attributes"
+                        ]["settings_id"]
+                        == settings_id
+                    ][:OVERVIEW_BUILDS],
+                }
+            )
+        return {
+            "site_id": site_id,
+            "channels": sorted(channels, key=lambda item: item["channel"]),
+            "routes": {
+                route["data"]["attributes"]["variant_id"]: view(
+                    route, "path", "title", "description"
+                )
+                for route in of("publication_route")
+            },
+        }
 
     def _candidate_read(self, snapshot, identity, candidate_id):
         candidate = self.record(snapshot, candidate_id, "publication_candidate")

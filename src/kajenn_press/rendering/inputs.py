@@ -20,8 +20,18 @@ class RenderInputs:
         revision_id=None,
         generation=None,
         resource_urls=None,
+        block_sources=None,
+        resource_sources=None,
+        data_urls=False,
     ):
-        """Trusted coordinator API. URL overrides are supplied by the later release resolver."""
+        """Trusted coordinator API. URL overrides are supplied by the later release resolver.
+
+        A draft render replaces declared block sources and text resources of the closure with
+        unsaved sources (``block_sources``, ``resource_sources``) and can reference resources
+        as ``data:`` URLs of their bytes; the catalog is never written.
+        """
+        block_sources = block_sources or {}
+        resource_sources = resource_sources or {}
         snapshot = self.catalog.read(generation)
         try:
             variant = snapshot.revisions[revision_id or snapshot.records[variant_id]["revision_id"]]
@@ -59,9 +69,22 @@ class RenderInputs:
             if len(references) + len(visiting) >= 256:
                 raise DomainError("input_limit", "Too many rendering dependencies")
             visiting.add(rid)
+            draft = rid in resource_sources
+            if draft:
+                if kind not in {"template", "css", "javascript"}:
+                    raise DomainError(
+                        "invalid_input",
+                        "Only template, CSS and JavaScript sources can be drafted",
+                        resource_id=rid,
+                    )
+                # An unsaved template is code the worker executes: drafting it needs write.
+                self.policy.require(identity, actual_scope, "write")
             sources = {}
             for name in revision["payloads"]:
-                raw = self.catalog.read_payload(rid, name, snapshot.generation)
+                if draft and name == "source":
+                    raw = resource_sources[rid].encode("utf-8")
+                else:
+                    raw = self.catalog.read_payload(rid, name, snapshot.generation)
                 total += len(raw)
                 if total > 32 * 1024 * 1024:
                     raise DomainError("input_limit", "Rendering input exceeds 32 MiB")
@@ -75,6 +98,9 @@ class RenderInputs:
                 "payloads": revision["payloads"],
                 "sources": sources,
             }
+            if draft:
+                # Only draft inputs carry the marker, so saved inputs keep their exact bytes.
+                references[rid]["draft"] = True
             for dep in revision["data"]["attributes"].get("dependencies", []):
                 if dep not in snapshot.revisions:
                     raise DomainError(
@@ -85,13 +111,24 @@ class RenderInputs:
                 name = "binary" if kind == "media" else "source"
                 raw = base64.b64decode(sources[name])
                 suffix = {"css": "css", "javascript": "js", "media": "bin"}[kind]
-                resources[rid] = {
-                    "kind": kind,
-                    "url": (resource_urls or {}).get(rid, f"/_resources/{sha256(raw)}.{suffix}"),
-                }
+                if data_urls:
+                    mime = {"css": "text/css", "javascript": "text/javascript"}.get(
+                        kind, revision["data"]["attributes"].get("mime_type")
+                    )
+                    url = f"data:{mime};base64,{sources[name]}"
+                else:
+                    url = (resource_urls or {}).get(rid, f"/_resources/{sha256(raw)}.{suffix}")
+                resources[rid] = {"kind": kind, "url": url}
             visiting.remove(rid)
 
         include(variant)
+        unknown = set(resource_sources) - set(references)
+        if unknown:
+            raise DomainError(
+                "invalid_input",
+                "Drafted resource outside the page closure",
+                resource_id=min(unknown),
+            )
         site = snapshot.revisions[snapshot.records[site_id]["revision_id"]]
         content = snapshot.revisions[snapshot.records[attrs["content_id"]]["revision_id"]]
         include(site)
@@ -99,10 +136,15 @@ class RenderInputs:
         template = references[attrs["template_revision"]]
         if template["kind"] != "template":
             raise DomainError("invalid_template", "Variant needs an exact template")
+        undeclared = set(block_sources) - set(attrs["blocks"])
+        if undeclared:
+            raise DomainError("invalid_input", "Undeclared block: " + min(undeclared))
         blocks = {
             name: {
                 "format": declaration["format"],
-                "source": self.catalog.read_payload(
+                "source": block_sources[name]
+                if name in block_sources
+                else self.catalog.read_payload(
                     variant["id"], "block." + name, snapshot.generation
                 ).decode("utf-8"),
             }
@@ -140,3 +182,5 @@ class RenderInputs:
             self.policy.require(identity, reference["scope"], "read")
             if reference["kind"] in {"template", "css", "javascript", "media"}:
                 self.policy.require(identity, reference["scope"], "use")
+            if reference.get("draft"):
+                self.policy.require(identity, reference["scope"], "write")

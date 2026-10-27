@@ -17,7 +17,7 @@ class Page(AdminPage):
         hero.p("YOUR MULTISITE WORKSPACE", class_="guide-eyebrow")
         hero.h1("Multiple sites. One place to work.")
         hero.p(
-            "Kajenn public site helps you organize pages, languages and resources across your sites. "
+            "Kajenn Press helps you organize pages, languages and resources across your sites. "
             "Your team prepares content here; visitors see the static HTML pages generated "
             "from the latest published release.",
             class_="guide-lead",
@@ -25,9 +25,12 @@ class Page(AdminPage):
         status = home.aside(class_="guide-status", aria_label="Available features")
         status.strong("What you can do today")
         status.p(
-            "Open Create page under your site to edit a Gramlot template, write its HTML body "
-            "with Jodit, save both and render the result. You can also reopen saved pages. "
-            "Multi-block, Markdown and media editing, and publication controls, are still to come."
+            "Open a page under Pages to edit every block its template declares, in Jodit, "
+            "Markdown or source, beside a preview that follows your unsaved edits. New page "
+            "creates a page with a starter template. Each page and resource opens in its own tab. "
+            "Templates, styles, scripts and media open in their own editor, beside a page "
+            "that uses them. Publishing builds the site, gives a private preview link, "
+            "activates a release and rolls it back."
         )
         start = home.section(class_="guide-section")
         start.h2("Getting started")
@@ -41,17 +44,18 @@ class Page(AdminPage):
                 ),
             ),
             (
-                "Open Create page",
+                "Open New page",
                 (
-                    "In the navigation tree on the left, open Create page under the site name. "
+                    "In the navigation tree on the left, open Pages and then New page. "
                     "Save the starter template, open Content to write in Jodit, save the page "
-                    "and click Render saved page."
+                    "and click Render saved page. Reopen it from Pages to edit all its blocks."
                 ),
             ),
             (
-                "Explore Resources and the library",
+                "Explore the site and the library",
                 (
-                    "Resources contains items belonging to the selected site. The Shared library "
+                    "Pages, Templates, Styles, Scripts and Media list the objects of the selected "
+                    "site; each one opens in its own tab. The Shared library "
                     "contains reusable resources for multiple sites."
                 ),
             ),

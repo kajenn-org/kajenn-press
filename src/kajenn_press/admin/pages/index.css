@@ -13,7 +13,11 @@ body { margin:0; }
 .admin-tree::part(row) { padding-inline:4px; }
 .admin-tree::part(branch-row) { font-weight:600; }
 .admin-tree::part(caption) { font-size:13px; }
-.scope-permissions { border-top:1px solid #3e5163; margin-top:24px; padding-top:12px; color:#c9d5e0; font-size:12px; }
+.admin-brand { display:flex; align-items:center; gap:10px; padding-right:6px; }
+.admin-brand img { width:48px; height:48px; object-fit:contain; }
+.admin-status { display:flex; align-items:center; justify-content:space-between; gap:16px; height:100%; }
+.active-title { font-weight:600; color:var(--gramlot-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scope-permissions p { display:inline; margin:0 8px 0 0; }
 .new-site-dialog { position:fixed; top:80px; width:min(420px,90vw); z-index:10; margin-inline:auto; }
 .new-site-dialog label,.new-site-dialog input { display:block; width:100%; margin-bottom:10px; }
 .workspace-host { padding:0 24px 24px; }
@@ -40,13 +44,14 @@ body { margin:0; }
 .record-detail dd { margin:3px 0 0; overflow-wrap:anywhere; }
 .record-detail pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 .empty { padding:16px; }
-.admin-footer { padding:6px 16px; font-size:11px; background:var(--gramlot-surface); border-top:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); }
+.admin-footer { padding:0 16px; font-size:11px; background:var(--gramlot-surface); border-top:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); }
 .login-shell { min-height:100vh; display:grid; place-items:center; background:var(--gramlot-background); }
 .login-card { width:min(380px,90vw); padding:28px; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:8px; }
 .login-card label,.login-card input { display:block; width:100%; margin-bottom:12px; }
 .login-card button { margin-top:12px; }
+.login-logo { display:block; width:160px; height:160px; margin:0 auto 12px; }
 button:focus-visible,select:focus-visible,input:focus-visible { outline:3px solid var(--gramlot-focus-ring); outline-offset:2px; }
-@media(max-width:850px) { .workspace { grid-template-columns:1fr; } .workspace-host { padding:0 12px 16px; } .toolbar { padding:12px; } .admin-toolbar strong,.admin-toolbar label { display:none; } .admin-top header { gap:8px; padding:0 10px; } .account { gap:5px; font-size:12px; } }
+@media(max-width:850px) { .workspace { grid-template-columns:1fr; } .workspace-host { padding:0 12px 16px; } .toolbar { padding:12px; } .admin-toolbar strong,.admin-toolbar label { display:none; } .scope-permissions { display:none; } .admin-top header { gap:8px; padding:0 10px; } .account { gap:5px; font-size:12px; } }
 
 @media(max-width:500px) { .admin-toolbar { gap:5px; padding:0 6px; } .admin-toolbar select { width:130px; } .account span { display:none; } }
 
@@ -90,6 +95,39 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .author-page input { width:min(100%,480px); }
 .author-page select { min-width:120px; }
 .author-page a { color:var(--gramlot-action); }
+.preview-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 12px; }
+.preview-controls label { margin:0; }
+.preview-controls select { min-width:0; width:auto; }
+/* The frame keeps the page's real width and is scaled from its top-left corner. */
+.preview-viewport { overflow:hidden; border:1px solid var(--gramlot-border); border-radius:6px; background:white; max-width:100%; }
+.preview-frame { transform-origin:0 0; }
+
+/* Page editor: toolbar on top, block editors and the scaled preview side by side. */
+.page-toolbar { padding:14px 18px 10px; border-bottom:1px solid var(--gramlot-border); background:var(--gramlot-surface); }
+.page-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; }
+.page-heading h1 { margin:0 12px 0 0; font-size:22px; }
+.page-heading .breadcrumb { width:100%; margin:0; }
+.page-heading select { width:auto; min-width:80px; }
+.page-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
+.page-actions select { width:auto; min-width:0; min-height:32px; }
+.page-status { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:8px; font-size:13px; }
+.page-message { font-weight:600; }
+.page-blocks { padding:8px; }
+.page-preview { padding:12px; overflow:auto; background:var(--gramlot-surface-subtle); }
+.media-view { max-width:100%; max-height:60vh; margin:12px 0; border:1px solid var(--gramlot-border); background:white; }
+.page-actions input { width:auto; min-width:160px; }
+
+/* Publishing panel: channel, routes, builds and history as consecutive sections. */
+.publish-page { max-width:1200px; padding-top:20px; }
+.publish-section { margin:22px 0; padding:18px; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:8px; }
+.publish-section h2 { margin:0 0 6px; font-size:19px; }
+.publish-section h3 { margin:18px 0 8px; font-size:16px; }
+.publish-section select { width:auto; min-width:160px; }
+.publish-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 16px; margin:12px 0; }
+.publish-form select { width:100%; }
+.publish-section td input { width:100%; min-width:90px; }
+.publish-choices { display:flex; flex-wrap:wrap; gap:6px 18px; margin:12px 0; }
+@media(max-width:850px) { .publish-form { grid-template-columns:1fr; } }
 
 /* Deployments: catalog release beside the release read back from storage. */
 .deploy-page .lead { max-width:900px; color:var(--gramlot-text-secondary); margin:0 0 14px; }
