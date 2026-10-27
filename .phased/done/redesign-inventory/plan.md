@@ -79,7 +79,8 @@ Starting point (main `1c49362`): 8 724 lines in `src/kajenn_press/` (catalog 758
   - Details: one row per REST/MCP operation (44) with its classification and its successor; one row per test suite (9 suites, 133 tests) with its classification; the migration of the Hetzner catalog (one site, three pages) to the new model, or the decision to rebuild it.
   - Done: 44 operations and 9 suites classified; a migration path or a rebuild decision for the existing site.
 
-- [ ] **Phase 7**: Open decisions and the N2 entry contract
+- [x] **Phase 7**: Open decisions and the N2 entry contract
+  > Done: 12 decisions recorded as decided by the owner on 2026-10-27 in `xmldocs/proposal/site-tab-redesign.xml` (d-editing-lock, d-update-local, d-template-conflict, d-slot-removed, d-template-switch, d-dynamic-seo, d-resolver-config, d-resolver-output, d-idempotency, d-audit, d-preview-interaction, d-site-rebuild); none open. N2 entry contract written; the inventory is accepted.
   - Run: opus / high
   - Files: `xmldocs/proposal/site-tab-redesign.xml` (decisions), `xmldocs/proposal/redesign-inventory.xml` (section "N2 entry contract"), `.phased/roadmap.md`.
   - Details: put to the owner, one at a time, the open decisions `d-update-local`, `d-template-conflict`, `d-slot-removed`, `d-template-switch`, `d-dynamic-seo` and the proposed `d-editing-lock`, plus the two questions raised in Phase 2 (idempotency keys for MCP retries; audit and events) and in Phase 3 (resolver configuration in the worker; filtering of resolver output) and in Phase 5 (`d-preview-interaction`: how clicks and drops reach slots in the preview) and in Phase 6 (rebuild instead of migrating the Hetzner site), with the inventory facts that bear on each. Write what N2 starts from and must deliver, with the upstream items it depends on.

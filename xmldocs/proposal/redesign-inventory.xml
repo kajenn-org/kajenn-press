@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<proposal id="redesign-inventory" title="Kajenn Press: inventory of the code against the site tab redesign" date="2026-10-27" lang="en" author="Giovanni Porcari" status="draft">
+<proposal id="redesign-inventory" title="Kajenn Press: inventory of the code against the site tab redesign" date="2026-10-27" lang="en" author="Giovanni Porcari" status="accepted">
 
   <problem>
     <p><ref to="site-tab-redesign" doc="proposal/site-tab-redesign"/> changes the administration and the publication model. Before any code changes, every part of the existing code, every REST/MCP operation, every test suite and every deployment file needs a stated fate, and the upstream capabilities the redesign relies on need to be checked.</p>
@@ -95,8 +95,8 @@
         <row><cell><c>catalog/local.py</c>: <c>LocalCatalog</c>, <c>Snapshot</c>, <c>Change</c></cell><cell>replace</cell><cell>Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions</cell><cell>d-publish-unit</cell></row>
         <row><cell>Generations and <c>expected_generation</c></cell><cell>replace</cell><cell>The editing lock of one editor per site; a stale editor cannot save</cell><cell>d-editing-lock</cell></row>
         <row><cell>Immutable JSON revisions, <c>revision_*</c> history</cell><cell>replace</cell><cell>S3 versions of the source zip and of each published page</cell><cell>d-publish-unit</cell></row>
-        <row><cell>Receipts and idempotency keys</cell><cell>open</cell><cell>Retries from MCP clients (Help me) still need a rule; decided in Phase 7</cell><cell>—</cell></row>
-        <row><cell>Audit and events</cell><cell>open</cell><cell>No audit appears in the redesign; decided in Phase 7</cell><cell>—</cell></row>
+        <row><cell>Receipts and idempotency keys</cell><cell>change</cell><cell>Keys kept; receipts kept 24 hours in the site working copy</cell><cell>d-idempotency</cell></row>
+        <row><cell>Audit and events</cell><cell>replace</cell><cell>Minimal log in the site Bag: who, when, what</cell><cell>d-audit</cell></row>
         <row><cell><c>catalog/filesystem.py</c> (fsync, private directory, atomic JSON publish)</cell><cell>change</cell><cell>Reused for the unpacked working copy and the local re-render cache</cell><cell>d-rerender-cache</cell></row>
         <row><cell><c>catalog/errors.py</c></cell><cell>change</cell><cell><c>Conflict</c>, <c>OwnershipError</c>, <c>IntegrityError</c> kept for the lock and the zip; <c>CommitUncertain</c> and <c>UnsupportedProfile</c> follow the catalog</cell><cell>d-editing-lock</cell></row>
         <row><cell><c>objects.py</c>: <c>ObjectStore</c>, <c>ObjectRef</c></cell><cell>replace</cell><cell>Assets stored inside the site and page Bags</cell><cell>d-content-copy</cell></row>
@@ -140,7 +140,7 @@
         <row><cell><c>service.py</c>: <c>RenderService</c></cell><cell>change</cell><cell>Entry point takes a page of the site instead of a variant revision</cell><cell>d-content-copy</cell></row>
         <row><cell>Operations <c>render_preview</c>, <c>render_draft</c></cell><cell>change</cell><cell><c>render_draft</c> renders the unsaved page for the Visual editor and the floating editor; <c>render_preview</c> renders the saved page</cell><cell>—</cell></row>
       </table>
-      <p>Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.</p>
+      <p>Resolvers receive named connections from the server deployment (<ref to="d-resolver-config" doc="proposal/site-tab-redesign"/>); their output is text by default and HTML goes through nh3 (<ref to="d-resolver-output" doc="proposal/site-tab-redesign"/>).</p>
     </section>
 
     <section title="Publication and serving" id="publication">
@@ -195,7 +195,7 @@
       <fact source="src/kajenn_press/admin/views.py:29" method="read" verified="2026-10-27"><c>scaled_preview</c> keeps a rendered page at 1280 or 375 px and scales it; the page is shown by <c>htmlPreview</c> (line 77).</fact>
       <fact source="src/kajenn_press/admin/pages/page.py:14" method="read" verified="2026-10-27">The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; <c>page.js</c> calls <c>render_draft</c> for the live preview (line 177).</fact>
       <fact source="src/kajenn_press/admin/pages/index.py:28" method="read" verified="2026-10-27">The shell is <c>IndexPage</c>; <c>navigation_bag</c> (line 62) builds the tree of the selected site; <c>create_site</c> (line 325) creates a site from the dialog.</fact>
-      <p>The HTML preview runs in an iframe with an empty <c>sandbox</c> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. This becomes decision <c>d-preview-interaction</c> in Phase 7.</p>
+      <p>The HTML preview runs in an iframe with an empty <c>sandbox</c> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. Decided as <ref to="d-preview-interaction" doc="proposal/site-tab-redesign"/>: a script in the preview with <c>postMessage</c>, verified first in N5.</p>
 
       <table title="Classification">
         <row head="true"><cell>Item</cell><cell>Fate</cell><cell>Successor or change</cell><cell>Decision</cell></row>
@@ -281,7 +281,17 @@
       <fact source="kpress MCP sites_list and records_index, 2026-10-27" method="run" verified="2026-10-27">The Hetzner catalog holds one site, "Kajenn Press" (language en), with three pages at <c>/en/</c>, <c>/en/features/</c>, <c>/en/get-started/</c>, each with blocks <c>hero</c> and <c>body</c> on one template. No release is active. The 2026-10-27 deployment check added channel settings <c>preview-check</c>, one candidate, one build and one preview grant.</fact>
       <fact source="examples/kajenn_press_site/pages/home.body.html" method="run" verified="2026-10-27">The home page blocks on Hetzner have the same SHA-256 as <c>examples/kajenn_press_site/pages/home.body.html</c> and <c>home.hero.html</c>: the site was loaded from the example sources.</fact>
       <p>The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.</p>
-      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <c>examples/kajenn_press_site/</c> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <c>deploy/docker/HETZNER.md</c> before the new version is installed. To confirm in Phase 7.</p>
+      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <c>examples/kajenn_press_site/</c> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <c>deploy/docker/HETZNER.md</c> before the new version is installed. Decided as <ref to="d-site-rebuild" doc="proposal/site-tab-redesign"/>.</p>
+    </section>
+    <section title="N2 entry contract" id="n2-entry">
+      <p>N2 builds the page Bag, template slots and copies. It starts from main after N1 and from the decisions of <ref to="site-tab-redesign" doc="proposal/site-tab-redesign"/>, none of which is open.</p>
+      <list>
+        <item><b>Starts from</b>: <c>EditorialService.execute</c>, <c>AccessPolicy</c>, <c>DomainError</c>, <c>prepare_blocks</c>, the qualified engines and <c>RenderWorker</c>, all classified keep or change above.</item>
+        <item><b>Delivers</b>: the page Bag (template copy, contents, assets) serialized in TYTX JSON; slots read from <c>kpress_slot</c> with unique names; copies carrying the original id and the original's digest at copy time; Update with differences and unselected local changes (d-update-local); linked and independent site templates with per-node conflicts (d-template-conflict); contents without slot (d-slot-removed); template switch with guided mapping (d-template-switch); rendering of a page Bag to static HTML with slots filled; resolvers with named connections and filtered output.</item>
+        <item><b>Does not deliver</b>: the site source zip and S3 versions (N3), per-page publication and serving (N4), any UI (N5–N8).</item>
+        <item><b>Depends on upstream</b>: none of the missing items blocks N2. The zipped Bag is avoided by TYTX JSON; the genro-storage version restore is needed from N3.</item>
+        <item><b>Owner action before N3</b>: enable versioning on the Hetzner bucket <c>kpress-releases</c> and on the local development bucket.</item>
+      </list>
     </section>
   </solution>
 

@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N1.
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N2, whose entry contract is in `xmldocs/proposal/redesign-inventory.xml`.
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -37,7 +37,10 @@ The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.
 
 Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each macro gets its own detailed plan when it starts; this roadmap does not authorize later macros.
 
-### N1: Inventory against the redesign
+### N1 (completed 2026-10-27): Inventory against the redesign
+
+- Result: `xmldocs/proposal/redesign-inventory.xml` (accepted) and the decisions of `xmldocs/proposal/site-tab-redesign.xml`, none open. Archived plan: [redesign-inventory](done/redesign-inventory/plan.md).
+- Owner action before N3: enable versioning on the Hetzner bucket `kpress-releases` (not enabled on 2026-10-27) and on the local development bucket.
 
 - Objective: map the redesign onto the existing code before changing it.
 - Delivers: for each module of `src/kajenn_press/` (catalog, services, rendering, publication, admin, child) and for `deploy/`, what stays, what changes and what is removed; the REST/MCP operations that survive, change or go; the migration of existing catalogs, if any.

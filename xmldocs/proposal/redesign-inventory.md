@@ -1,7 +1,7 @@
 <!-- generated from redesign-inventory.xml by xmldocs: do not edit, edit the XML -->
 
 ## Kajenn Press: inventory of the code against the site tab redesign
-*Proposal · redesign-inventory · 2026-10-27 · draft*
+*Proposal · redesign-inventory · 2026-10-27 · accepted*
 
 ### Problem
 
@@ -110,8 +110,8 @@ Today one local catalog holds every record of an installation as immutable JSON 
 | `catalog/local.py`: `LocalCatalog`, `Snapshot`, `Change` | replace | Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions | d-publish-unit |
 | Generations and `expected_generation` | replace | The editing lock of one editor per site; a stale editor cannot save | d-editing-lock |
 | Immutable JSON revisions, `revision_*` history | replace | S3 versions of the source zip and of each published page | d-publish-unit |
-| Receipts and idempotency keys | open | Retries from MCP clients (Help me) still need a rule; decided in Phase 7 | — |
-| Audit and events | open | No audit appears in the redesign; decided in Phase 7 | — |
+| Receipts and idempotency keys | change | Keys kept; receipts kept 24 hours in the site working copy | d-idempotency |
+| Audit and events | replace | Minimal log in the site Bag: who, when, what | d-audit |
 | `catalog/filesystem.py` (fsync, private directory, atomic JSON publish) | change | Reused for the unpacked working copy and the local re-render cache | d-rerender-cache |
 | `catalog/errors.py` | change | `Conflict`, `OwnershipError`, `IntegrityError` kept for the lock and the zip; `CommitUncertain` and `UnsupportedProfile` follow the catalog | d-editing-lock |
 | `objects.py`: `ObjectStore`, `ObjectRef` | replace | Assets stored inside the site and page Bags | d-content-copy |
@@ -156,7 +156,7 @@ Today a template is Python source that authors a Gramlot or HtmlBuilder Source; 
 | `service.py`: `RenderService` | change | Entry point takes a page of the site instead of a variant revision | d-content-copy |
 | Operations `render_preview`, `render_draft` | change | `render_draft` renders the unsaved page for the Visual editor and the floating editor; `render_preview` renders the saved page | — |
 
-Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.
+Resolvers receive named connections from the server deployment ( (→ proposal/site-tab-redesign#d-resolver-config)); their output is text by default and HTML goes through nh3 ( (→ proposal/site-tab-redesign#d-resolver-output)).
 
 #### Publication and serving
 
@@ -215,7 +215,7 @@ Today the shell is a Gramlot `IndexPage` with a site selector, a navigation tree
 - `READ` `src/kajenn_press/admin/pages/page.py:14` · 2026-10-27 — The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; `page.js` calls `render_draft` for the live preview (line 177).
 - `READ` `src/kajenn_press/admin/pages/index.py:28` · 2026-10-27 — The shell is `IndexPage`; `navigation_bag` (line 62) builds the tree of the selected site; `create_site` (line 325) creates a site from the dialog.
 
-The HTML preview runs in an iframe with an empty `sandbox` (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. This becomes decision `d-preview-interaction` in Phase 7.
+The HTML preview runs in an iframe with an empty `sandbox` (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. Decided as  (→ proposal/site-tab-redesign#d-preview-interaction): a script in the preview with `postMessage`, verified first in N5.
 
 *Classification*
 
@@ -311,7 +311,17 @@ Totals over the 44 operations: 3 keep, 20 change, 13 replace, 8 remove.
 
 The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.
 
-Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from `examples/kajenn_press_site/` with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of `deploy/docker/HETZNER.md` before the new version is installed. To confirm in Phase 7.
+Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from `examples/kajenn_press_site/` with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of `deploy/docker/HETZNER.md` before the new version is installed. Decided as  (→ proposal/site-tab-redesign#d-site-rebuild).
+
+#### N2 entry contract
+
+N2 builds the page Bag, template slots and copies. It starts from main after N1 and from the decisions of  (→ proposal/site-tab-redesign#site-tab-redesign), none of which is open.
+
+- **Starts from**: `EditorialService.execute`, `AccessPolicy`, `DomainError`, `prepare_blocks`, the qualified engines and `RenderWorker`, all classified keep or change above.
+- **Delivers**: the page Bag (template copy, contents, assets) serialized in TYTX JSON; slots read from `kpress_slot` with unique names; copies carrying the original id and the original's digest at copy time; Update with differences and unselected local changes (d-update-local); linked and independent site templates with per-node conflicts (d-template-conflict); contents without slot (d-slot-removed); template switch with guided mapping (d-template-switch); rendering of a page Bag to static HTML with slots filled; resolvers with named connections and filtered output.
+- **Does not deliver**: the site source zip and S3 versions (N3), per-page publication and serving (N4), any UI (N5–N8).
+- **Depends on upstream**: none of the missing items blocks N2. The zipped Bag is avoided by TYTX JSON; the genro-storage version restore is needed from N3.
+- **Owner action before N3**: enable versioning on the Hetzner bucket `kpress-releases` and on the local development bucket.
 
 ### Related documents
 

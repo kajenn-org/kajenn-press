@@ -78,7 +78,7 @@ table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
 caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
 th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: var(--panel); }
-  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press: inventory of the code against the site tab redesign</h1><div class="doc-meta"><span>redesign-inventory</span><span>2026-10-27</span><span>Giovanni Porcari</span><span class="tag tag-draft">draft</span></div></header><section class="part problem"><h2>Problem</h2>
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Proposal</div><h1>Kajenn Press: inventory of the code against the site tab redesign</h1><div class="doc-meta"><span>redesign-inventory</span><span>2026-10-27</span><span>Giovanni Porcari</span><span class="tag tag-accepted">accepted</span></div></header><section class="part problem"><h2>Problem</h2>
     <p><a class="ref" href="../proposal/site-tab-redesign.html#site-tab-redesign"></a> changes the administration and the publication model. Before any code changes, every part of the existing code, every REST/MCP operation, every test suite and every deployment file needs a stated fate, and the upstream capabilities the redesign relies on need to be checked.</p>
     <p>Classification used throughout: <code>keep</code> (unchanged), <code>change</code> (kept and adapted), <code>replace</code> (removed, a named new part takes its role), <code>remove</code> (removed with no successor). Capabilities are <code>exists</code>, <code>partial</code> or <code>missing</code>.</p>
   </section><section class="part solution"><h2>Proposed solution</h2>
@@ -170,8 +170,8 @@ th { background: var(--panel); }
         <tr><td><code>catalog/local.py</code>: <code>LocalCatalog</code>, <code>Snapshot</code>, <code>Change</code></td><td>replace</td><td>Site source Bag: an unpacked working copy while editing, one zipped object on S3 after each save; history from S3 versions</td><td>d-publish-unit</td></tr>
         <tr><td>Generations and <code>expected_generation</code></td><td>replace</td><td>The editing lock of one editor per site; a stale editor cannot save</td><td>d-editing-lock</td></tr>
         <tr><td>Immutable JSON revisions, <code>revision_*</code> history</td><td>replace</td><td>S3 versions of the source zip and of each published page</td><td>d-publish-unit</td></tr>
-        <tr><td>Receipts and idempotency keys</td><td>open</td><td>Retries from MCP clients (Help me) still need a rule; decided in Phase 7</td><td>—</td></tr>
-        <tr><td>Audit and events</td><td>open</td><td>No audit appears in the redesign; decided in Phase 7</td><td>—</td></tr>
+        <tr><td>Receipts and idempotency keys</td><td>change</td><td>Keys kept; receipts kept 24 hours in the site working copy</td><td>d-idempotency</td></tr>
+        <tr><td>Audit and events</td><td>replace</td><td>Minimal log in the site Bag: who, when, what</td><td>d-audit</td></tr>
         <tr><td><code>catalog/filesystem.py</code> (fsync, private directory, atomic JSON publish)</td><td>change</td><td>Reused for the unpacked working copy and the local re-render cache</td><td>d-rerender-cache</td></tr>
         <tr><td><code>catalog/errors.py</code></td><td>change</td><td><code>Conflict</code>, <code>OwnershipError</code>, <code>IntegrityError</code> kept for the lock and the zip; <code>CommitUncertain</code> and <code>UnsupportedProfile</code> follow the catalog</td><td>d-editing-lock</td></tr>
         <tr><td><code>objects.py</code>: <code>ObjectStore</code>, <code>ObjectRef</code></td><td>replace</td><td>Assets stored inside the site and page Bags</td><td>d-content-copy</td></tr>
@@ -215,7 +215,7 @@ th { background: var(--panel); }
         <tr><td><code>service.py</code>: <code>RenderService</code></td><td>change</td><td>Entry point takes a page of the site instead of a variant revision</td><td>d-content-copy</td></tr>
         <tr><td>Operations <code>render_preview</code>, <code>render_draft</code></td><td>change</td><td><code>render_draft</code> renders the unsaved page for the Visual editor and the floating editor; <code>render_preview</code> renders the saved page</td><td>—</td></tr>
       </table></div>
-      <p>Open for Phase 7: which configuration a resolver receives in the worker (database address, credentials) and whether resolver output is filtered like a content.</p>
+      <p>Resolvers receive named connections from the server deployment (<a class="ref" href="../proposal/site-tab-redesign.html#d-resolver-config"></a>); their output is text by default and HTML goes through nh3 (<a class="ref" href="../proposal/site-tab-redesign.html#d-resolver-output"></a>).</p>
     </section>
 
     <section class="section" id="publication"><h3>Publication and serving</h3>
@@ -270,7 +270,7 @@ th { background: var(--panel); }
       <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/views.py:29</code><span class="muted">2026-10-27</span></div><div><code>scaled_preview</code> keeps a rendered page at 1280 or 375 px and scales it; the page is shown by <code>htmlPreview</code> (line 77).</div></div>
       <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/page.py:14</code><span class="muted">2026-10-27</span></div><div>The page editor offers Jodit and CodeMirror for HTML blocks, the Markdown editor and CodeMirror for Markdown blocks; <code>page.js</code> calls <code>render_draft</code> for the live preview (line 177).</div></div>
       <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:28</code><span class="muted">2026-10-27</span></div><div>The shell is <code>IndexPage</code>; <code>navigation_bag</code> (line 62) builds the tree of the selected site; <code>create_site</code> (line 325) creates a site from the dialog.</div></div>
-      <p>The HTML preview runs in an iframe with an empty <code>sandbox</code> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. This becomes decision <code>d-preview-interaction</code> in Phase 7.</p>
+      <p>The HTML preview runs in an iframe with an empty <code>sandbox</code> (see Upstream capabilities): no script runs inside it. Slot borders can be added by CSS in the rendered HTML, but clicking a slot to detach it and dropping a content on it need either a script inside the preview or the page rendered in the administration document. Decided as <a class="ref" href="../proposal/site-tab-redesign.html#d-preview-interaction"></a>: a script in the preview with <code>postMessage</code>, verified first in N5.</p>
 
       <div class="table-wrap"><table><caption>Classification</caption>
         <tr><th>Item</th><th>Fate</th><th>Successor or change</th><th>Decision</th></tr>
@@ -356,7 +356,17 @@ th { background: var(--panel); }
       <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">kpress MCP sites_list and records_index, 2026-10-27</code><span class="muted">2026-10-27</span></div><div>The Hetzner catalog holds one site, "Kajenn Press" (language en), with three pages at <code>/en/</code>, <code>/en/features/</code>, <code>/en/get-started/</code>, each with blocks <code>hero</code> and <code>body</code> on one template. No release is active. The 2026-10-27 deployment check added channel settings <code>preview-check</code>, one candidate, one build and one preview grant.</div></div>
       <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">examples/kajenn_press_site/pages/home.body.html</code><span class="muted">2026-10-27</span></div><div>The home page blocks on Hetzner have the same SHA-256 as <code>examples/kajenn_press_site/pages/home.body.html</code> and <code>home.hero.html</code>: the site was loaded from the example sources.</div></div>
       <p>The text of the site describes the previous model (revisions, candidates, builds, channels). It needs rewriting in any case.</p>
-      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <code>examples/kajenn_press_site/</code> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <code>deploy/docker/HETZNER.md</code> before the new version is installed. To confirm in Phase 7.</p>
+      <p>Proposed: no migration code. The Kajenn Press site is rebuilt in the new model from <code>examples/kajenn_press_site/</code> with rewritten text, as the first site of N2–N5. The old catalog volume is archived with the backup command of <code>deploy/docker/HETZNER.md</code> before the new version is installed. Decided as <a class="ref" href="../proposal/site-tab-redesign.html#d-site-rebuild"></a>.</p>
+    </section>
+    <section class="section" id="n2-entry"><h3>N2 entry contract</h3>
+      <p>N2 builds the page Bag, template slots and copies. It starts from main after N1 and from the decisions of <a class="ref" href="../proposal/site-tab-redesign.html#site-tab-redesign"></a>, none of which is open.</p>
+      <ul>
+        <li><b>Starts from</b>: <code>EditorialService.execute</code>, <code>AccessPolicy</code>, <code>DomainError</code>, <code>prepare_blocks</code>, the qualified engines and <code>RenderWorker</code>, all classified keep or change above.</li>
+        <li><b>Delivers</b>: the page Bag (template copy, contents, assets) serialized in TYTX JSON; slots read from <code>kpress_slot</code> with unique names; copies carrying the original id and the original's digest at copy time; Update with differences and unselected local changes (d-update-local); linked and independent site templates with per-node conflicts (d-template-conflict); contents without slot (d-slot-removed); template switch with guided mapping (d-template-switch); rendering of a page Bag to static HTML with slots filled; resolvers with named connections and filtered output.</li>
+        <li><b>Does not deliver</b>: the site source zip and S3 versions (N3), per-page publication and serving (N4), any UI (N5–N8).</li>
+        <li><b>Depends on upstream</b>: none of the missing items blocks N2. The zipped Bag is avoided by TYTX JSON; the genro-storage version restore is needed from N3.</li>
+        <li><b>Owner action before N3</b>: enable versioning on the Hetzner bucket <code>kpress-releases</code> and on the local development bucket.</li>
+      </ul>
     </section>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a> — Kajenn Press: the site tab, page Bags and per-page publication</li>

@@ -178,14 +178,61 @@ A site is edited by one person at a time. Whoever opens the editor takes the sit
    1. **Information only**
    2. **Budget with a limit**
    → Choice: **Information only** (GP, 2026-10-27) — The tool is used internally for now.
-- **d-editing-lock** `proposed` — How do two people edit the same site?
-   1. **One editor at a time per site**
-   2. **Concurrent editing with merge of the source zip**
-- **d-update-local** `open` — When a page changed its copy of a content, does Update overwrite it, skip it or ask?
-- **d-template-conflict** `open` — When a Library template changes a node that a linked site template changed or removed, which version wins?
-- **d-slot-removed** `open` — What do pages show when their template no longer declares a slot that held a content?
-- **d-template-switch** `open` — When a page switches template, do slots with the same name keep their contents?
-- **d-dynamic-seo** `open` — Content in dynamic iframes is not indexed. Must content that matters for SEO always come from resolvers in the static HTML?
+- **d-editing-lock** `decided` — How do two people edit the same site?
+   1. **One editor at a time per site**: The lock expires after inactivity (for example 30 minutes); another user can take the site with an explicit command, warning the holder, whose unsaved changes are lost; Help me works under the lock of the user who opened it.
+   2. **Concurrent editing with merge of the source zip**: Needs a merge of the same Bag and conflict resolution per node; nothing provides it today.
+   → Choice: **One editor at a time per site** (GP, 2026-10-27) — The source is one zip; a merge mechanism does not exist.
+- **d-update-local** `decided` — When a page changed its copy of a content, does Update overwrite it, skip it or ask?
+   1. **Always overwrite**
+   2. **Always skip**
+   3. **Flag and let the operator choose**: Pages with local changes are flagged and start unselected; selecting one shows the differences and overwrites on confirmation. Each copy carries the original id and the digest of the original at copy time; a different current digest means a local change.
+   → Choice: **Flag and let the operator choose** (GP, 2026-10-27) — Nothing is lost without the operator seeing it.
+- **d-template-conflict** `decided` — When a Library template changes a node that a linked site template changed or removed, which version wins?
+   1. **The site wins**
+   2. **The Library wins**
+   3. **Report and let the operator choose per node**: The update of that template stops and lists the conflicting nodes, including renamed labels; per node the operator keeps the site version or takes the Library one. Until then the site template stays on the Library version it records.
+   → Choice: **Report and let the operator choose per node** (GP, 2026-10-27) — Same rule as Update of copies.
+- **d-slot-removed** `decided` — What do pages show when their template no longer declares a slot that held a content?
+   1. **The copy is discarded**
+   2. **The copy stays without a slot**: The page does not show it; the Pages tree lists it under the page as without slot, with a warning; the check before Publish reports it; the operator moves or deletes it.
+   3. **The template cannot be saved while pages use the slot**
+   → Choice: **The copy stays without a slot** (GP, 2026-10-27) — Nothing is lost and templates stay free to change.
+- **d-template-switch** `decided` — When a page switches template, do slots with the same name keep their contents?
+   1. **By name**
+   2. **All contents become without slot**
+   3. **Guided mapping**: A panel shows old and new slots matched by name; the operator corrects and confirms; unmatched contents become without slot.
+   → Choice: **Guided mapping** (GP, 2026-10-27) — Equal names need one confirmation; renamed slots are seen before contents are detached.
+- **d-dynamic-seo** `decided` — Content in dynamic iframes is not indexed. How does a page with dynamic slots stay indexable?
+   1. **Accept: iframe content is not indexed**
+   2. **Dynamic iframes only on noindex pages**
+   3. **Static fallback content in the iframe slot**: Written by hand or produced by a resolver, rendered in the page HTML and indexed; the iframe replaces it when the browser loads it. The SEO tab warns when an indexed page has an iframe slot without fallback.
+   → Choice: **Static fallback content in the iframe slot** (GP, 2026-10-27) — Iframes stay free and pages do not reach search engines or no-JS readers empty.
+- **d-resolver-config** `decided` — How does a resolver in the render worker reach a database?
+   1. **Named connections in the server deployment**: The Kajenn server's `.env` and secrets define named connections; the page Bag names the connection only; the worker receives it per render. Credentials never enter a Bag or S3.
+   2. **Resolvers in the server process**
+   3. **Resolvers call HTTP APIs with a token**
+   → Choice: **Named connections in the server deployment** (GP, 2026-10-27) — Credentials stay out of files that move and are versioned.
+- **d-resolver-output** `decided` — Is resolver output filtered?
+   1. **Text by default, HTML through nh3**
+   2. **Trusted like the template**
+   → Choice: **Text by default, HTML through nh3** (GP, 2026-10-27) — Database values can hold text written by users.
+- **d-idempotency** `decided` — Do mutations keep idempotency keys?
+   1. **Keep keys; receipts kept 24 hours in the site working copy**
+   2. **Drop keys; clients re-read before retrying**
+   → Choice: **Keep keys; receipts kept 24 hours in the site working copy** (GP, 2026-10-27) — Help me makes many MCP calls and may retry them.
+- **d-audit** `decided` — Is there an audit of changes?
+   1. **Minimal log in the site Bag**: Who, when and what for each save, Publish, rollback and lock take; Help me actions are recorded as made by the user through Help me; the log travels with the zip.
+   2. **No audit**
+   → Choice: **Minimal log in the site Bag** (GP, 2026-10-27) — An S3 version does not say who changed what.
+- **d-preview-interaction** `decided` — How do clicks and drops reach slots in the sandboxed preview?
+   1. **A script in the preview with postMessage**: `sandbox="allow-scripts"` without `allow-same-origin`; the script is added to the preview HTML only, never to published HTML. Verified as the first step of N5; if native drag into the sandboxed iframe fails, the first version keeps click-to-select in the preview and drop on the Pages tree.
+   2. **Page in the administration document inside a shadow DOM**
+   3. **Cross-window drag and drop in Gramlot**
+   → Choice: **A script in the preview with postMessage** (GP, 2026-10-27) — The administration stays isolated from the page.
+- **d-site-rebuild** `decided` — What happens to the Kajenn Press site in the Hetzner catalog?
+   1. **Rebuild from the example sources**: No migration code; the catalog volume is archived with the backup command of `deploy/docker/HETZNER.md` before the new version is installed.
+   2. **Migrate with a converter**
+   → Choice: **Rebuild from the example sources** (GP, 2026-10-27) — The site comes from `examples/kajenn_press_site` and its text must be rewritten anyway.
 
 ### Consequences
 
