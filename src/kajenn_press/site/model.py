@@ -15,12 +15,13 @@ from uuid import uuid4
 from genro_bag import Bag
 
 from ..domain import DomainError
+from .linking import LIBRARY, SITE, rebase
 from .slots import template_slots
 
 ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
 ASSET_KINDS = {"css", "javascript", "media"}
-SECTIONS = ("templates", "contents", "assets", "pages")
+SECTIONS = ("templates", "template_bases", "contents", "assets", "pages")
 PAGE_SECTIONS = ("template", "slots", "unplaced", "assets")
 
 
@@ -184,6 +185,41 @@ class Site:
             page.set_item(section, Bag())
         return self._add("pages", page, name=required_text(name, "name"))
 
+    def import_template(self, library, library_template_id, linked):
+        """Bring a Library template into the site, linked to its future versions or not."""
+        original = library.node("templates", library_template_id)
+        attributes = {
+            "name": original.attr["name"],
+            "engine": original.attr["engine"],
+            "library_id": library_template_id,
+            "library_digest": value_digest(original.value),
+            "linked": bool(linked),
+        }
+        template_id = self._add("templates", copy_value(original.value), **attributes)
+        if linked:
+            self.section("template_bases").set_item(template_id, copy_value(original.value))
+        return template_id
+
+    def rebase_template(self, template_id, library, resolutions=None):
+        """Rebase a linked template on the current Library version (d-template-conflict).
+
+        Returns the conflicts left; when there are none the template takes the merged
+        source and records the new Library version as its base.
+        """
+        template = self.node("templates", template_id)
+        if not template.attr.get("linked"):
+            raise DomainError("invalid_input", "Only a linked template follows the Library")
+        if any(choice not in (SITE, LIBRARY) for choice in (resolutions or {}).values()):
+            raise DomainError("invalid_input", "A resolution keeps site or takes library")
+        current = library.node("templates", template.attr["library_id"])
+        base = self.section("template_bases").get_node(template_id)
+        merged, conflicts = rebase(base.value, template.value, current.value, resolutions)
+        if merged is not None:
+            template.value = merged
+            base.value = copy_value(current.value)
+            template.attr["library_digest"] = value_digest(current.value)
+        return conflicts
+
     def page(self, page_id):
         self.node("pages", page_id)
         return Page(self, page_id)
@@ -278,3 +314,10 @@ class Site:
         item_id = new_id()
         self.section(section).set_item(item_id, value, _attributes=attributes)
         return item_id
+
+
+class Library(Site):
+    """Templates, contents and assets shared by several sites; it has no pages."""
+
+    def add_page(self, name, template_id):
+        raise DomainError("invalid_input", "The Library has no pages")
