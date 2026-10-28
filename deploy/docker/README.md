@@ -95,6 +95,14 @@ child's user can read only `releases` (`child-policy.json`). With an external bu
 `KPRESS_SOURCES_BUCKET` in `.env` names it (see `HETZNER.md`, step 6); when it is empty, and
 with the shared volume, the site operations answer `unavailable`.
 
+## Sites published page by page
+
+The `demo` profile also runs `site-publisher`, which builds the Kajenn Press example site
+(`examples/kajenn_press_site`) through MCP and publishes it page by page, and
+`site-server`, which serves it at `http://press.localhost:8877` from the versioned
+`releases` bucket with the child's read-only credentials. Both are off with the shared
+volume and with an external bucket.
+
 ## Shared volume instead of RustFS
 
 `compose.volume.yaml` replaces RustFS with a Docker volume, `releases`: websites

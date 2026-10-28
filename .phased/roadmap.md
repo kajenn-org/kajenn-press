@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N4 (per-page publication and Kajenn serving).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N5 (navigation and the Visual editor).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -60,7 +60,9 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Objective: one zipped source Bag per site, unpacked for editing and zipped again on save.
 - Delivers: S3 versions per deliberate save; restore of a previous source; one editor at a time per site; export and import of a complete site as one zip; starting sites kept in Library.
 
-### N4: Per-page publication and Kajenn serving
+### N4 (completed 2026-10-28, branch feat/page-publication): Per-page publication and Kajenn serving
+
+- Result: page URLs and redirects; published page objects and the site index pinning versions; Publish, page and site rollback, maintenance (32 site operations); `src/kajenn_press/site/serving.py` with the local re-render cache; the demo publishes and serves the example site page by page. Old publication path removed after N5 (N4-D3). Archived plan: [page-publication](done/page-publication/plan.md). Pending owner actions on Hetzner: `deploy/docker/HETZNER.md` steps 6–7.
 
 - Objective: one published object per page, versioned by S3, served by Kajenn.
 - Delivers: Publish of the changed pages with selection; per-page rollback; site rollback through the source zip; re-rendering through resolvers with a local filesystem cache; `sitemap.xml`, `robots.txt` and 301 redirects generated at publication; maintenance mode.

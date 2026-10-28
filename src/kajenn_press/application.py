@@ -63,6 +63,7 @@ class PressApplication(McpOpenApiApplication):
             if self.sites_config is not None:
                 # s3fs comes with the optional release-s3 extra; an installation without
                 # site sources keeps working without it, as the administration does.
+                from .site.publish import Publisher
                 from .site.store import SourceStore
 
                 config = dict(self.sites_config)
@@ -74,8 +75,14 @@ class PressApplication(McpOpenApiApplication):
                     SourceStore(config.pop("sources")),
                     self.policy,
                     worker=worker,
-                    connections=config.pop("connections", {}),
+                    connections=config.get("connections", {}),
+                    publisher=(
+                        Publisher(config.pop("releases"), worker, config.get("connections", {}))
+                        if "releases" in config
+                        else None
+                    ),
                 )
+                config.pop("connections", None)
                 if config:
                     raise ValueError("Unknown site configuration")
         except Exception as exc:
@@ -844,6 +851,13 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_url_set(self, site_id: str, key: str, page_id: str, url: str, _request=None) -> dict:
+        """Move a page to a new URL path; the old path redirects to it."""
+        return self._site(
+            _request, "page_url_set", site_id=site_id, key=key, page_id=page_id, url=url
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_asset_add(
         self, site_id: str, key: str, page_id: str, asset_id: str, _request=None
     ) -> dict:
@@ -906,6 +920,43 @@ class PressApplication(McpOpenApiApplication):
             _request, "unplaced_place", site_id=site_id, key=key, page_id=page_id,
             copy_id=copy_id, slot=slot,
         )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publish_plan(self, site_id: str, _request=None) -> dict:
+        """Pages changed since the last publication, selected, with their warnings."""
+        return self._site(_request, "publish_plan", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publish(self, site_id: str, key: str, selected: list[str], _request=None) -> dict:
+        """Save the source and publish the selected pages; the site index is written last."""
+        return self._site(_request, "publish", site_id=site_id, key=key, selected=selected)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_versions(self, site_id: str, page_id: str, _request=None) -> dict:
+        """Published versions of a page, oldest first, with the one online marked."""
+        return self._site(_request, "page_versions", site_id=site_id, page_id=page_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_rollback(
+        self, site_id: str, key: str, page_id: str, version_id: str, _request=None
+    ) -> dict:
+        """Put an earlier published version of a page online."""
+        return self._site(
+            _request, "page_rollback", site_id=site_id, key=key, page_id=page_id,
+            version_id=version_id,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_rollback(self, site_id: str, key: str, version_id: str, _request=None) -> dict:
+        """Restore a source version and publish the whole site from it."""
+        return self._site(
+            _request, "site_rollback", site_id=site_id, key=key, version_id=version_id
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def maintenance_set(self, site_id: str, key: str, on: bool, _request=None) -> dict:
+        """Put the published site in maintenance (503) or take it out."""
+        return self._site(_request, "maintenance_set", site_id=site_id, key=key, on=on)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_check(self, site_id: str, page_id: str, _request=None) -> dict:

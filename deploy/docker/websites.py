@@ -49,6 +49,8 @@ def site_sources():
             "access_key": Path(os.environ["SOURCES_S3_ACCESS_FILE"]).read_text().strip(),
             "secret_key": Path(os.environ["SOURCES_S3_SECRET_FILE"]).read_text().strip(),
         },
+        # Per-page publication (N4) writes to the release bucket, which needs versioning.
+        "releases": release_storage(),
     }
 
 

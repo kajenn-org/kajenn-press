@@ -38,6 +38,7 @@ CHANGES = {
     "content_save",
     "asset_add",
     "page_add",
+    "page_url_set",
     "page_asset_add",
     "slot_assign",
     "copies_update",
@@ -46,7 +47,16 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list"}
-OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY
+PUBLISHING = {
+    "publish_plan",
+    "publish",
+    "page_versions",
+    "page_rollback",
+    "site_rollback",
+    "maintenance_set",
+}
+PUBLISHING_READS = {"publish_plan", "page_versions"}
+OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
 
@@ -62,12 +72,13 @@ def decode_base64(value):
 
 
 class SiteService:
-    def __init__(self, root, store, policy, worker=None, connections=None):
+    def __init__(self, root, store, policy, worker=None, connections=None, publisher=None):
         self.root = private_directory(root)
         self.store = store
         self.policy = policy
         self.worker = worker
         self.connections = connections or {}
+        self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
@@ -111,6 +122,15 @@ class SiteService:
                 return handler(identity, **params)
             site_id = params["site_id"]
             scope = "site:" + site_id
+            if operation in PUBLISHING:
+                if self.publisher is None:
+                    raise DomainError("unavailable", "Configure the release bucket first")
+                self.policy.require(identity, scope, "publish")
+                if operation in PUBLISHING_READS:
+                    return handler(identity, **params)
+                self.policy.require(identity, scope, "write")
+                self.lock.require(site_id, identity)
+                return handler(identity, **params)
             if operation in READS:
                 self.policy.require(identity, scope, PERMISSIONS.get(operation, "read"))
                 return handler(identity, **params)
@@ -179,6 +199,67 @@ class SiteService:
             identity, key, "starter_save", {"site_id": site_id, "name": name}, keep
         )
 
+    def _publish_plan(self, identity, site_id):
+        return self.publisher.plan(self.site(identity, site_id))
+
+    def _publish(self, identity, site_id, key, selected):
+        """Save the source, then publish the selected pages from that version."""
+
+        def run():
+            copy = self.working_copy(site_id)
+            site = copy.load()
+            site.record(identity, "publish", now(), pages=len(selected))
+            copy.save(site)
+            version = self.store.save_from(copy)
+            return {"source_version": version, **self.publisher.publish(site, version, selected)}
+
+        arguments = {"site_id": site_id, "selected": selected}
+        return self.receipts.run(identity, key, "publish", arguments, run)
+
+    def _page_versions(self, identity, site_id, page_id):
+        return self.publisher.page_versions(site_id, page_id)
+
+    def _page_rollback(self, identity, site_id, key, page_id, version_id):
+        def run():
+            result = self.publisher.page_rollback(site_id, page_id, version_id)
+            self._record(identity, site_id, "page_rollback", page_id=page_id, to=version_id)
+            return result
+
+        arguments = {"site_id": site_id, "page_id": page_id, "version_id": version_id}
+        return self.receipts.run(identity, key, "page_rollback", arguments, run)
+
+    def _site_rollback(self, identity, site_id, key, version_id):
+        """Restore a source version and publish every page from it."""
+
+        def run():
+            version = self.store.restore(site_id, version_id)
+            site = self.store.load_into(site_id, self.working_copy(site_id))
+            selected = [
+                p["page_id"] for p in self.publisher.plan(site) if p["state"] != "unchanged"
+            ]
+            result = self.publisher.publish(site, version, selected)
+            self._record(identity, site_id, "site_rollback", to=version_id)
+            return {"source_version": version, **result}
+
+        arguments = {"site_id": site_id, "version_id": version_id}
+        return self.receipts.run(identity, key, "site_rollback", arguments, run)
+
+    def _maintenance_set(self, identity, site_id, key, on):
+        def run():
+            result = self.publisher.set_maintenance(site_id, on)
+            self._record(identity, site_id, "maintenance_set", on=bool(on))
+            return result
+
+        return self.receipts.run(
+            identity, key, "maintenance_set", {"site_id": site_id, "on": bool(on)}, run
+        )
+
+    def _record(self, identity, site_id, operation, **details):
+        copy = self.working_copy(site_id)
+        site = copy.load()
+        site.record(identity, operation, now(), **details)
+        copy.save(site)
+
     def _starters_list(self, identity):
         return self.store.starters()
 
@@ -226,6 +307,7 @@ class SiteService:
                 {
                     "id": node.label,
                     "name": page.name,
+                    "url": node.attr["url"],
                     "template_id": page.template.attr["original_id"],
                     "slots": {n.attr["slot"]: n.attr["original_id"] for n in page.slots.nodes},
                     "unplaced": [n.label for n in page.unplaced.nodes],
@@ -239,6 +321,7 @@ class SiteService:
             "contents": items("contents"),
             "assets": items("assets"),
             "pages": pages,
+            "redirects": site.redirects(),
         }
 
     def _site_export(self, identity, site_id, version_id=None):
@@ -295,6 +378,10 @@ class SiteService:
 
     def _page_add(self, identity, site, name, template_id):
         return {"page_id": site.add_page(name, template_id)}
+
+    def _page_url_set(self, identity, site, page_id, url):
+        site.set_page_url(page_id, url)
+        return {"page_id": page_id, "url": url}
 
     def _page_asset_add(self, identity, site, page_id, asset_id):
         return {"copy": site.add_page_asset(page_id, asset_id)}

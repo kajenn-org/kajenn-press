@@ -9,8 +9,9 @@ COPY src /src/src
 RUN pip install --no-cache-dir --no-deps /src && pip check
 
 COPY deploy/docker/child.py /app/child.py
+COPY deploy/docker/site_server.py /app/site_server.py
 
-RUN useradd --uid 10003 --create-home app
+RUN useradd --uid 10003 --create-home app && mkdir -p /cache && chown app:app /cache
 USER app
 WORKDIR /app
 EXPOSE 8876

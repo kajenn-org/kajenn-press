@@ -9,6 +9,8 @@ name of their engine; the render worker rebuilds them through that engine's gram
 
 import difflib
 import hashlib
+import re
+import unicodedata
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -21,7 +23,7 @@ from .slots import template_slots
 ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
 ASSET_KINDS = {"css", "javascript", "media"}
-SECTIONS = ("templates", "template_bases", "contents", "assets", "pages", "audit")
+SECTIONS = ("templates", "template_bases", "contents", "assets", "pages", "redirects", "audit")
 PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data")
 
 
@@ -65,6 +67,19 @@ class UpdateItem:
     up_to_date: bool
     selected: bool
     difference: str | None
+
+
+def valid_url(url):
+    """A site-relative URL path: starts with /, no query, fragment, spaces or dot segments."""
+    if (
+        not isinstance(url, str)
+        or not url.startswith("/")
+        or "//" in url
+        or re.search(r"[?#\s]", url)
+        or any(segment in (".", "..") for segment in url.split("/"))
+    ):
+        raise DomainError("invalid_input", "A URL path starts with / and has no query or dots")
+    return url
 
 
 def required_text(value, label):
@@ -203,7 +218,48 @@ class Site:
         )
         for section in PAGE_SECTIONS[1:]:
             page.set_item(section, Bag())
-        return self._add("pages", page, name=required_text(name, "name"))
+        name = required_text(name, "name")
+        url = "/" if not len(self.section("pages")) else self.free_url(name)
+        return self._add("pages", page, name=name, url=url)
+
+    def page_urls(self):
+        return {node.attr["url"]: node.label for node in self.section("pages").nodes}
+
+    def free_url(self, name):
+        """A URL path from a page name, unique among pages and redirect sources."""
+        ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+        slug = re.sub(r"[^a-z0-9]+", "-", ascii_name.casefold()).strip("-") or "page"
+        taken = set(self.page_urls()) | set(self.redirects())
+        url, number = f"/{slug}/", 1
+        while url in taken:
+            number += 1
+            url = f"/{slug}-{number}/"
+        return url
+
+    def redirects(self):
+        """Old URL path -> current URL path."""
+        return {
+            node.attr["source"]: node.attr["target"] for node in self.section("redirects").nodes
+        }
+
+    def set_page_url(self, page_id, url):
+        """Move a page to a new URL; the old one redirects to it, chains collapse."""
+        node = self.node("pages", page_id)
+        url = valid_url(url)
+        owner = self.page_urls().get(url)
+        if owner not in (None, page_id):
+            raise DomainError("conflict", f"URL {url} belongs to another page", resource_id=owner)
+        old = node.attr["url"]
+        if old == url:
+            return
+        node.attr["url"] = url
+        redirects = self.section("redirects")
+        for redirect in list(redirects.nodes):
+            if redirect.attr["source"] == url:
+                redirects.pop(redirect.label)
+            elif redirect.attr["target"] == old:
+                redirect.attr["target"] = url
+        redirects.set_item(new_id(), None, _attributes={"source": old, "target": url})
 
     def import_template(self, library, library_template_id, linked):
         """Bring a Library template into the site, linked to its future versions or not."""

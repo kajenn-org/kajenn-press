@@ -10,6 +10,13 @@ services:
   storage-init:
     profiles: ["rustfs"]
 
+  # The demo site publisher needs site sources; not part of the external-bucket setup.
+  site-publisher:
+    profiles: !override ["press-demo"]
+
+  site-server:
+    profiles: !override ["press-demo"]
+
   websites:
     environment:
       RELEASE_S3_ENDPOINT: ${KPRESS_S3_ENDPOINT:?set in .env}

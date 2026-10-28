@@ -16,6 +16,13 @@ services:
     volumes:
       - releases:/releases
 
+  # Per-page publication needs versioned S3: off with the shared volume.
+  site-publisher:
+    profiles: !override ["press-demo"]
+
+  site-server:
+    profiles: !override ["press-demo"]
+
   websites:
     environment:
       RELEASE_STORAGE: local
