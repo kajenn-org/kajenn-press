@@ -73,7 +73,9 @@ Entry: main `e3dcb97`; the 32 site operations; the administration shell `IndexPa
   - Details: empty site, page without slots, unplaced contents shown under their page, errors of the lock and of the receipts shown to the operator in plain words.
   - Done: each state reached in the browser and readable.
 
-- [ ] **Phase 8**: Retire the old administration and publication path
+- [x] **Phase 8**: Retire the old administration and publication path
+  > Done (N4-D3): removed the catalog, release and preview path (`catalog/local.py`, `objects.py`, `services/`, `publication/` except `routes.py`, `child.py`, `rendering/inputs.py` and `service.py`, the old admin pages), the builder and child services, `compose.volume.yaml`, the preview origin, the old examples and tests. `application.py` keeps `capabilities` and the 35 site operations; the index shows Sites and Library only. README files rewritten on the new path; `docs/01`–`docs/14` stay for N10.
+  > Suites: main 139 passed, 11 skipped; admin 2 passed; Docker 10 passed.
   - Files: `src/kajenn_press/admin/pages/` (author, page, resource, publishing, library, home), `src/kajenn_press/publication/` (channels, candidates, builds, bundles, pointers, in-process public serving, export), `src/kajenn_press/child.py`, the old operations in `application.py`, `deploy/docker/` (builder, child), `examples/` and `tests/` of the old path, `docs/`.
   - Details: N4-D3: remove what the new site tab and per-page publication replace, as classified in `xmldocs/proposal/redesign-inventory.xml`; keep what the inventory keeps (login, origin guard, preview gateway, editors, engines, preparation, worker).
   - Done: no caller of the removed code is left; the full and Docker suites pass on the new path only.

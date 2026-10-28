@@ -1,16 +1,14 @@
 """Installed, one-request worker. Trusted code, not an OS security sandbox."""
 
-import base64
 import json
 import sys
 from contextlib import redirect_stdout
 
 from genro_bag import Bag
 
-from .contract import CONTRACT, RenderProblem, canonical, sha256
-from .engines import installed_profile, render_template
+from .contract import RenderProblem, canonical, sha256
+from .engines import installed_profile
 from .page import page_data_bag, plain_template, render_page
-from .preparation import prepare_blocks
 
 
 def run_request(request):
@@ -36,33 +34,7 @@ def run_request(request):
             "digest": sha256(html.encode()),
             "diagnostics": diagnostics,
         }
-    if request["action"] != "render":
-        raise RenderProblem("invalid_request", "Unknown worker action")
-    value = request["input"]
-    if value["contract"] != CONTRACT or value["profile"] != profile:
-        raise RenderProblem("profile_mismatch", "Frozen profile differs from installed worker")
-    if sha256(canonical(value)) != request["input_digest"]:
-        raise RenderProblem("invalid_input", "Frozen input digest differs")
-    template = value["references"][value["template_revision"]]
-    attributes = template["attributes"]
-    data = value["data"]
-    data["blocks"], diagnostics = prepare_blocks(
-        value["blocks"], attributes["blocks"], data["page"]["variant_id"]
-    )
-    source = base64.b64decode(template["sources"]["source"], validate=True).decode("utf-8")
-    try:
-        html = render_template(attributes["engine"], source, data)
-    except RenderProblem as exc:
-        exc.diagnostic.setdefault("resource_id", template["record_id"])
-        raise
-    return {
-        "ok": True,
-        "profile": profile,
-        "input_digest": request["input_digest"],
-        "html": html,
-        "digest": sha256(html.encode()),
-        "diagnostics": diagnostics,
-    }
+    raise RenderProblem("invalid_request", "Unknown worker action")
 
 
 def main():

@@ -8,6 +8,8 @@ keys returns the first results (idempotency receipts are kept 24 hours).
 import argparse
 import base64
 import json
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -46,6 +48,20 @@ class Mcp:
         if not result.get("ok"):
             raise RuntimeError(f"{operation}: {json.dumps(result.get('error'), indent=2)}")
         return result["result"]
+
+
+def wait_until_ready(mcp, seconds=300):
+    """The manager answers MCP once its lifespan has opened the site store."""
+    deadline = time.monotonic() + seconds
+    while True:
+        try:
+            if mcp("capabilities")["sites"]:
+                return
+        except (OSError, urllib.error.URLError, RuntimeError):
+            pass
+        if time.monotonic() > deadline:
+            raise RuntimeError("The manager did not become ready")
+        time.sleep(2)
 
 
 def publish(mcp):
@@ -96,6 +112,7 @@ def main():
     parser.add_argument("--config", required=True)
     arguments = parser.parse_args()
     mcp = Mcp(arguments.endpoint, arguments.host, Path(arguments.token_file).read_text().strip())
+    wait_until_ready(mcp)
     site = publish(mcp)
     Path(arguments.config).write_text(json.dumps({"bindings": {arguments.public_origin: site}}))
     print("published site", site, "for", arguments.public_origin, flush=True)

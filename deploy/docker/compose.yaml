@@ -1,4 +1,4 @@
-# websites composition: RustFS release storage and websites; profile `demo` adds a builder and one child.
+# websites composition: RustFS storage and websites; profile `demo` publishes the example site page by page and serves it.
 # Addresses come from deploy/docker/.env (copy .env.example). Start from the repository root:
 # docker compose -f deploy/docker/compose.yaml up --build
 name: kajenn-websites
@@ -45,7 +45,6 @@ services:
     image: kajenn-websites:local
     environment:
       WEBSITES_MANAGEMENT_ORIGIN: ${KPRESS_SCHEME:?set in .env}://${KPRESS_MANAGEMENT_HOST:?set in .env}
-      WEBSITES_PREVIEW_ORIGIN: ${KPRESS_SCHEME}://${KPRESS_PREVIEW_HOST:?set in .env}
       WEBSITES_FORWARDED_ALLOW_IPS: ${KPRESS_TRUSTED_PROXIES:?set in .env}
       # Release storage: the RustFS bucket; compose.external-s3.yaml points elsewhere.
       RELEASE_S3_ENDPOINT: http://rustfs:9000
@@ -66,48 +65,6 @@ services:
       storage-init:
         condition: service_completed_successfully
 
-  builder:
-    image: kajenn-websites:local
-    profiles: ["demo"]
-    command:
-      - python
-      - /app/kajenn_org/build.py
-      - --endpoint=http://websites:8875
-      # Plain http inside the network: the demo needs KPRESS_SCHEME=http.
-      - --host=${KPRESS_MANAGEMENT_HOST}
-      - --token-file=/secrets/token
-      - --public-origin=http://kajenn.localhost:8876
-      - --serving-address=http://127.0.0.1:8876
-      - --state=/config/build-state.json
-      - --child-config=/config/child.json
-    volumes:
-      - websites-secrets:/secrets:ro
-      - child-config:/config
-    depends_on:
-      websites:
-        condition: service_started
-
-  child:
-    build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.child
-    image: kajenn-child:local
-    profiles: ["demo"]
-    environment:
-      CHILD_CACHE_SECONDS: "5"
-      RELEASE_S3_ENDPOINT: http://rustfs:9000
-      RELEASE_S3_BUCKET: releases
-      RELEASE_S3_ACCESS_FILE: /secrets/storage_access
-      RELEASE_S3_SECRET_FILE: /secrets/storage_secret
-    ports:
-      - "127.0.0.1:8876:8876"
-    volumes:
-      - child-secrets:/secrets:ro
-      - child-config:/config:ro
-    depends_on:
-      builder:
-        condition: service_completed_successfully
-
   site-publisher:
     image: kajenn-websites:local
     profiles: ["demo"]
@@ -123,8 +80,8 @@ services:
       - websites-secrets:/secrets:ro
       - sites-config:/config
     depends_on:
-      builder:
-        condition: service_completed_successfully
+      websites:
+        condition: service_started
 
   site-server:
     image: kajenn-child:local
@@ -151,5 +108,4 @@ volumes:
   websites-secrets:
   websites-data:
   child-secrets:
-  child-config:
   sites-config:

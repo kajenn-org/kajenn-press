@@ -82,7 +82,6 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             shell_page = await login(http)
             shell = (await rpc(http, shell_page, "main", "source"))["value"]
             assert "Sites" in shell and "Library" in shell and "Demo site" in shell
-            assert "Current site" not in shell
 
             tab = await open_page(http, "/admin/site?site=" + site)
             view = (await rpc(http, tab, "site_workspace", "source", site=site))["value"]
@@ -115,11 +114,11 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
     asyncio.run(scenario())
 
 
-def test_without_site_sources_the_catalog_navigation_stays(tmp_path):
+def test_without_site_sources_the_administration_says_so(tmp_path):
     async def scenario():
         async with admin_client(tmp_path) as (http, _server):
             shell_page = await login(http)
             shell = (await rpc(http, shell_page, "main", "source"))["value"]
-            assert "Current site" in shell
+            assert "Site sources are not configured" in shell
 
     asyncio.run(scenario())

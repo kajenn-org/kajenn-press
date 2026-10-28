@@ -18,28 +18,6 @@ CURRENT_REQUEST = ContextVar("public_site_admin_request")
 LOGO_URL = "/assets/branding/kajenn-press-256.png"
 # Pages live below the administration mount, so they reference assets relatively.
 LOGO_SRC = LOGO_URL.removeprefix("/")
-READ_OPERATIONS = frozenset(
-    {
-        "sites_list",
-        "records_index",
-        "revision_index",
-        "scope_capabilities",
-        "record_read",
-        "child_list",
-        "child_channels",
-        "publication_overview",
-    }
-)
-
-
-async def execute_read(operation, **arguments):
-    if operation not in READ_OPERATIONS:
-        raise DomainError("invalid_operation", "Unsupported administration read")
-    return await execute_service(operation, arguments)
-
-
-async def execute_site_create(**arguments):
-    return await execute_service("site_create", arguments)
 
 
 async def execute_service(operation, arguments):

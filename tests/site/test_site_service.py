@@ -232,11 +232,11 @@ def test_invalid_input_is_a_domain_error(service):
         run(service, "anna", "site_read", site_id=site_id, extra=1)
 
 
-def test_operation_names_do_not_collide_with_the_editorial_ones():
-    from kajenn_press.domain import OPERATIONS as EDITORIAL
-    from kajenn_press.publication.service import OPERATIONS as PUBLICATION
+def test_operation_names_are_unique_and_documented():
+    from kajenn_press.application import PressApplication
 
-    assert not OPERATIONS & (EDITORIAL | PUBLICATION | {"render_preview", "render_draft"})
+    routes = {name for name in dir(PressApplication) if name in OPERATIONS}
+    assert routes == OPERATIONS
 
 
 def test_site_list_shows_readable_sites_and_their_holder(service):

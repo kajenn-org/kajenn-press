@@ -1,9 +1,7 @@
 """Rendering a page Bag in the installed worker (N2 Phase 7)."""
 
-import json
 import os
 import re
-import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -68,45 +66,12 @@ def example_site(worker):
     return site, pages
 
 
-OLD_PATH = """
-import json, sys
-from kajenn_press.rendering.engines import render_template
-from kajenn_press.rendering.preparation import prepare_blocks
-request = json.loads(sys.stdin.read())
-blocks, _ = prepare_blocks(
-    request["blocks"], {k: {"format": "html", "required": True} for k in request["blocks"]}, "x"
-)
-data = {"page": {"title": request["title"]}, "language": "en", "blocks": blocks,
-        "resources": {"css": {"kind": "css", "url": "site.css"},
-                      "logo": {"kind": "media", "url": "logo.png"}}}
-print(json.dumps(render_template("gramlot", request["source"], data)))
-"""
-
-
-def old_template_html(key, title):
-    blocks = {
-        slot: {"format": "html", "source": (EXAMPLE / "pages" / f"{key}.{slot}.html").read_text()}
-        for slot in ("hero", "body")
-    }
-    request = {"source": (EXAMPLE / "template.py").read_text(), "title": title, "blocks": blocks}
-    completed = subprocess.run(
-        [render_python(), "-I", "-c", OLD_PATH],
-        input=json.dumps(request),
-        capture_output=True,
-        text=True,
-        timeout=60,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stderr
-    return json.loads(completed.stdout)
-
-
 @pytest.fixture(scope="module")
 def worker():
     return RenderWorker(render_python(), timeout=30)
 
 
-def test_example_pages_render_the_same_visible_text_as_the_previous_template(worker):
+def test_example_pages_render_their_slot_contents_inside_the_layout(worker):
     site, pages = example_site(worker)
     for key, title in PAGES:
         result = worker.render_page(page_request(site, pages[key], {}))
@@ -114,7 +79,11 @@ def test_example_pages_render_the_same_visible_text_as_the_previous_template(wor
         html = result["html"]
         assert f"<title>{title}</title>" in html
         assert 'href="data:text/css;base64,' in html
-        assert body_text(html) == body_text(old_template_html(key, title))
+        text = body_text(html)
+        for slot in ("hero", "body"):
+            content = (EXAMPLE / "pages" / f"{key}.{slot}.html").read_text()
+            assert body_text("<body>" + content + "</body>") in text
+        assert "Skip to content" in text and "Built with Kajenn Press" in text
 
 
 def small_site(worker, layout):

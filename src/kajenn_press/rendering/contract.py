@@ -1,9 +1,6 @@
-"""Versioned, JSON-only process boundary. No catalog handles cross it."""
+"""Versioned, JSON-only process boundary between the coordinator and the render worker."""
 
-import json
-from dataclasses import dataclass
-
-from ..catalog.filesystem import digest as sha256
+from ..catalog.filesystem import digest as sha256  # noqa: F401 — public shared digest alias
 from ..catalog.filesystem import encode as canonical  # noqa: F401 — public shared encoding alias
 
 CONTRACT = "kajenn-static-v1"
@@ -15,20 +12,6 @@ QUALIFIED = {
     "markdown-it-py": "4.2.0",
     "nh3": "0.3.7",
 }
-
-
-@dataclass(frozen=True)
-class RenderInput:
-    """Canonical immutable bytes, safe to persist later as a candidate input."""
-
-    encoded: bytes
-
-    def unpack(self):
-        return json.loads(self.encoded)
-
-    @property
-    def digest(self):
-        return sha256(self.encoded)
 
 
 class RenderProblem(Exception):

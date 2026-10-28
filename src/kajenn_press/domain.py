@@ -1,44 +1,6 @@
-"""Versioned editorial vocabulary and server-owned access policy."""
+"""Domain errors and the server-owned access policy."""
 
 from copy import deepcopy
-
-EDITORIAL_KINDS = {"site", "content", "variant", "template", "css", "javascript", "media"}
-
-OPERATIONS = {
-    "capabilities",
-    "site_create",
-    "sites_list",
-    "site_configure",
-    "records_list",
-    "records_index",
-    "revision_index",
-    "scope_capabilities",
-    "content_create",
-    "variant_create",
-    "draft_save",
-    "resource_save",
-    "media_save",
-    "resource_copy",
-    "record_read",
-    "revision_history",
-    "revision_compare",
-    "revision_checkpoint",
-    "revision_restore",
-    "dependencies",
-    "readiness",
-}
-MUTATIONS = {
-    "site_create",
-    "site_configure",
-    "content_create",
-    "variant_create",
-    "draft_save",
-    "resource_save",
-    "media_save",
-    "resource_copy",
-    "revision_checkpoint",
-    "revision_restore",
-}
 
 
 class DomainError(Exception):
