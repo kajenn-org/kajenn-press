@@ -74,7 +74,9 @@ Known facts (2026-10-27):
   - Owner actions: approve the operation names at the gate.
   - Done: the operations are listed by `capabilities` and on `/mcp`; a full cycle over MCP creates a site, fills two pages, saves, restores and renders.
 
-- [ ] **Phase 6**: Export, import and starting sites
+- [x] **Phase 6**: Export, import and starting sites
+  > Done: operations `site_export` (a saved version as one zip in base64), `site_import` (a new site id, same content, the importer holds it), `starter_save` (latest saved version kept in the Library at `library/starters/<id>.zip`), `starters_list`, and `site_new(starter_id=...)`; `Site.reidentify`; `SourceStore.export`, `starter_save`, `starters`, `starter_open`; 4 routes (69 in total); `tests/site/test_export_import.py` (4 tests). Imported and started sites keep the audit log of their origin and add their own entry. `pack`/`unpack` moved from `store.py` to `storage.py`, so the service and the application import without s3fs (checked with s3fs import blocked).
+  > Suite: 215 passed, 19 skipped, 0 failed.
   - Run: opus / high
   - Files: `src/kajenn_press/site/`, `tests/site/`.
   - Details: export the current source as one zip; import a zip as a new site (new site id, same content); starting sites kept as zips in the Library; a new site from a starting site.

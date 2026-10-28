@@ -15,15 +15,16 @@ from threading import RLock
 
 from genro_bag import Bag, BagException
 
-from ..catalog.filesystem import private_directory
+from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from .lock import EditingLock
-from .model import Site
+from .model import Site, new_id
 from .receipts import Receipts
 from .render import page_request
-from .storage import WorkingCopy
+from .storage import WorkingCopy, unpack
 
 READS = {
+    "site_export",
     "site_read",
     "site_versions",
     "copies_update_plan",
@@ -44,12 +45,20 @@ CHANGES = {
     "unplaced_place",
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
-OPERATIONS = READS | CHANGES | CONTROLS
+LIBRARY = {"site_import", "starter_save", "starters_list"}
+OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
 
 def now():
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def decode_base64(value):
+    try:
+        return base64.b64decode(value, validate=True)
+    except (binascii.Error, TypeError, ValueError) as exc:
+        raise DomainError("invalid_input", "data_base64 is not base64") from exc
 
 
 class SiteService:
@@ -90,8 +99,15 @@ class SiteService:
         bound.apply_defaults()
         params = {k: v for k, v in bound.arguments.items() if k != "identity"}
         with self._mutex:
-            if operation == "site_new":
+            if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
+                return handler(identity, **params)
+            if operation == "starters_list":
+                self.policy.require(identity, "library", "read")
+                return handler(identity, **params)
+            if operation == "starter_save":
+                self.policy.require(identity, "library", "write")
+                self.policy.require(identity, "site:" + params["site_id"], "read")
                 return handler(identity, **params)
             site_id = params["site_id"]
             scope = "site:" + site_id
@@ -126,16 +142,45 @@ class SiteService:
 
     # Controls
 
-    def _site_new(self, identity, key, name):
+    def _site_new(self, identity, key, name, starter_id=None):
         def create():
-            site = Site.create(name)
-            site.record(identity, "site_new", now())
-            version = self.store.save(site)
-            self.working_copy(site.site_id).save(site)
-            self.lock.take(site.site_id, identity)
-            return {"site_id": site.site_id, "version_id": version}
+            if starter_id is None:
+                site = Site.create(name)
+            else:
+                site = self.store.starter_open(starter_id).reidentify(name)
+            site.record(identity, "site_new", now(), starter_id=starter_id)
+            return self._first_save(identity, site)
 
-        return self.receipts.run(identity, key, "site_new", {"name": name}, create)
+        arguments = {"name": name, "starter_id": starter_id}
+        return self.receipts.run(identity, key, "site_new", arguments, create)
+
+    def _site_import(self, identity, key, data_base64, name=None):
+        def create():
+            site = unpack(decode_base64(data_base64)).reidentify(name)
+            site.record(identity, "site_import", now())
+            return self._first_save(identity, site)
+
+        arguments = {"sha256": digest(data_base64.encode()), "name": name}
+        return self.receipts.run(identity, key, "site_import", arguments, create)
+
+    def _first_save(self, identity, site):
+        version = self.store.save(site)
+        self.working_copy(site.site_id).save(site)
+        self.lock.take(site.site_id, identity)
+        return {"site_id": site.site_id, "version_id": version}
+
+    def _starter_save(self, identity, key, site_id, name):
+        def keep():
+            starter_id = new_id()
+            self.store.starter_save(starter_id, self.store.open(site_id).reidentify(name))
+            return {"starter_id": starter_id}
+
+        return self.receipts.run(
+            identity, key, "starter_save", {"site_id": site_id, "name": name}, keep
+        )
+
+    def _starters_list(self, identity):
+        return self.store.starters()
 
     def _site_open(self, identity, site_id, force=False):
         """Take the site; unless already held by the caller, edit its latest version."""
@@ -196,6 +241,10 @@ class SiteService:
             "pages": pages,
         }
 
+    def _site_export(self, identity, site_id, version_id=None):
+        data = self.store.export(site_id, version_id)
+        return {"site_id": site_id, "data_base64": base64.b64encode(data).decode("ascii")}
+
     def _site_versions(self, identity, site_id):
         return [
             {**v, "last_modified": str(v["last_modified"])} for v in self.store.versions(site_id)
@@ -242,11 +291,7 @@ class SiteService:
         return {"content_id": content_id}
 
     def _asset_add(self, identity, site, name, kind, data_base64, mime_type):
-        try:
-            data = base64.b64decode(data_base64, validate=True)
-        except (binascii.Error, TypeError, ValueError) as exc:
-            raise DomainError("invalid_input", "data_base64 is not base64") from exc
-        return {"asset_id": site.add_asset(name, kind, data, mime_type)}
+        return {"asset_id": site.add_asset(name, kind, decode_base64(data_base64), mime_type)}
 
     def _page_add(self, identity, site, name, template_id):
         return {"page_id": site.add_page(name, template_id)}

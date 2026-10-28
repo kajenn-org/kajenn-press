@@ -6,43 +6,14 @@ version writes it as the new current object, so S3 keeps it as a new version and
 is never rewritten.
 """
 
-import io
-import json
-import zipfile
-
 import s3fs
 from genro_storage import StorageManager
 
 from ..catalog.errors import IntegrityError
-from ..catalog.filesystem import encode
 from ..domain import DomainError
-from .storage import site_envelope, site_from_envelope
+from .storage import pack, unpack
 
 MOUNT = "sources"
-ENTRY = "site.json"
-FIXED_TIME = (1980, 1, 1, 0, 0, 0)
-
-
-def pack(site):
-    """Deterministic zip bytes of a site."""
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
-        info = zipfile.ZipInfo(ENTRY, date_time=FIXED_TIME)
-        info.compress_type = zipfile.ZIP_DEFLATED
-        archive.writestr(info, encode(site_envelope(site)))
-    return stream.getvalue()
-
-
-def unpack(raw):
-    """The site in zip bytes; anything but one intact `site.json` fails closed."""
-    try:
-        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-            if archive.namelist() != [ENTRY]:
-                raise IntegrityError("A site zip holds exactly one site.json")
-            envelope = json.loads(archive.read(ENTRY))
-    except (zipfile.BadZipFile, ValueError) as exc:
-        raise IntegrityError("Site zip is not readable") from exc
-    return site_from_envelope(envelope)
 
 
 class SourceStore:
@@ -107,6 +78,35 @@ class SourceStore:
         restored = self.open(site_id, version_id)
         restored.bag.set_item("audit", current.audit)
         return self.save(restored)
+
+    def export(self, site_id, version_id=None):
+        """Zip bytes of a saved version: a complete site in one file."""
+        self.open(site_id, version_id)
+        return self.node(site_id, version_id).read_bytes()
+
+    def starter_node(self, starter_id):
+        return self.storage.node(f"{MOUNT}:library/starters/{starter_id}.zip")
+
+    def starter_save(self, starter_id, site):
+        """Keep a site in the Library as a starting site."""
+        self.starter_node(starter_id).write_bytes(pack(site))
+
+    def starters(self):
+        """Starting sites in the Library: id and name."""
+        folder = self.storage.node(f"{MOUNT}:library/starters")
+        if not folder.exists():
+            return []
+        return [
+            {"starter_id": node.stem, "name": unpack(node.read_bytes()).name}
+            for node in sorted(folder.children(), key=lambda n: n.basename)
+            if node.suffix == ".zip"
+        ]
+
+    def starter_open(self, starter_id):
+        node = self.starter_node(starter_id)
+        if not node.exists():
+            raise DomainError("not_found", f"No starting site {starter_id}")
+        return unpack(node.read_bytes())
 
     def load_into(self, site_id, working_copy, version_id=None):
         """Fill the local working copy from the store."""

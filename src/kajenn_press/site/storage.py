@@ -4,10 +4,14 @@ The file is canonical JSON holding the site Bag in TYTX JSON and its SHA-256. A 
 malformed or altered file fails closed. N3 zips this copy and versions it on S3.
 """
 
+import io
+import json
+import zipfile
+
 from genro_bag import Bag, BagException
 
 from ..catalog.errors import IntegrityError
-from ..catalog.filesystem import digest, private_directory, publish_json, read_json
+from ..catalog.filesystem import digest, encode, private_directory, publish_json, read_json
 from .model import PAGE_SECTIONS, SECTIONS, Site
 
 SITE_FILE = "site.json"
@@ -65,3 +69,29 @@ class WorkingCopy:
     def load(self):
         envelope, _raw = read_json(self.root, SITE_FILE)
         return site_from_envelope(envelope)
+
+
+ENTRY = "site.json"
+FIXED_TIME = (1980, 1, 1, 0, 0, 0)
+
+
+def pack(site):
+    """Deterministic zip bytes of a site."""
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+        info = zipfile.ZipInfo(ENTRY, date_time=FIXED_TIME)
+        info.compress_type = zipfile.ZIP_DEFLATED
+        archive.writestr(info, encode(site_envelope(site)))
+    return stream.getvalue()
+
+
+def unpack(raw):
+    """The site in zip bytes; anything but one intact `site.json` fails closed."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            if archive.namelist() != [ENTRY]:
+                raise IntegrityError("A site zip holds exactly one site.json")
+            envelope = json.loads(archive.read(ENTRY))
+    except (zipfile.BadZipFile, ValueError) as exc:
+        raise IntegrityError("Site zip is not readable") from exc
+    return site_from_envelope(envelope)

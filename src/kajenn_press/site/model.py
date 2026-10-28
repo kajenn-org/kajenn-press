@@ -134,6 +134,14 @@ class Site:
     def name(self):
         return self.bag.get_node("info").attr["name"]
 
+    def reidentify(self, name=None):
+        """Give the site a new id (and optionally a name): an imported or started copy."""
+        info = self.bag.get_node("info")
+        info.attr["site_id"] = new_id()
+        if name is not None:
+            info.attr["name"] = required_text(name, "name")
+        return self
+
     @property
     def audit(self):
         """Who did what and when, oldest first (d-audit)."""

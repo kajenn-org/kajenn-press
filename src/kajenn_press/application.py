@@ -728,9 +728,33 @@ class PressApplication(McpOpenApiApplication):
         return self._execute(request, operation, arguments)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def site_new(self, key: str, name: str, _request=None) -> dict:
-        """Create a site source; the creator holds it."""
-        return self._site(_request, "site_new", key=key, name=name)
+    def site_new(
+        self, key: str, name: str, starter_id: str | None = None, _request=None
+    ) -> dict:
+        """Create a site source, empty or from a starting site; the creator holds it."""
+        return self._site(_request, "site_new", key=key, name=name, starter_id=starter_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_export(self, site_id: str, version_id: str | None = None, _request=None) -> dict:
+        """A saved version of the site as one zip, in base64."""
+        return self._site(_request, "site_export", site_id=site_id, version_id=version_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_import(
+        self, key: str, data_base64: str, name: str | None = None, _request=None
+    ) -> dict:
+        """A new site from an exported zip; the importer holds it."""
+        return self._site(_request, "site_import", key=key, data_base64=data_base64, name=name)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def starter_save(self, key: str, site_id: str, name: str, _request=None) -> dict:
+        """Keep the latest saved version of a site in the Library as a starting site."""
+        return self._site(_request, "starter_save", key=key, site_id=site_id, name=name)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def starters_list(self, _request=None) -> dict:
+        """Starting sites in the Library."""
+        return self._site(_request, "starters_list")
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def site_open(self, site_id: str, force: bool = False, _request=None) -> dict:
