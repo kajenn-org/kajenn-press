@@ -18,8 +18,10 @@ AUTH = {
 
 
 @asynccontextmanager
-async def client(root, grants=None, token="test-admin-token", publication=None):
-    server = create_server(root, auth=AUTH, grants=grants or ADMIN, publication=publication)
+async def client(root, grants=None, token="test-admin-token", publication=None, sites=None):
+    server = create_server(
+        root, auth=AUTH, grants=grants or ADMIN, publication=publication, sites=sites
+    )
     incoming, outgoing = asyncio.Queue(), asyncio.Queue()
     task = asyncio.create_task(
         server({"type": "lifespan", "asgi": {"version": "3.0"}}, incoming.get, outgoing.put)

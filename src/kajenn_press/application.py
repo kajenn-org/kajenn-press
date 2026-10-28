@@ -20,6 +20,8 @@ from .rendering.contract import RenderProblem
 from .rendering.process import RenderWorker
 from .rendering.service import RenderService
 from .services.editorial import EditorialService
+from .site.service import OPERATIONS as SITE_OPERATIONS
+from .site.service import SiteService
 
 RENDERS = frozenset({"render_preview", "render_draft"})
 
@@ -32,12 +34,14 @@ class PressApplication(McpOpenApiApplication):
     }
     mcp_name = "kajenn-press"
 
-    def __init__(self, catalog_root, grants, publication_config=None, **kwargs):
+    def __init__(self, catalog_root, grants, publication_config=None, sites_config=None, **kwargs):
         self.catalog_root = Path(catalog_root)
         self.policy = AccessPolicy(grants)
         self.service = None
         self.publication = None
         self.publication_config = publication_config
+        self.sites_config = sites_config
+        self.sites = None
         super().__init__(**kwargs)
 
     async def on_startup(self):
@@ -56,6 +60,24 @@ class PressApplication(McpOpenApiApplication):
                 self.publication = PublicationService(
                     self.service.catalog, self.policy, worker, **config
                 )
+            if self.sites_config is not None:
+                # s3fs comes with the optional release-s3 extra; an installation without
+                # site sources keeps working without it, as the administration does.
+                from .site.store import SourceStore
+
+                config = dict(self.sites_config)
+                worker = self.publication.worker if self.publication is not None else None
+                if "render_python" in config:
+                    worker = RenderWorker(config.pop("render_python"))
+                self.sites = SiteService(
+                    config.pop("root"),
+                    SourceStore(config.pop("sources")),
+                    self.policy,
+                    worker=worker,
+                    connections=config.pop("connections", {}),
+                )
+                if config:
+                    raise ValueError("Unknown site configuration")
         except Exception as exc:
             self._close_services()
             # Ordinary hook exceptions are only logged by Kajenn. Ownership or
@@ -80,13 +102,17 @@ class PressApplication(McpOpenApiApplication):
         if (
             is_rest
             and operation
-            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | RENDERS)
+            in (MUTATIONS | (PUBLICATION_OPERATIONS - READS) | EXPORTS | RENDERS | SITE_OPERATIONS)
             and request.scope["method"] != "POST"
         ):
             raise HTTPException(405, "Mutations require POST")
         if self.service is None:
             raise HTTPException(503, "Editorial service is not started")
         try:
+            if operation in SITE_OPERATIONS:
+                if self.sites is None:
+                    raise DomainError("unavailable", "Configure the site source store first")
+                return {"ok": True, "result": self.sites.execute(request.avatar().identity, operation, **arguments)}
             if operation in RENDERS:
                 names = {"variant_id", "revision_id"}
                 if operation == "render_draft":
@@ -125,6 +151,8 @@ class PressApplication(McpOpenApiApplication):
                     operations=sorted(set(result["operations"]) | PUBLICATION_OPERATIONS | RENDERS),
                     permissions=result["permissions"] + ["build", "preview_grant", "publish"],
                 )
+            if operation == "capabilities" and self.sites is not None:
+                result.update(sites=True, operations=sorted(set(result["operations"]) | SITE_OPERATIONS))
             return {"ok": True, "result": result}
         except DomainError as exc:
             if is_rest:
@@ -694,8 +722,181 @@ class PressApplication(McpOpenApiApplication):
         """Child channels. Channel settings a child can be registered for."""
         return self._execute(_request, "child_channels", {})
 
+    # Site operations (N3): the site source model, see kajenn_press.site.service.
 
-def create_server(catalog_root, *, auth, grants, publication=None, administration=None):
+    def _site(self, request, operation, **arguments):
+        return self._execute(request, operation, arguments)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_new(self, key: str, name: str, _request=None) -> dict:
+        """Create a site source; the creator holds it."""
+        return self._site(_request, "site_new", key=key, name=name)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_open(self, site_id: str, force: bool = False, _request=None) -> dict:
+        """Take the site for editing; force takes it from another holder."""
+        return self._site(_request, "site_open", site_id=site_id, force=force)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_close(self, site_id: str, _request=None) -> dict:
+        """Release the site."""
+        return self._site(_request, "site_close", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_save(self, site_id: str, _request=None) -> dict:
+        """Save the working copy as a new S3 version."""
+        return self._site(_request, "site_save", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_restore(self, site_id: str, version_id: str, _request=None) -> dict:
+        """Make an older version current again, as a new version."""
+        return self._site(_request, "site_restore", site_id=site_id, version_id=version_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_read(self, site_id: str, _request=None) -> dict:
+        """Templates, contents with use counts, assets, pages and the holder."""
+        return self._site(_request, "site_read", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_versions(self, site_id: str, _request=None) -> dict:
+        """S3 versions of the site source, oldest first."""
+        return self._site(_request, "site_versions", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def template_add(
+        self,
+        site_id: str,
+        key: str,
+        name: str,
+        engine: str,
+        source: str | None = None,
+        python_source: str | None = None,
+        _request=None,
+    ) -> dict:
+        """Add a template: a plain Source in TYTX JSON, or Python build code."""
+        return self._site(
+            _request, "template_add", site_id=site_id, key=key, name=name, engine=engine,
+            source=source, python_source=python_source,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def content_add(
+        self, site_id: str, key: str, name: str, format: str, text: str, _request=None
+    ) -> dict:
+        """Add an HTML or Markdown content."""
+        return self._site(
+            _request, "content_add", site_id=site_id, key=key, name=name, format=format, text=text
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def content_save(self, site_id: str, key: str, content_id: str, text: str, _request=None) -> dict:
+        """Replace the text of a content; page copies change only through copies_update."""
+        return self._site(
+            _request, "content_save", site_id=site_id, key=key, content_id=content_id, text=text
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def asset_add(
+        self,
+        site_id: str,
+        key: str,
+        name: str,
+        kind: str,
+        data_base64: str,
+        mime_type: str,
+        _request=None,
+    ) -> dict:
+        """Add a CSS, JavaScript or media asset."""
+        return self._site(
+            _request, "asset_add", site_id=site_id, key=key, name=name, kind=kind,
+            data_base64=data_base64, mime_type=mime_type,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_add(self, site_id: str, key: str, name: str, template_id: str, _request=None) -> dict:
+        """Add a page with a copy of a site template."""
+        return self._site(
+            _request, "page_add", site_id=site_id, key=key, name=name, template_id=template_id
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_asset_add(
+        self, site_id: str, key: str, page_id: str, asset_id: str, _request=None
+    ) -> dict:
+        """Copy an asset into a page."""
+        return self._site(
+            _request, "page_asset_add", site_id=site_id, key=key, page_id=page_id, asset_id=asset_id
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def slot_assign(
+        self, site_id: str, key: str, page_id: str, slot: str, content_id: str, _request=None
+    ) -> dict:
+        """Copy a content into a slot of a page."""
+        return self._site(
+            _request, "slot_assign", site_id=site_id, key=key, page_id=page_id, slot=slot,
+            content_id=content_id,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def copies_update_plan(self, site_id: str, original_id: str, _request=None) -> dict:
+        """Copies of an original, with differences and what Update would select."""
+        return self._site(_request, "copies_update_plan", site_id=site_id, original_id=original_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def copies_update(
+        self, site_id: str, key: str, original_id: str, selected: list, _request=None
+    ) -> dict:
+        """Replace the selected copies, given as [page_id, path], with the original."""
+        return self._site(
+            _request, "copies_update", site_id=site_id, key=key, original_id=original_id,
+            selected=selected,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def template_switch_plan(
+        self, site_id: str, page_id: str, template_id: str, _request=None
+    ) -> dict:
+        """Proposed slot mapping, by name, for a page switching template."""
+        return self._site(
+            _request, "template_switch_plan", site_id=site_id, page_id=page_id,
+            template_id=template_id,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def template_switch(
+        self, site_id: str, key: str, page_id: str, template_id: str, mapping: dict, _request=None
+    ) -> dict:
+        """Switch a page's template with the confirmed slot mapping."""
+        return self._site(
+            _request, "template_switch", site_id=site_id, key=key, page_id=page_id,
+            template_id=template_id, mapping=mapping,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def unplaced_place(
+        self, site_id: str, key: str, page_id: str, copy_id: str, slot: str, _request=None
+    ) -> dict:
+        """Move an unplaced content copy into a free slot."""
+        return self._site(
+            _request, "unplaced_place", site_id=site_id, key=key, page_id=page_id,
+            copy_id=copy_id, slot=slot,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_check(self, site_id: str, page_id: str, _request=None) -> dict:
+        """Empty slots and unplaced contents of a page."""
+        return self._site(_request, "page_check", site_id=site_id, page_id=page_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_render(self, site_id: str, page_id: str, _request=None) -> dict:
+        """Static HTML of a page, rendered in the worker."""
+        return self._site(_request, "page_render", site_id=site_id, page_id=page_id)
+
+
+def create_server(
+    catalog_root, *, auth, grants, publication=None, administration=None, sites=None
+):
     """Build a host with explicit credentials/policy and private local storage.
 
     Authentication configuration belongs to the deployment; API clients cannot
@@ -713,6 +914,7 @@ def create_server(catalog_root, *, auth, grants, publication=None, administratio
                     "catalog_root": str(root),
                     "grants": grants,
                     "publication_config": publication,
+                    "sites_config": sites,
                 },
             )
         ]
