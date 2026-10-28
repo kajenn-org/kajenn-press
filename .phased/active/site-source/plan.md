@@ -49,7 +49,8 @@ Known facts (2026-10-27):
   - Details: pack a site into a zip (layout per N3-D2) and unpack it with integrity checks; a store on a Genro Storage S3 mount with one object per site; save writes a new version; list versions with date and size; open a version as a site; restore a version as the new current one; startup refuses a bucket without versioning; the working copy is filled from the store and saved back to it.
   - Done: three saves give three versions; restoring the first makes it current as a fourth version; a corrupted object fails closed; an unversioned bucket is refused.
 
-- [ ] **Phase 3**: Editing lock
+- [x] **Phase 3**: Editing lock
+  > Done: `src/kajenn_press/site/lock.py` (`EditingLock` with `take`, `require`, `release`, `holder`); `tests/site/test_editing_lock.py` (6 tests). One JSON record per site in the manager's directory, written with `publish_json`; expiry 30 minutes of inactivity by default, refreshed by every `require`. `take(force=True)` records `taken_from`; the previous holder's next `require` is refused with the new holder and the time it was taken. Help me acts under the user's identity, so it needs no lock of its own. The clock is a parameter, so expiry is tested with explicit time.
   - Run: opus / high
   - Files: new `src/kajenn_press/site/lock.py`, `tests/site/`.
   - Details: one holder per site (identity, taken at, last activity); expiry after 30 minutes of inactivity (configurable); an explicit take by another identity records the previous holder and warns it; save and every mutation check the holder; Help me acts under the holder's identity (d-editing-lock).
