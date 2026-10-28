@@ -932,6 +932,28 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "publish", site_id=site_id, key=key, selected=selected)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_versions(self, site_id: str, page_id: str, _request=None) -> dict:
+        """Published versions of a page, oldest first, with the one online marked."""
+        return self._site(_request, "page_versions", site_id=site_id, page_id=page_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_rollback(
+        self, site_id: str, key: str, page_id: str, version_id: str, _request=None
+    ) -> dict:
+        """Put an earlier published version of a page online."""
+        return self._site(
+            _request, "page_rollback", site_id=site_id, key=key, page_id=page_id,
+            version_id=version_id,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_rollback(self, site_id: str, key: str, version_id: str, _request=None) -> dict:
+        """Restore a source version and publish the whole site from it."""
+        return self._site(
+            _request, "site_rollback", site_id=site_id, key=key, version_id=version_id
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_check(self, site_id: str, page_id: str, _request=None) -> dict:
         """Empty slots and unplaced contents of a page."""
         return self._site(_request, "page_check", site_id=site_id, page_id=page_id)

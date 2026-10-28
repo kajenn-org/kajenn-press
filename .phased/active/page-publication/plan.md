@@ -60,7 +60,8 @@ Known facts (2026-10-28):
   - Details: a Publish plan lists the pages changed since the last publication (page digest against the index), all selected, with the warnings of N4-D4; Publish saves the source, renders each selected page with real asset URLs (N4-D1) in the worker, writes the page objects (new S3 versions), then the index with the pinned versions, `sitemap.xml` and `robots.txt`; records the audit entry; a page that fails to render is reported and left as it was.
   - Done: the first Publish puts every page online; a second Publish after one edit writes one page object and a new index; an unselected changed page stays at its previous version.
 
-- [ ] **Phase 4**: Rollback
+- [x] **Phase 4**: Rollback
+  > Done: `Publisher.page_versions` (oldest first, the online one marked) and `Publisher.page_rollback` (a new index pinning an earlier version, with that version's URL and assets; URL conflicts refused); operations `page_versions`, `page_rollback`, `site_rollback` (31 site operations, 75 routes). `site_rollback` restores a source version and publishes every page whose fingerprint differs from the index. Both rollbacks are recorded in the audit log of the working copy. `tests/site/test_rollback.py` (3 tests).
   - Run: opus / high
   - Files: `src/kajenn_press/site/publish.py`, `src/kajenn_press/site/service.py`, `src/kajenn_press/application.py`, `tests/site/`.
   - Details: list the versions of a page object; roll a page back by writing an index that pins an older version; roll the site back by restoring a source version and publishing every page from it; both recorded in the audit log.

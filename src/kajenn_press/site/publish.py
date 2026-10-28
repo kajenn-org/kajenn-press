@@ -9,7 +9,14 @@ from genro_storage import StorageManager
 
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
-from .published import PublishedPage, make_index, pack_page, page_fingerprint, read_index
+from .published import (
+    PublishedPage,
+    make_index,
+    pack_page,
+    page_fingerprint,
+    read_index,
+    unpack_page,
+)
 from .render import page_assets, page_request
 from .store import require_versioning
 
@@ -138,5 +145,58 @@ class Publisher:
         return {
             "published": published,
             "failed": failed,
+            "index_version": node.versions[-1]["version_id"],
+        }
+
+    def page_versions(self, site_id, page_id):
+        """Versions of a page object, oldest first, with the one online marked."""
+        node = self.node(self.page_path(site_id, page_id))
+        if not node.exists():
+            raise DomainError("not_found", f"Page {page_id} was never published")
+        index = self.index(site_id) or {"pages": {}}
+        current = index["pages"].get(page_id, {}).get("version_id")
+        return [
+            {
+                "version_id": v["version_id"],
+                "last_modified": str(v["last_modified"]),
+                "size": v["size"],
+                "online": v["version_id"] == current,
+            }
+            for v in node.versions
+        ]
+
+    def page_rollback(self, site_id, page_id, version_id):
+        """Put an earlier version of a page online: a new index pinning it."""
+        index = self.index(site_id)
+        if index is None:
+            raise DomainError("not_found", f"Site {site_id} was never published")
+        key = self.page_path(site_id, page_id)
+        if version_id not in {v["version_id"] for v in self.page_versions(site_id, page_id)}:
+            raise DomainError("not_found", f"No version {version_id} of page {page_id}")
+        earlier = unpack_page(self.node(key, version_id).read_bytes())
+        if earlier.page_id != page_id:
+            raise IntegrityError("Page object holds another page")
+        pages = {
+            **index["pages"],
+            page_id: {
+                "url": earlier.url,
+                "key": key,
+                "version_id": version_id,
+                "fingerprint": earlier.fingerprint,
+                "assets": sorted(earlier.assets),
+            },
+        }
+        try:
+            raw = make_index(
+                site_id, index["source_version"], pages, index["redirects"], index["maintenance"]
+            )
+        except IntegrityError as exc:
+            raise DomainError("conflict", str(exc)) from exc
+        node = self.node(self.index_path(site_id))
+        node.write_bytes(raw)
+        return {
+            "page_id": page_id,
+            "version_id": version_id,
+            "url": earlier.url,
             "index_version": node.versions[-1]["version_id"],
         }

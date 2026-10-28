@@ -47,7 +47,8 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list"}
-PUBLISHING = {"publish_plan", "publish"}
+PUBLISHING = {"publish_plan", "publish", "page_versions", "page_rollback", "site_rollback"}
+PUBLISHING_READS = {"publish_plan", "page_versions"}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
@@ -118,7 +119,7 @@ class SiteService:
                 if self.publisher is None:
                     raise DomainError("unavailable", "Configure the release bucket first")
                 self.policy.require(identity, scope, "publish")
-                if operation == "publish_plan":
+                if operation in PUBLISHING_READS:
                     return handler(identity, **params)
                 self.policy.require(identity, scope, "write")
                 self.lock.require(site_id, identity)
@@ -207,6 +208,40 @@ class SiteService:
 
         arguments = {"site_id": site_id, "selected": selected}
         return self.receipts.run(identity, key, "publish", arguments, run)
+
+    def _page_versions(self, identity, site_id, page_id):
+        return self.publisher.page_versions(site_id, page_id)
+
+    def _page_rollback(self, identity, site_id, key, page_id, version_id):
+        def run():
+            result = self.publisher.page_rollback(site_id, page_id, version_id)
+            self._record(identity, site_id, "page_rollback", page_id=page_id, to=version_id)
+            return result
+
+        arguments = {"site_id": site_id, "page_id": page_id, "version_id": version_id}
+        return self.receipts.run(identity, key, "page_rollback", arguments, run)
+
+    def _site_rollback(self, identity, site_id, key, version_id):
+        """Restore a source version and publish every page from it."""
+
+        def run():
+            version = self.store.restore(site_id, version_id)
+            site = self.store.load_into(site_id, self.working_copy(site_id))
+            selected = [
+                p["page_id"] for p in self.publisher.plan(site) if p["state"] != "unchanged"
+            ]
+            result = self.publisher.publish(site, version, selected)
+            self._record(identity, site_id, "site_rollback", to=version_id)
+            return {"source_version": version, **result}
+
+        arguments = {"site_id": site_id, "version_id": version_id}
+        return self.receipts.run(identity, key, "site_rollback", arguments, run)
+
+    def _record(self, identity, site_id, operation, **details):
+        copy = self.working_copy(site_id)
+        site = copy.load()
+        site.record(identity, operation, now(), **details)
+        copy.save(site)
 
     def _starters_list(self, identity):
         return self.store.starters()
