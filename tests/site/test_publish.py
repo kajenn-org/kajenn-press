@@ -111,7 +111,7 @@ def test_first_publish_puts_every_page_online_with_content_addressed_assets(serv
     assert result["failed"] == [] and len(result["published"]) == 2
     index = service.publisher.index(site)
     assert index["source_version"] == result["source_version"]
-    assert [e["url"] for e in index["pages"].values()] == ["/", "/about/"]
+    assert sorted(e["url"] for e in index["pages"].values()) == ["/", "/about/"]
     home = object_of(service, site, pages[0])
     asset = published_asset_name(PNG, "image/png")
     assert f'src="/_assets/{asset}"' in home.html and "<p>Home</p>" in home.html

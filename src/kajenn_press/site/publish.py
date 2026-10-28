@@ -5,6 +5,8 @@ and pins the version of every page that is online, so readers never see half a
 publication. A page that fails to render is reported and keeps its previous version.
 """
 
+import json
+
 from genro_storage import StorageManager
 
 from ..catalog.errors import IntegrityError
@@ -21,6 +23,19 @@ from .render import page_assets, page_request
 from .store import require_versioning
 
 MOUNT = "releases"
+DEFAULT_REFRESH = 600
+
+
+def refresh_seconds(site, page_id):
+    """Seconds a page's rendering stays valid: the shortest resolver cache, 0 if none."""
+    times = [
+        node.resolver.cache_time
+        for node in site.page(page_id).bag.get_item("data").nodes
+        if node.resolver is not None
+    ]
+    if not times:
+        return 0
+    return min(time if time > 0 else DEFAULT_REFRESH for time in times)
 
 
 class Publisher:
@@ -105,15 +120,16 @@ class Publisher:
                 pages.pop(page_id)
                 published.append({"page_id": page_id, "state": "removed"})
                 continue
-            result = self.worker.render_page(
-                page_request(site, page_id, self.connections, published=True)
-            )
+            request = page_request(site, page_id, self.connections, published=True)
+            result = self.worker.render_page(request)
             if result["status"] != "succeeded":
                 failed.append({"page_id": page_id, "diagnostics": result["diagnostics"]})
                 continue
             assets = {name: data for _url, name, data in page_assets(site, page_id, True).values()}
             url = site.node("pages", page_id).attr["url"]
             fingerprint = page_fingerprint(site, page_id)
+            refresh = refresh_seconds(site, page_id)
+            stored = {k: v for k, v in request.items() if k != "connections"}
             raw = pack_page(
                 PublishedPage(
                     page_id,
@@ -122,6 +138,8 @@ class Publisher:
                     site.node("pages", page_id).value.to_tytx(transport="json"),
                     result["html"],
                     assets,
+                    json.dumps(stored, sort_keys=True) if refresh else None,
+                    refresh,
                 )
             )
             node = self.node(self.page_path(site.site_id, page_id))
@@ -132,6 +150,7 @@ class Publisher:
                 "version_id": node.versions[-1]["version_id"],
                 "fingerprint": fingerprint,
                 "assets": sorted(assets),
+                "refresh": refresh,
             }
             published.append({"page_id": page_id, "state": "published"})
         try:
@@ -184,6 +203,7 @@ class Publisher:
                 "version_id": version_id,
                 "fingerprint": earlier.fingerprint,
                 "assets": sorted(earlier.assets),
+                "refresh": earlier.refresh,
             },
         }
         try:

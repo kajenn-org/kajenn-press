@@ -2,7 +2,9 @@
 
 A published page is one zip: `page.json` (the page Bag in TYTX JSON with its id, URL,
 fingerprint and the SHA-256 of its HTML), `index.html` (the pre-rendered HTML) and
-`assets/<sha256>.<ext>` (its asset bytes, addressed by content). The site index is
+`assets/<sha256>.<ext>` (its asset bytes, addressed by content), and for a page whose
+Data uses resolvers `request.json` (the worker request without connections), so the
+serving server can render it again. The site index is
 canonical JSON naming, for each page, its URL and the S3 version of its object that is
 online; readers that follow the index always see a complete publication. `sitemap.xml`
 and `robots.txt` are built by the serving server from the index and its own origin.
@@ -42,6 +44,8 @@ class PublishedPage:
     page: str
     html: str
     assets: dict
+    request: str | None = None
+    refresh: int = 0
 
 
 def pack_page(published):
@@ -55,9 +59,11 @@ def pack_page(published):
                 "fingerprint": published.fingerprint,
                 "html_sha256": sha256(published.html.encode("utf-8")),
                 "page": published.page,
+                "refresh": published.refresh,
             }
         ),
         "index.html": published.html.encode("utf-8"),
+        **({"request.json": published.request.encode("utf-8")} if published.request else {}),
         **{f"assets/{name}": data for name, data in sorted(published.assets.items())},
     }
     stream = io.BytesIO()
@@ -78,8 +84,14 @@ def unpack_page(raw):
                 raise IntegrityError("A published page starts with page.json and index.html")
             meta = json.loads(archive.read("page.json"))
             html = archive.read("index.html").decode("utf-8")
+            request = None
+            rest = names[2:]
+            if rest[:1] == ["request.json"]:
+                request = archive.read("request.json").decode("utf-8")
+                json.loads(request)
+                rest = rest[1:]
             assets = {}
-            for name in names[2:]:
+            for name in rest:
                 asset = name.removeprefix("assets/")
                 if name == asset or not ASSET_NAME.fullmatch(asset):
                     raise IntegrityError(f"Unexpected entry {name} in a published page")
@@ -91,21 +103,30 @@ def unpack_page(raw):
         raise IntegrityError("Published page is not readable") from exc
     if (
         not isinstance(meta, dict)
-        or set(meta) != {"schema", "page_id", "url", "fingerprint", "html_sha256", "page"}
+        or set(meta)
+        != {"schema", "page_id", "url", "fingerprint", "html_sha256", "page", "refresh"}
         or meta["schema"] != SCHEMA
         or meta["html_sha256"] != sha256(html.encode("utf-8"))
     ):
         raise IntegrityError("Published page failed its integrity check")
     return PublishedPage(
-        meta["page_id"], meta["url"], meta["fingerprint"], meta["page"], html, assets
+        meta["page_id"],
+        meta["url"],
+        meta["fingerprint"],
+        meta["page"],
+        html,
+        assets,
+        request,
+        meta["refresh"],
     )
 
 
 def make_index(site_id, source_version, pages, redirects, maintenance=False):
     """Canonical JSON bytes of a site index.
 
-    `pages` maps page ids to {"url", "key", "version_id", "fingerprint", "assets"}, where
-    `assets` lists the content-addressed asset names the page object holds.
+    `pages` maps page ids to {"url", "key", "version_id", "fingerprint", "assets",
+    "refresh"}: `assets` lists the content-addressed asset names the page object holds;
+    `refresh` is how many seconds its rendering stays valid (0 for a static page).
     """
     urls = [entry["url"] for entry in pages.values()]
     if len(urls) != len(set(urls)):
@@ -136,7 +157,7 @@ def read_index(raw):
         or not isinstance(index["pages"], dict)
         or not isinstance(index["redirects"], dict)
         or any(
-            set(entry) != {"url", "key", "version_id", "fingerprint", "assets"}
+            set(entry) != {"url", "key", "version_id", "fingerprint", "assets", "refresh"}
             for entry in index["pages"].values()
         )
         or len({e["url"] for e in index["pages"].values()}) != len(index["pages"])

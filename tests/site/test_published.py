@@ -61,13 +61,25 @@ def test_altered_published_pages_fail_closed(change, message):
         unpack_page(rezip(altered))
 
 
+def test_a_dynamic_page_keeps_its_render_request():
+    dynamic = PublishedPage("p1", "/", "f" * 64, "{}::X", "<p>x</p>", {}, '{"engine": "gramlot"}')
+    assert unpack_page(pack_page(dynamic)).request == '{"engine": "gramlot"}'
+
+
 def test_not_a_zip_fails_closed():
     with pytest.raises(IntegrityError, match="not readable"):
         unpack_page(b"nope")
 
 
 def page_entry(url):
-    return {"url": url, "key": "k", "version_id": "v", "fingerprint": "f", "assets": []}
+    return {
+        "url": url,
+        "key": "k",
+        "version_id": "v",
+        "fingerprint": "f",
+        "assets": [],
+        "refresh": 0,
+    }
 
 
 def test_index_round_trip_and_checks():
