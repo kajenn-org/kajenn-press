@@ -84,6 +84,9 @@ services:
         condition: service_started
 
   site-server:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.child
     image: kajenn-child:local
     profiles: ["demo"]
     command: ["python", "/app/site_server.py"]

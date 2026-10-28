@@ -6,9 +6,9 @@ The menu does not mark the current page.
 """
 
 NAV = (
-    ("/en/", "Overview", "Kajenn Press · Editorial publishing with releases"),
-    ("/en/features/", "Features", "Features · Kajenn Press"),
-    ("/en/get-started/", "Get started", "Get started · Kajenn Press"),
+    ("/", "Overview", "Kajenn Press · Editorial publishing with releases"),
+    ("/features/", "Features", "Features · Kajenn Press"),
+    ("/get-started/", "Get started", "Get started · Kajenn Press"),
 )
 REPOSITORY = "https://github.com/kajenn-org/kajenn-press"
 
@@ -25,7 +25,7 @@ def build(source, data):
     body = doc.body()
     body.a("Skip to content", href="#main", class_="skip")
     inner = body.header(class_="site-header").div(class_="header-inner")
-    brand = inner.a(href="/en/", class_="brand", aria_label="Kajenn Press home")
+    brand = inner.a(href="/", class_="brand", aria_label="Kajenn Press home")
     brand.img(src=logo, width="48", height="48", alt="")
     brand.span("kajenn", class_="brand-name")
     brand.span("press", class_="brand-press")
@@ -39,7 +39,7 @@ def build(source, data):
     footer = body.footer(class_="site-footer")
     top = footer.div(class_="footer-top")
     about = top.div()
-    mark = about.a(href="/en/", class_="brand")
+    mark = about.a(href="/", class_="brand")
     mark.span("kajenn", class_="brand-name")
     mark.span("press", class_="brand-press")
     about.p(

@@ -60,7 +60,8 @@ Entry: main `594e755`; the 35 site operations; page Bag sections `template`, `sl
   - Details: per the approved mockup: page list with check state, site defaults on the root page only, page fields with the inherited value beside each empty field, URL change with the 301 note, alt texts per N6-D3, search and social previews updated while typing, page and site checks; saves through `page_seo_set`, `page_url_set` and `page_alt_set`.
   - Done: matches the mockup in the browser; a field edited shows in both previews and, after Publish, in the served page.
 
-- [ ] **Phase 6**: Example site and Docker
+- [x] **Phase 6**: Example site and Docker
+  > Done: the example site's navigation and buttons point to `/`, `/features/`, `/get-started/` (they pointed to `/en/...`, which no page serves); `publish.py` sets the root defaults (site name, public origin from `--public-origin`) and one description per page. `test_the_example_site_has_no_seo_problem_and_serves_its_seo` (no SEO problem, canonical, description, `og:site_name`, sitemap); the Docker test checks canonical and description of the served home page. Fixed in passing (Phase 8 regression): `site-server` in `compose.yaml` had no `build` since the `child` service was removed, so it ran a stale `kajenn-child:local` image; it now builds `Dockerfile.child`. README lists the SEO. Suites: main 165 passed, 11 skipped; admin 2 passed; Docker 10 passed (external S3 test with `KAJENN_RELEASE_S3`).
   - Files: `examples/kajenn_press_site/publish.py`, `tests/docker/`, `README.md`, `deploy/docker/README.md`.
   - Details: the example site sets its root defaults and per-page descriptions; the Docker test checks the SEO tags of a served page and the sitemap.
   - Done: full, admin and Docker suites green.

@@ -3,6 +3,8 @@
 import asyncio
 import base64
 import os
+import sys
+from pathlib import Path
 
 import pytest
 from child.support import running
@@ -19,6 +21,7 @@ from kajenn_press.site.serving import create_site_server
 from kajenn_press.site.store import SourceStore
 
 ORIGIN = "http://site.localhost"
+EXAMPLE = Path(__file__).parents[2] / "examples" / "kajenn_press_site"
 LAYOUT = """
 def build(source, data):
     doc = source.html(lang="en")
@@ -278,3 +281,20 @@ def test_publish_replaces_an_index_written_before_n6(setup):
     assert {item["state"] for item in plan} == {"new"}
     run(service, "publish", site_id=site, key="again", selected=list(pages.values()))
     assert set(service.publisher.index(site)["pages"]) == set(pages.values())
+
+
+def test_the_example_site_has_no_seo_problem_and_serves_its_seo(setup, tmp_path):
+    service, _releases, _worker = setup
+    sys.path.insert(0, str(EXAMPLE))
+    try:
+        from publish import publish
+    finally:
+        sys.path.remove(str(EXAMPLE))
+    site = publish(lambda operation, **arguments: run(service, operation, **arguments), ORIGIN)
+
+    assert run(service, "seo_check", site_id=site) == []
+    home, features, sitemap = get(server(setup, site, tmp_path), "/", "/features/", "/sitemap.xml")
+    assert '<link rel="canonical" href="http://site.localhost/">' in home.text
+    assert '<meta name="description" content="Kajenn Press manages a website' in home.text
+    assert '<meta property="og:site_name" content="Kajenn Press">' in features.text
+    assert f"<loc>{ORIGIN}/get-started/</loc>" in sitemap.text
