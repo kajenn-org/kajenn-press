@@ -67,7 +67,7 @@ def manager_only():
 def test_without_profile_only_the_manager_runs(manager_only):
     services = compose("ps", "-a", "--format", "{{.Service}}").stdout.split()
     assert "websites" in services and "rustfs" in services
-    assert "builder" not in services and "child" not in services
+    assert "site-publisher" not in services and "site-server" not in services
 
 
 def test_forwarded_https_from_a_trusted_proxy_reaches_the_administration(manager_only):

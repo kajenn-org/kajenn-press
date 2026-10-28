@@ -5,9 +5,8 @@ import copy
 from contextlib import asynccontextmanager
 
 import httpx
-from api.support import AUTH
+from api.support import ADMIN, AUTH
 from kajenn.auth.user_store import UserStore
-from services.scenarios import ADMIN
 
 from kajenn_press.application import create_server
 
@@ -38,13 +37,12 @@ class FixtureUsers(UserStore):
 
 
 @asynccontextmanager
-async def admin_client(root, grants=None, publication=None, sites=None):
-    origin = publication["management_origin"] if publication else "https://admin.test"
+async def admin_client(root, grants=None, sites=None):
+    origin = "https://admin.test"
     server = create_server(
         root,
         auth=AUTH,
         grants=grants or ADMIN,
-        publication=publication,
         administration={"origin": origin, "users": {"store_class": FixtureUsers}},
         sites=sites,
     )

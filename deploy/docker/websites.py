@@ -1,4 +1,4 @@
-"""websites in Docker: administration, internal installation, render worker, RustFS releases.
+"""websites in Docker: administration, site sources, render worker and per-page publication.
 
 The operator account and the MCP token come from the private /secrets volume.
 Loopback composition only; the user store is not a production identity store.
@@ -21,9 +21,7 @@ def secret(name):
     return (SECRETS / name).read_text().strip()
 
 def release_storage():
-    """RELEASE_STORAGE=s3 (default): the bucket named by RELEASE_S3_*; local: the shared volume at /releases."""
-    if os.environ.get("RELEASE_STORAGE", "s3") == "local":
-        return {"protocol": "local", "base_path": "/releases"}
+    """The versioned release bucket named by RELEASE_S3_*."""
     config = {
         "protocol": "s3",
         "bucket": os.environ["RELEASE_S3_BUCKET"],
@@ -51,6 +49,7 @@ def site_sources():
         },
         # Per-page publication (N4) writes to the release bucket, which needs versioning.
         "releases": release_storage(),
+        "render_python": "/opt/render/bin/python",
     }
 
 
@@ -81,16 +80,9 @@ class OperatorUsers(UserStore):
 def main():
     management_origin = os.environ["WEBSITES_MANAGEMENT_ORIGIN"]
     server = create_server(
-        "/data/catalog",
+        "/data",
         auth={"bearer": {"builder": {"token": secret("token"), "tags": "editor"}}},
         grants={"operator": {"*": PERMISSIONS}, "builder": {"*": PERMISSIONS}},
-        publication={
-            "management_origin": management_origin,
-            "preview_origin": os.environ["WEBSITES_PREVIEW_ORIGIN"],
-            "render_python": "/opt/render/bin/python",
-            "preview_secret": bytes.fromhex(secret("preview_secret")),
-            "release_storage": release_storage(),
-        },
         administration={"origin": management_origin, "users": {"store_class": OperatorUsers}},
         sites=site_sources(),
     )

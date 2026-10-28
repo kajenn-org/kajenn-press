@@ -104,6 +104,7 @@ def test_http_redirects_to_https(proxied):
         assert status == 301 and location == f"https://{name}/admin/"
 
 
-def test_preview_name_reaches_the_preview_origin_not_the_administration(proxied):
-    status, _, body = request(18443, NAMES[1], "/admin/", True)
-    assert status == 404 and body == b"Preview unavailable"
+def test_preview_name_does_not_reach_the_administration(proxied):
+    # Private links return with N7; until then the preview name is not the management origin.
+    status, _, _body = request(18443, NAMES[1], "/admin/", True)
+    assert status == 404

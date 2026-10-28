@@ -4,7 +4,6 @@ import asyncio
 from contextlib import asynccontextmanager
 
 import httpx
-from services.scenarios import ADMIN
 
 from kajenn_press.application import create_server
 
@@ -17,11 +16,12 @@ AUTH = {
 }
 
 
+ADMIN = {"admin": {"*": ["read", "write", "use", "create_site"]}}
+
+
 @asynccontextmanager
-async def client(root, grants=None, token="test-admin-token", publication=None, sites=None):
-    server = create_server(
-        root, auth=AUTH, grants=grants or ADMIN, publication=publication, sites=sites
-    )
+async def client(root, grants=None, token="test-admin-token", sites=None):
+    server = create_server(root, auth=AUTH, grants=grants or ADMIN, sites=sites)
     incoming, outgoing = asyncio.Queue(), asyncio.Queue()
     task = asyncio.create_task(
         server({"type": "lifespan", "asgi": {"version": "3.0"}}, incoming.get, outgoing.put)
@@ -32,7 +32,7 @@ async def client(root, grants=None, token="test-admin-token", publication=None, 
     try:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=server),
-            base_url=publication["management_origin"] if publication else "http://local",
+            base_url="http://local",
             headers={"Authorization": "Bearer " + token} if token else {},
         ) as http:
             yield http, server
@@ -59,44 +59,3 @@ async def call(http, channel, operation, **arguments):
     )
     body = response.json()
     return response.status_code, body.get("result", {}).get("structuredContent", body)
-
-
-async def record(http, channel, operation, **arguments):
-    status, body = await call(http, channel, operation, **arguments)
-    assert status == 200 and body.get("ok"), body
-    return body["result"]["records"][0]
-
-
-async def seed_http(http, channel="rest"):
-    from services.scenarios import BLOCKS, DECLARATIONS
-
-    site = await record(
-        http, channel, "site_create", key="site", name="First", languages=["it", "en"]
-    )
-    other = await record(http, channel, "site_create", key="other", name="Second", languages=["it"])
-    template = await record(
-        http,
-        channel,
-        "resource_save",
-        key="template",
-        scope="library",
-        kind="template",
-        name="page",
-        source="source only",
-        engine="gramlot",
-        blocks=DECLARATIONS,
-    )
-    content = await record(
-        http, channel, "content_create", key="content", site_id=site["record_id"], title="Article"
-    )
-    variant = await record(
-        http,
-        channel,
-        "variant_create",
-        key="variant",
-        content_id=content["record_id"],
-        language="it",
-        template_revision=template["revision_id"],
-        blocks=BLOCKS,
-    )
-    return site, other, template, content, variant

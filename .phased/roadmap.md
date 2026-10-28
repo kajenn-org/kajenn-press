@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N5 (navigation and the Visual editor).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N6 (SEO tab).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -68,7 +68,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Delivers: Publish of the changed pages with selection; per-page rollback; site rollback through the source zip; re-rendering through resolvers with a local filesystem cache; `sitemap.xml`, `robots.txt` and 301 redirects generated at publication; maintenance mode.
 - Replaces: channels, routes, candidates, builds and releases of Macro 2 and the release export of Macro 3b, as decided in N1.
 
-### N5: Navigation and the Visual editor tab
+### N5 (completed 2026-10-28, branches feat/visual-editor and feat/retire-old-path): Navigation and the Visual editor tab
+
+- Result: Sites and Library navigation; the site tab with the Visual editor, the Pages and Contents drawer, the docked block editor and the Update plan of copies; the old administration and publication path removed (N4-D3). Archived plan: [visual-editor](done/visual-editor/plan.md).
+
 
 - Objective: Sites and Library in the navigation tree; one tab per site; the Visual editor.
 - Delivers: rendered site opening on the root page and navigable through its links; slot borders on command; detachable blocks in a floating window with CodeMirror, Jodit and Preview; the drawer with the Pages tree (logical, drag and drop, slots under each page) and the Contents tree (use count states and badge); drag of a content into a slot from the preview or the tree; marks for pages changed since publication and for outdated copies.

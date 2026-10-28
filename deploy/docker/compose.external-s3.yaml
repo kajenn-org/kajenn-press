@@ -34,13 +34,3 @@ services:
     depends_on: !override
       secrets:
         condition: service_completed_successfully
-
-  child:
-    environment:
-      RELEASE_S3_ENDPOINT: ${KPRESS_S3_ENDPOINT}
-      RELEASE_S3_BUCKET: ${KPRESS_S3_BUCKET}
-      RELEASE_S3_BASE_PATH: ${KPRESS_S3_BASE_PATH:-}
-      RELEASE_S3_ACCESS_FILE: /s3-credentials/access
-      RELEASE_S3_SECRET_FILE: /s3-credentials/secret
-    volumes:
-      - ${KPRESS_S3_CREDENTIALS_DIR}:/s3-credentials:ro

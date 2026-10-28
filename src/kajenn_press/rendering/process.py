@@ -9,7 +9,6 @@ import subprocess
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory, TemporaryFile
-from uuid import uuid4
 
 from genro_bag import Bag
 
@@ -158,34 +157,3 @@ class RenderWorker:
             "html": response["html"],
             "diagnostics": response["diagnostics"],
         }
-
-    def render(self, frozen):
-        """Coordinator-internal execution. Public callers use RenderService authorization."""
-        attempt = {"attempt_id": uuid4().hex, "input_digest": frozen.digest}
-        try:
-            response = self._call(
-                {"action": "render", "input": frozen.unpack(), "input_digest": frozen.digest}
-            )
-            if not response["ok"]:
-                return {**attempt, "status": "failed", "diagnostics": response["diagnostics"]}
-            if (
-                set(response) != {"ok", "profile", "input_digest", "html", "digest", "diagnostics"}
-                or not isinstance(response["html"], str)
-                or not response["html"].lower().startswith("<!doctype html><html")
-                or not response["html"].lower().endswith("</html>")
-                or response["digest"] != sha256(response["html"].encode())
-                or response["input_digest"] != frozen.digest
-                or response["profile"] != frozen.unpack()["profile"]
-                or not self._diagnostics_valid(response["diagnostics"])
-            ):
-                raise RenderProblem("invalid_output", "Worker result failed validation")
-            return {
-                **attempt,
-                "status": "succeeded",
-                "html": response["html"],
-                "digest": response["digest"],
-                "profile": response["profile"],
-                "diagnostics": response["diagnostics"],
-            }
-        except RenderProblem as exc:
-            return {**attempt, "status": "failed", "diagnostics": [exc.diagnostic]}
