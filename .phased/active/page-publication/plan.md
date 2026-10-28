@@ -43,7 +43,9 @@ Known facts (2026-10-28):
   - Details: every page has a URL path (the first page `/`), unique in the site; changing it records a redirect from the old path; a redirect never points at itself and chains collapse; one operation to set a page URL.
   - Done: URLs unique, redirects recorded and collapsed, the operation on REST and MCP.
 
-- [ ] **Phase 2**: Published page object and site index
+- [x] **Phase 2**: Published page object and site index
+  > Done: `src/kajenn_press/site/published.py`: `PublishedPage`, `pack_page`/`unpack_page` (deterministic zip: `page.json` with id, URL, fingerprint, HTML SHA-256 and the page Bag in TYTX; `index.html`; `assets/<sha256>.<ext>` checked against their content), `make_index`/`read_index` (schema, site id, source version, maintenance, pages with URL, key, pinned version id, fingerprint and asset names, redirects; unique URLs), `page_fingerprint` (name, URL and page Bag). `tests/site/test_published.py` (8 tests).
+  > Deviation: `sitemap.xml` and `robots.txt` are not stored in the index; the serving server builds them from the index and its own public origin, which the manager does not know at Publish time (it arrives with the first Publish in N7).
   - Run: opus / high
   - Files: new `src/kajenn_press/site/published.py`, `tests/site/`.
   - Details: a published page object (zip): the page Bag, its rendered HTML, its asset bytes by content address, the digest of the page it was made from; the site index (JSON): for each page its URL, object key and pinned version id (N4-D2), assets by content address, redirects, `sitemap.xml` and `robots.txt` text, maintenance flag, the source version it was published from; read and write with integrity checks.
