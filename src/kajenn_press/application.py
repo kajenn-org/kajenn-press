@@ -851,6 +851,29 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def folder_add(
+        self, site_id: str, key: str, name: str, parent: str | None = None, _request=None
+    ) -> dict:
+        """Add a logical folder to the Pages tree."""
+        return self._site(_request, "folder_add", site_id=site_id, key=key, name=name, parent=parent)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def tree_move(
+        self,
+        site_id: str,
+        key: str,
+        item_id: str,
+        parent: str | None = None,
+        position: int | None = None,
+        _request=None,
+    ) -> dict:
+        """Move a page or folder in the Pages tree (drag and drop)."""
+        return self._site(
+            _request, "tree_move", site_id=site_id, key=key, item_id=item_id, parent=parent,
+            position=position,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_url_set(self, site_id: str, key: str, page_id: str, url: str, _request=None) -> dict:
         """Move a page to a new URL path; the old path redirects to it."""
         return self._site(

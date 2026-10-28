@@ -29,7 +29,8 @@ Entry: main `e3dcb97`; the 32 site operations; the administration shell `IndexPa
 
 ## Work Plan
 
-- [ ] **Phase 1**: Page tree and marks in the site model
+- [x] **Phase 1**: Page tree and marks in the site model
+  > Done: site section `folders`; pages and folders carry `parent` and `position`; `Site.add_folder`, `children`, `move` (no cycles, dense positions, URLs unchanged), `tree`, `outdated_copies`; operations `folder_add` and `tree_move` (34 site operations, 78 routes); `site_read` returns `tree` and, per page, `slot_names`, `changed` (fingerprint against the site index; true before the first Publish) and `outdated`. `tests/site/test_page_tree.py` (5 tests). Bag drops attributes whose value is None, so root items read `parent` with `.get`.
   - Files: `src/kajenn_press/site/model.py`, `service.py`, `application.py`, `tests/site/`.
   - Details: logical folders for pages, each page and folder with a parent and a position; moving a page or folder (drag and drop backend); `site_read` returns the tree, the slots of each page with their assigned content, and two marks per page: changed since publication (fingerprint against the site index) and holding outdated copies (copy digest against the current original).
   - Done: moves keep the tree consistent (no cycles, positions dense); marks match the publish plan and the Update plan.
