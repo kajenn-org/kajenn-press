@@ -19,8 +19,10 @@ from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from .lock import EditingLock
 from .model import Site, new_id
+from .published import page_fingerprint
 from .receipts import Receipts
 from .render import page_request
+from .slots import template_slots
 from .storage import WorkingCopy, unpack
 
 READS = {
@@ -39,6 +41,8 @@ CHANGES = {
     "asset_add",
     "page_add",
     "page_url_set",
+    "folder_add",
+    "tree_move",
     "page_asset_add",
     "slot_assign",
     "copies_update",
@@ -46,7 +50,7 @@ CHANGES = {
     "unplaced_place",
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
-LIBRARY = {"site_import", "starter_save", "starters_list"}
+LIBRARY = {"site_import", "starter_save", "starters_list", "site_list"}
 PUBLISHING = {
     "publish_plan",
     "publish",
@@ -112,6 +116,8 @@ class SiteService:
         with self._mutex:
             if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
+                return handler(identity, **params)
+            if operation == "site_list":
                 return handler(identity, **params)
             if operation == "starters_list":
                 self.policy.require(identity, "library", "read")
@@ -260,6 +266,14 @@ class SiteService:
         site.record(identity, operation, now(), **details)
         copy.save(site)
 
+    def _site_list(self, identity):
+        """Sites the caller can read, with the holder of each."""
+        return [
+            {**item, "holder": self.lock.holder(item["site_id"])}
+            for item in self.store.sites()
+            if self.policy.allows(identity, "site:" + item["site_id"], "read")
+        ]
+
     def _starters_list(self, identity):
         return self.store.starters()
 
@@ -300,17 +314,25 @@ class SiteService:
                 for n in site.section(section).nodes
             ]
 
+        online = {}
+        if self.publisher is not None:
+            online = (self.publisher.index(site_id) or {"pages": {}})["pages"]
         pages = []
         for node in site.section("pages").nodes:
             page = site.page(node.label)
+            entry = online.get(node.label)
             pages.append(
                 {
                     "id": node.label,
                     "name": page.name,
                     "url": node.attr["url"],
                     "template_id": page.template.attr["original_id"],
+                    "slot_names": [slot.name for slot in template_slots(page.template.value)],
                     "slots": {n.attr["slot"]: n.attr["original_id"] for n in page.slots.nodes},
                     "unplaced": [n.label for n in page.unplaced.nodes],
+                    "changed": entry is None
+                    or entry["fingerprint"] != page_fingerprint(site, node.label),
+                    "outdated": bool(site.outdated_copies(node.label)),
                 }
             )
         return {
@@ -318,9 +340,13 @@ class SiteService:
             "name": site.name,
             "holder": self.lock.holder(site_id),
             "templates": items("templates"),
-            "contents": items("contents"),
+            "contents": [
+                {**item, "text": site.node("contents", item["id"]).value}
+                for item in items("contents")
+            ],
             "assets": items("assets"),
             "pages": pages,
+            "tree": site.tree(),
             "redirects": site.redirects(),
         }
 
@@ -378,6 +404,13 @@ class SiteService:
 
     def _page_add(self, identity, site, name, template_id):
         return {"page_id": site.add_page(name, template_id)}
+
+    def _folder_add(self, identity, site, name, parent=None):
+        return {"folder_id": site.add_folder(name, parent)}
+
+    def _tree_move(self, identity, site, item_id, parent=None, position=None):
+        site.move(item_id, parent, position)
+        return {"item_id": item_id, "parent": parent}
 
     def _page_url_set(self, identity, site, page_id, url):
         site.set_page_url(page_id, url)

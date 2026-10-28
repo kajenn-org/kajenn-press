@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site tab mockup</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--soft:#f0eee9;--line:#dcd9d2;--fg:#1f1e1c;--muted:#6b6963;--faint:#9b988f;--accent:#1d5fa5;--accent-bg:#e6f0fb;--warn:#8a5a00;--warn-bg:#fbefd5;--ok:#2e6b12}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1b1a;--panel:#232322;--soft:#2b2b29;--line:#3a3a37;--fg:#ecebe7;--muted:#a9a69e;--faint:#7c7a73;--accent:#7fb2ec;--accent-bg:#1f3550;--warn:#f0c46a;--warn-bg:#46350f;--ok:#9bd06b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:620px}
+.top{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.top b{font-weight:600}.grow{flex:1}.muted{color:var(--muted)}
+.main{display:grid;grid-template-columns:170px minmax(0,1fr);min-height:0}
+.nav{border-right:1px solid var(--line);padding:10px 8px;background:var(--soft);overflow:auto}
+.tree div{padding:3px 6px;border-radius:6px;white-space:nowrap;cursor:default}
+.tree .sel{background:var(--accent-bg);color:var(--accent)}
+.tree .head{color:var(--muted);margin-top:8px}
+.site{display:grid;grid-template-rows:auto auto 1fr;min-width:0;min-height:0}
+.bar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:3px 10px;cursor:pointer}
+button.primary{border-color:var(--accent);color:var(--accent)}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.tab{padding:7px 12px;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer}
+.tab.on{border-color:var(--accent);color:var(--fg)}
+.work{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;position:relative}
+.drawer{border-right:1px solid var(--line);padding:8px;overflow:auto;background:var(--panel)}
+.dtabs{display:flex;gap:4px;margin-bottom:8px}.dtabs .tab{padding:3px 8px}
+.slot-node{margin-left:16px;color:var(--muted)}.slot-node.empty{color:var(--faint)}
+.mark{font-size:11px;margin-left:4px}.changed{color:var(--warn)}.outdated{color:var(--accent)}
+.unused{font-style:italic;color:var(--faint)}
+.badge{font-size:11px;background:var(--accent-bg);color:var(--accent);border-radius:9px;padding:0 6px;margin-left:4px}
+.stage{padding:12px;overflow:auto;background:var(--soft)}
+.stagebar{display:flex;gap:10px;align-items:center;color:var(--muted);margin-bottom:8px}
+.page{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;max-width:760px}
+.show .slot{outline:1px dashed var(--accent);outline-offset:2px;cursor:pointer;position:relative}
+.slot .lbl{display:none;position:absolute;top:-10px;right:6px;font-size:11px;background:var(--accent-bg);color:var(--accent);padding:0 5px;border-radius:4px}
+.show .slot .lbl{display:block}
+.hero{padding:18px;background:var(--accent-bg);border-radius:6px;margin:10px 0}
+.editor{position:absolute;right:12px;top:12px;width:330px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);display:none}
+.editor header{display:flex;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line)}
+.editor .body{padding:10px;font:12px/1.5 ui-monospace,monospace;min-height:90px;color:var(--muted);white-space:pre-wrap}
+.editor footer{padding:8px 10px;border-top:1px solid var(--line);display:flex;gap:6px;align-items:center}
+.plan{display:none;padding:10px;border-top:1px solid var(--line)}
+.plan label{display:block;padding:2px 0}
+.note{color:var(--warn);font-size:12px}
+.placeholder{padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><b>Kajenn Press</b><span class="grow"></span><span class="muted">operator</span><button>Sign out</button></div>
+  <div class="main">
+    <div class="nav tree">
+      <div class="head">Sites</div>
+      <div class="sel">kajenn.org</div><div>Kajenn Press</div><div>acme.org</div>
+      <div class="muted">+ new site</div>
+      <div class="head">Library</div>
+      <div>Starting sites</div>
+    </div>
+    <div class="site">
+      <div class="bar">
+        <b>kajenn.org</b><span class="muted">· editing as operator · saved 10:42</span><span class="grow"></span>
+        <button>Versions</button><button class="primary">Save</button>
+      </div>
+      <div class="tabs">
+        <span class="tab on" data-t="ve">Visual editor</span><span class="tab" data-t="seo">SEO</span><span class="tab" data-t="pub">Published site</span>
+      </div>
+      <div id="ve" class="work">
+        <div class="drawer">
+          <div class="dtabs"><span class="tab on" data-d="pages">Pages</span><span class="tab" data-d="contents">Contents</span></div>
+          <div id="pages" class="tree">
+            <div class="sel">Home <span class="mark changed" title="changed since publication">●</span></div>
+            <div class="slot-node">hero ← Welcome</div>
+            <div class="slot-node">body ← Intro <span class="mark outdated" title="copy older than its original">↻</span></div>
+            <div class="slot-node empty">aside · empty</div>
+            <div>▾ About</div>
+            <div style="margin-left:14px">Team</div>
+            <div style="margin-left:14px">History</div>
+            <div>Contacts</div>
+            <div class="muted">+ page · + folder</div>
+          </div>
+          <div id="contents" class="tree" style="display:none">
+            <div>Welcome</div><div>Intro</div><div>Footer<span class="badge">5</span></div>
+            <div class="unused">Old banner</div><div class="muted">+ content</div>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="stagebar"><span>/ · Home</span><span class="grow"></span>
+            <label><input type="checkbox" id="slots" checked> Show slots</label>
+            <select><option>Desktop · 1280</option><option>Phone · 375</option></select></div>
+          <div id="page" class="page show">
+            <div class="muted">Kajenn · About · Contacts</div>
+            <div class="slot hero" data-s="hero"><span class="lbl">hero</span><b>Welcome to Kajenn</b><div class="muted">The ASGI framework of the Genro family</div></div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+              <div class="slot" data-s="body" style="padding:6px"><span class="lbl">body</span>Kajenn serves applications, REST and MCP from one router.</div>
+              <div class="slot" data-s="aside" style="padding:6px;color:var(--faint);text-align:center"><span class="lbl">aside</span>drop a content here</div>
+            </div>
+          </div>
+        </div>
+        <div class="editor" id="editor">
+          <header><b id="title">body · Intro</b><span class="grow"></span><span style="cursor:pointer" id="close">✕</span></header>
+          <div class="tabs" style="padding:0 8px"><span class="tab on">CodeMirror</span><span class="tab">Jodit</span><span class="tab">Preview</span></div>
+          <div class="body">&lt;p&gt;Kajenn serves applications,
+REST and MCP from one router.&lt;/p&gt;</div>
+          <footer><span class="note">Used in 2 pages</span><span class="grow"></span><button class="primary" id="save">Save</button></footer>
+          <div class="plan" id="plan">
+            <b>Update copies</b>
+            <label><input type="checkbox" checked> Home</label>
+            <label><input type="checkbox" checked> About / History</label>
+            <label class="muted"><input type="checkbox"> Contacts — changed in the page</label>
+            <div style="margin-top:6px"><button class="primary">Update and render</button></div>
+          </div>
+        </div>
+      </div>
+      <div id="seo" class="placeholder" style="display:none">SEO — N6</div>
+      <div id="pub" class="placeholder" style="display:none">Published site — N7</div>
+    </div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+$$('[data-t]').forEach(t=>t.onclick=()=>{$$('[data-t]').forEach(x=>x.classList.toggle('on',x===t));['ve','seo','pub'].forEach(i=>$('#'+i).style.display=i===t.dataset.t?(i==='ve'?'grid':'block'):'none')});
+$$('[data-d]').forEach(t=>t.onclick=()=>{$$('[data-d]').forEach(x=>x.classList.toggle('on',x===t));$('#pages').style.display=t.dataset.d==='pages'?'block':'none';$('#contents').style.display=t.dataset.d==='contents'?'block':'none'});
+$('#slots').onchange=e=>$('#page').classList.toggle('show',e.target.checked);
+$$('.slot').forEach(s=>s.onclick=()=>{if(!$('#page').classList.contains('show'))return;$('#title').textContent=s.dataset.s;$('#plan').style.display='none';$('#editor').style.display='block'});
+$('#close').onclick=()=>$('#editor').style.display='none';
+$('#save').onclick=()=>$('#plan').style.display='block';
+</script>
+</body>
+</html>

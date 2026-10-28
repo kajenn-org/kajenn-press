@@ -38,7 +38,7 @@ class FixtureUsers(UserStore):
 
 
 @asynccontextmanager
-async def admin_client(root, grants=None, publication=None):
+async def admin_client(root, grants=None, publication=None, sites=None):
     origin = publication["management_origin"] if publication else "https://admin.test"
     server = create_server(
         root,
@@ -46,6 +46,7 @@ async def admin_client(root, grants=None, publication=None):
         grants=grants or ADMIN,
         publication=publication,
         administration={"origin": origin, "users": {"store_class": FixtureUsers}},
+        sites=sites,
     )
     incoming, outgoing = asyncio.Queue(), asyncio.Queue()
     task = asyncio.create_task(
@@ -64,10 +65,10 @@ async def admin_client(root, grants=None, publication=None):
         await asyncio.wait_for(task, 30)
 
 
-async def open_page(http):
+async def open_page(http, path="/admin/"):
     import re
 
-    response = await http.get("/admin/")
+    response = await http.get(path)
     assert response.status_code == 200, response.text
     return re.search(r'"pageId":"([a-f0-9]+)"', response.text)[1]
 

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Preview interaction qualification</title>
+<style>
+body{font:14px system-ui,sans-serif;margin:16px}
+#source{display:inline-block;padding:8px 12px;border:1px solid #888;border-radius:6px;cursor:grab}
+iframe{width:600px;height:220px;border:1px solid #888;margin-top:12px}
+#log{margin-top:12px;font:12px ui-monospace,monospace;white-space:pre}
+</style>
+</head>
+<body>
+<!-- N5 Phase 2 (d-preview-interaction): the administration page drags a tree item onto a
+     slot of a page rendered in a sandboxed iframe without allow-same-origin; a script added
+     to the preview HTML only reports clicks and drops with postMessage. -->
+<div id="source" draggable="true" data-content="c-intro">Content: Intro</div>
+<iframe id="preview" sandbox="allow-scripts" title="Preview"></iframe>
+<div id="log"></div>
+<script>
+const log = (line) => { document.getElementById("log").textContent += line + "\n"; };
+document.cookie = "admin_session=secret; SameSite=Strict";
+document.getElementById("source").addEventListener("dragstart", (event) => {
+  event.dataTransfer.setData("text/plain", "kpress-content:c-intro");
+  event.dataTransfer.effectAllowed = "copy";
+});
+window.addEventListener("message", (event) => {
+  if (event.source !== document.getElementById("preview").contentWindow) return;
+  log("message " + JSON.stringify(event.data) + " origin=" + event.origin);
+});
+const page = `<!doctype html><html><body>
+<div kpress_slot="hero" style="padding:16px;border:1px dashed #36c">hero slot</div>
+<div kpress_slot="body" style="padding:16px;margin-top:8px;border:1px dashed #36c">body slot</div>
+<script>
+const slot = (node) => node.closest("[kpress_slot]");
+let cookie;
+try { cookie = document.cookie; } catch (error) { cookie = "denied: " + error.name; }
+let parentDom;
+try { parentDom = window.parent.document.title; } catch (error) { parentDom = "denied: " + error.name; }
+parent.postMessage({kind: "isolation", cookie: cookie, parentDom: parentDom}, "*");
+document.addEventListener("click", (event) => {
+  const found = slot(event.target);
+  if (found) parent.postMessage({kind: "click", slot: found.getAttribute("kpress_slot")}, "*");
+});
+document.addEventListener("dragover", (event) => { if (slot(event.target)) event.preventDefault(); });
+document.addEventListener("drop", (event) => {
+  const found = slot(event.target);
+  if (!found) return;
+  event.preventDefault();
+  parent.postMessage({kind: "drop", slot: found.getAttribute("kpress_slot"),
+                      data: event.dataTransfer.getData("text/plain")}, "*");
+});
+<\/script></body></html>`;
+document.getElementById("preview").srcdoc = page;
+</script>
+</body>
+</html>

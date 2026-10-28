@@ -23,7 +23,16 @@ from .slots import template_slots
 ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
 ASSET_KINDS = {"css", "javascript", "media"}
-SECTIONS = ("templates", "template_bases", "contents", "assets", "pages", "redirects", "audit")
+SECTIONS = (
+    "templates",
+    "template_bases",
+    "contents",
+    "assets",
+    "pages",
+    "folders",
+    "redirects",
+    "audit",
+)
 PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data")
 
 
@@ -220,7 +229,101 @@ class Site:
             page.set_item(section, Bag())
         name = required_text(name, "name")
         url = "/" if not len(self.section("pages")) else self.free_url(name)
-        return self._add("pages", page, name=name, url=url)
+        position = len(self.children(None))
+        return self._add("pages", page, name=name, url=url, parent=None, position=position)
+
+    def add_folder(self, name, parent=None):
+        """A logical folder of the Pages tree; it only organizes editing, never URLs."""
+        if parent is not None:
+            self.node("folders", parent)
+        position = len(self.children(parent))
+        return self._add(
+            "folders", None, name=required_text(name, "name"), parent=parent, position=position
+        )
+
+    def tree_node(self, item_id):
+        """The page or folder node with this id."""
+        for section in ("pages", "folders"):
+            node = self.section(section).get_node(item_id)
+            if node is not None:
+                return node
+        raise DomainError("not_found", f"No page or folder {item_id}", resource_id=item_id)
+
+    def children(self, parent):
+        """Pages and folders under a folder (None: the root), by position."""
+        nodes = [
+            node
+            for section in ("folders", "pages")
+            for node in self.section(section).nodes
+            if node.attr.get("parent") == parent
+        ]
+        return sorted(nodes, key=lambda node: node.attr["position"])
+
+    def move(self, item_id, parent=None, position=None):
+        """Move a page or folder under `parent` at `position` (None: last); no cycles."""
+        node = self.tree_node(item_id)
+        if parent is not None:
+            self.node("folders", parent)
+            ancestor = parent
+            while ancestor is not None:
+                if ancestor == item_id:
+                    raise DomainError("invalid_input", "A folder cannot move into itself")
+                ancestor = self.node("folders", ancestor).attr.get("parent")
+        old_parent = node.attr.get("parent")
+        siblings = [n for n in self.children(parent) if n is not node]
+        index = len(siblings) if position is None else max(0, min(int(position), len(siblings)))
+        siblings.insert(index, node)
+        node.attr["parent"] = parent
+        for number, sibling in enumerate(siblings):
+            sibling.attr["position"] = number
+        if old_parent != parent:
+            for number, sibling in enumerate(self.children(old_parent)):
+                sibling.attr["position"] = number
+
+    def tree(self, parent=None):
+        """The Pages tree: folders and pages, nested, by position."""
+        items = []
+        for node in self.children(parent):
+            if "url" in node.attr:
+                items.append(
+                    {
+                        "type": "page",
+                        "id": node.label,
+                        "name": node.attr["name"],
+                        "url": node.attr["url"],
+                    }
+                )
+            else:
+                items.append(
+                    {
+                        "type": "folder",
+                        "id": node.label,
+                        "name": node.attr["name"],
+                        "children": self.tree(node.label),
+                    }
+                )
+        return items
+
+    def outdated_copies(self, page_id):
+        """Copies in the page whose original changed after the copy was made."""
+        page = self.page(page_id)
+        outdated = []
+        for path in [
+            "template",
+            *[
+                f"{section}.{n.label}"
+                for section in PAGE_SECTIONS[1:4]
+                for n in page.bag.get_item(section).nodes
+            ],
+        ]:
+            copy = page.bag.get_node(path)
+            original_id = copy.attr.get("original_id")
+            if original_id is None:
+                continue
+            _section, original = self.original(original_id)
+            if value_digest(original.value) != copy.attr["original_digest"]:
+                outdated.append({"path": path, "original_id": original_id})
+        return outdated
 
     def page_urls(self):
         return {node.attr["url"]: node.label for node in self.section("pages").nodes}

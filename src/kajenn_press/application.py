@@ -759,6 +759,11 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "starter_save", key=key, site_id=site_id, name=name)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_list(self, _request=None) -> dict:
+        """Sites with a source the caller can read, and who holds each."""
+        return self._site(_request, "site_list")
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def starters_list(self, _request=None) -> dict:
         """Starting sites in the Library."""
         return self._site(_request, "starters_list")
@@ -848,6 +853,29 @@ class PressApplication(McpOpenApiApplication):
         """Add a page with a copy of a site template."""
         return self._site(
             _request, "page_add", site_id=site_id, key=key, name=name, template_id=template_id
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def folder_add(
+        self, site_id: str, key: str, name: str, parent: str | None = None, _request=None
+    ) -> dict:
+        """Add a logical folder to the Pages tree."""
+        return self._site(_request, "folder_add", site_id=site_id, key=key, name=name, parent=parent)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def tree_move(
+        self,
+        site_id: str,
+        key: str,
+        item_id: str,
+        parent: str | None = None,
+        position: int | None = None,
+        _request=None,
+    ) -> dict:
+        """Move a page or folder in the Pages tree (drag and drop)."""
+        return self._site(
+            _request, "tree_move", site_id=site_id, key=key, item_id=item_id, parent=parent,
+            position=position,
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")

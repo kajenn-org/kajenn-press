@@ -237,3 +237,12 @@ def test_operation_names_do_not_collide_with_the_editorial_ones():
     from kajenn_press.publication.service import OPERATIONS as PUBLICATION
 
     assert not OPERATIONS & (EDITORIAL | PUBLICATION | {"render_preview", "render_draft"})
+
+
+def test_site_list_shows_readable_sites_and_their_holder(service):
+    site_id, *_ = build_site(service)
+    other = SiteService(service.root, service.store, AccessPolicy({"dan": {"site:x": ["read"]}}))
+    assert run(service, "carla", "site_list") == [
+        {"site_id": site_id, "name": "Kajenn Press", "holder": "anna"}
+    ]
+    assert other.execute("dan", "site_list") == []
