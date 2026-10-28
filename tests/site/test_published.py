@@ -23,7 +23,9 @@ PNG_NAME = hashlib.sha256(PNG).hexdigest() + ".png"
 
 
 def published():
-    return PublishedPage("p1", "/", "f" * 64, "{}::X", "<!doctype html><p>Hi</p>", {PNG_NAME: PNG})
+    return PublishedPage(
+        "p1", "/", "f" * 64, "{}::X", "<!doctype html><p>Hi</p>", {PNG_NAME: PNG}, True
+    )
 
 
 def test_published_page_round_trip_is_deterministic():
@@ -62,7 +64,9 @@ def test_altered_published_pages_fail_closed(change, message):
 
 
 def test_a_dynamic_page_keeps_its_render_request():
-    dynamic = PublishedPage("p1", "/", "f" * 64, "{}::X", "<p>x</p>", {}, '{"engine": "gramlot"}')
+    dynamic = PublishedPage(
+        "p1", "/", "f" * 64, "{}::X", "<p>x</p>", {}, True, '{"engine": "gramlot"}'
+    )
     assert unpack_page(pack_page(dynamic)).request == '{"engine": "gramlot"}'
 
 
@@ -79,6 +83,7 @@ def page_entry(url):
         "fingerprint": "f",
         "assets": [],
         "refresh": 0,
+        "indexable": True,
     }
 
 
@@ -91,7 +96,7 @@ def test_index_round_trip_and_checks():
     with pytest.raises(IntegrityError, match="share a URL"):
         make_index("s", "sv", {"a": page_entry("/"), "b": page_entry("/")}, {})
     with pytest.raises(IntegrityError):
-        read_index(raw.replace(b'"schema":1', b'"schema":2'))
+        read_index(raw.replace(b'"schema":2', b'"schema":1'))
     with pytest.raises(IntegrityError):
         read_index(b"{")
 

@@ -12,7 +12,9 @@ from genro_storage import StorageManager
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
 from .published import (
+    SCHEMA,
     PublishedPage,
+    index_schema,
     make_index,
     pack_page,
     page_fingerprint,
@@ -20,6 +22,7 @@ from .published import (
     unpack_page,
 )
 from .render import page_assets, page_request, social_image_file
+from .seo import effective_seo, indexable
 from .store import require_versioning
 
 MOUNT = "releases"
@@ -60,11 +63,18 @@ class Publisher:
         return f"sites/{site_id}/pages/{page_id}.zip"
 
     def index(self, site_id, version_id=None):
-        """The site index online, or None before the first Publish."""
+        """The site index online, or None before the first Publish.
+
+        The current index written before N6 (schema 1, without `indexable`) also reads as
+        None: the next Publish writes every selected page and a new index.
+        """
         node = self.node(self.index_path(site_id), version_id)
         if not node.exists():
             return None
-        return read_index(node.read_bytes())
+        raw = node.read_bytes()
+        if version_id is None and index_schema(raw) == SCHEMA - 1:
+            return None
+        return read_index(raw)
 
     def plan(self, site):
         """Each page with its state against the index online; changes are selected."""
@@ -141,6 +151,7 @@ class Publisher:
                     site.node("pages", page_id).value.to_tytx(transport="json"),
                     result["html"],
                     assets,
+                    indexable(effective_seo(site, page_id)),
                     json.dumps(stored, sort_keys=True) if refresh else None,
                     refresh,
                 )
@@ -154,6 +165,7 @@ class Publisher:
                 "fingerprint": fingerprint,
                 "assets": sorted(assets),
                 "refresh": refresh,
+                "indexable": indexable(effective_seo(site, page_id)),
             }
             published.append({"page_id": page_id, "state": "published"})
         try:
@@ -207,6 +219,7 @@ class Publisher:
                 "fingerprint": earlier.fingerprint,
                 "assets": sorted(earlier.assets),
                 "refresh": earlier.refresh,
+                "indexable": earlier.indexable,
             },
         }
         try:

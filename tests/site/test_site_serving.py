@@ -239,3 +239,42 @@ def test_maintenance_answers_503_and_clears(setup, tmp_path):
     (up,) = get(server(setup, site, tmp_path), "/")
     assert (down.status_code, down.headers["retry-after"]) == (503, "300")
     assert up.status_code == 200
+
+
+def test_noindex_pages_leave_the_sitemap_and_a_noindex_root_closes_the_site(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+
+    def seo(key, page, robots):
+        run(
+            service,
+            "page_seo_set",
+            site_id=site,
+            key=key,
+            page_id=pages[page],
+            fields={"robots": robots},
+        )
+        run(service, "publish", site_id=site, key="p" + key, selected=list(pages.values()))
+        return get(server(setup, site, tmp_path), "/about/", "/sitemap.xml", "/robots.txt")
+
+    about, sitemap, robots = seo("seo1", "About", "noindex, follow")
+    assert about.status_code == 200
+    assert '<meta name="robots" content="noindex, follow">' in about.text
+    assert f"<loc>{ORIGIN}/</loc>" in sitemap.text and "/about/" not in sitemap.text
+    assert robots.text.startswith("User-agent: *\nAllow: /")
+
+    _about, sitemap, robots = seo("seo2", "Home", "noindex, nofollow")
+    assert "<url>" not in sitemap.text
+    assert robots.text == "User-agent: *\nDisallow: /\n"
+
+
+def test_publish_replaces_an_index_written_before_n6(setup):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    node = service.publisher.node(service.publisher.index_path(site))
+    node.write_bytes(node.read_bytes().replace(b'"schema":2', b'"schema":1'))
+
+    plan = run(service, "publish_plan", site_id=site)
+    assert {item["state"] for item in plan} == {"new"}
+    run(service, "publish", site_id=site, key="again", selected=list(pages.values()))
+    assert set(service.publisher.index(site)["pages"]) == set(pages.values())

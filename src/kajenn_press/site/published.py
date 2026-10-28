@@ -7,7 +7,9 @@ Data uses resolvers `request.json` (the worker request without connections), so 
 serving server can render it again. The site index is
 canonical JSON naming, for each page, its URL and the S3 version of its object that is
 online; readers that follow the index always see a complete publication. `sitemap.xml`
-and `robots.txt` are built by the serving server from the index and its own origin.
+and `robots.txt` are built by the serving server from the index and its own origin: the
+sitemap lists the indexable pages; a root page that is not indexable closes the whole site
+to robots.
 """
 
 import hashlib
@@ -22,7 +24,7 @@ from ..catalog.filesystem import encode
 from .seo import effective_seo
 from .storage import FIXED_TIME
 
-SCHEMA = 1
+SCHEMA = 2
 ASSET_NAME = re.compile(r"[0-9a-f]{64}\.[a-z0-9]{1,8}")
 
 
@@ -56,6 +58,7 @@ class PublishedPage:
     page: str
     html: str
     assets: dict
+    indexable: bool
     request: str | None = None
     refresh: int = 0
 
@@ -72,6 +75,7 @@ def pack_page(published):
                 "html_sha256": sha256(published.html.encode("utf-8")),
                 "page": published.page,
                 "refresh": published.refresh,
+                "indexable": published.indexable,
             }
         ),
         "index.html": published.html.encode("utf-8"),
@@ -116,8 +120,18 @@ def unpack_page(raw):
     if (
         not isinstance(meta, dict)
         or set(meta)
-        != {"schema", "page_id", "url", "fingerprint", "html_sha256", "page", "refresh"}
+        != {
+            "schema",
+            "page_id",
+            "url",
+            "fingerprint",
+            "html_sha256",
+            "page",
+            "refresh",
+            "indexable",
+        }
         or meta["schema"] != SCHEMA
+        or not isinstance(meta["indexable"], bool)
         or meta["html_sha256"] != sha256(html.encode("utf-8"))
     ):
         raise IntegrityError("Published page failed its integrity check")
@@ -128,6 +142,7 @@ def unpack_page(raw):
         meta["page"],
         html,
         assets,
+        meta["indexable"],
         request,
         meta["refresh"],
     )
@@ -138,7 +153,8 @@ def make_index(site_id, source_version, pages, redirects, maintenance=False):
 
     `pages` maps page ids to {"url", "key", "version_id", "fingerprint", "assets",
     "refresh"}: `assets` lists the content-addressed asset names the page object holds;
-    `refresh` is how many seconds its rendering stays valid (0 for a static page).
+    `refresh` is how many seconds its rendering stays valid (0 for a static page);
+    `indexable` is false for a `noindex` page, left out of `sitemap.xml`.
     """
     urls = [entry["url"] for entry in pages.values()]
     if len(urls) != len(set(urls)):
@@ -155,6 +171,15 @@ def make_index(site_id, source_version, pages, redirects, maintenance=False):
     )
 
 
+def index_schema(raw):
+    """The schema number of index bytes, or None when they are not an index object."""
+    try:
+        index = json.loads(raw)
+    except ValueError:
+        return None
+    return index.get("schema") if isinstance(index, dict) else None
+
+
 def read_index(raw):
     """The site index in bytes, checked; any mismatch fails closed."""
     try:
@@ -169,7 +194,8 @@ def read_index(raw):
         or not isinstance(index["pages"], dict)
         or not isinstance(index["redirects"], dict)
         or any(
-            set(entry) != {"url", "key", "version_id", "fingerprint", "assets", "refresh"}
+            set(entry)
+            != {"url", "key", "version_id", "fingerprint", "assets", "refresh", "indexable"}
             for entry in index["pages"].values()
         )
         or len({e["url"] for e in index["pages"].values()}) != len(index["pages"])

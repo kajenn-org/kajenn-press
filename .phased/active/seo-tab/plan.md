@@ -42,7 +42,8 @@ Entry: main `594e755`; the 35 site operations; page Bag sections `template`, `sl
   - Details: per N6-D1, the effective SEO written into the `head` of the HTML returned by the worker, for preview and for publication alike; values escaped; JSON-LD checked as JSON and written with `</` escaped; Open Graph image as the published asset URL (absolute when an origin is set).
   - Done: the published HTML of the example site carries title, description, canonical, robots, Open Graph and JSON-LD; a template `title` is replaced, not duplicated.
 
-- [ ] **Phase 3**: Sitemap and robots from the SEO
+- [x] **Phase 3**: Sitemap and robots from the SEO
+  > Done: page objects and index entries carry `indexable` (schema 2); `sitemap.xml` lists only indexable pages; `robots.txt` is `Disallow: /` when the root page is not indexable. The root robots is not a separate index key: the root page entry decides. The current index of schema 1 reads as absent for Publish, so the next Publish writes every selected page and a schema 2 index; until then the site server refuses that index (fail closed). Tests: noindex page out of the sitemap, noindex root closes the site, Publish replaces a schema 1 index. Main suite: 157 passed, 11 skipped.
   - Files: `src/kajenn_press/site/published.py`, `publish.py`, `serving.py`, `tests/site/`.
   - Details: the site index carries per page `indexable` and the root `robots`; `sitemap.xml` lists only indexable pages; `robots.txt` disallows everything when the root robots is `noindex`; schema bump (shared decision).
   - Done: a `noindex` page is served but missing from the sitemap; a site-wide `noindex` gives `Disallow: /`.

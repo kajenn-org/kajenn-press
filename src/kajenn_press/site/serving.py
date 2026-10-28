@@ -30,9 +30,9 @@ from ..catalog.filesystem import private_directory, sync_directory, sync_file
 from ..domain import DomainError
 from ..publication.routes import origin, request_path
 from .published import read_index, unpack_page
+from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
-NOT_FOUND_URL = "/404/"
 HEADERS = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
@@ -182,7 +182,7 @@ class SiteServerApplication(BaseApplication):
                 headers={**HEADERS, "cache-control": "no-store", "retry-after": "300"},
             )
         if path == "/robots.txt":
-            text = f"User-agent: *\nAllow: /\nSitemap: {binding}/sitemap.xml\n"
+            text = robots(binding, index)
             return Response(text, media_type="text/plain", headers=PAGE_HEADERS)
         if path == "/sitemap.xml":
             return Response(
@@ -249,10 +249,16 @@ class SiteServerApplication(BaseApplication):
         await response(scope, receive, send)
 
 
+def robots(binding, index):
+    """Closed to robots when the root page is not indexable, else open with the sitemap."""
+    root = [entry for entry in index["pages"].values() if entry["url"] == ROOT_URL]
+    if root and not root[0]["indexable"]:
+        return "User-agent: *\nDisallow: /\n"
+    return f"User-agent: *\nAllow: /\nSitemap: {binding}/sitemap.xml\n"
+
+
 def sitemap(binding, index):
-    urls = sorted(
-        entry["url"] for entry in index["pages"].values() if entry["url"] != NOT_FOUND_URL
-    )
+    urls = sorted(entry["url"] for entry in index["pages"].values() if entry["indexable"])
     body = "".join(
         f"<url><loc>{escape(binding + quote(url, safe='/'))}</loc></url>" for url in urls
     )
