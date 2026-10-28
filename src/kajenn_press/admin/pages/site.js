@@ -82,7 +82,7 @@ export class Logic {
         dragValues['app/kpress-content'] = {content: item.attr.content};
     }
     acceptDrop(source, {item}) { return item.attr.kind === 'slot' || item.attr.kind === 'folder'; }
-    contentClass(source, item) { return item && item.attr && item.attr.unused ? 'content-unused' : ''; }
+    contentClass(source, {item}) { return item.attr.unused ? 'content-unused' : ''; }
     async dropOnTree(source, {dropValues, item}) {
         const site = this.siteId(source);
         try {
@@ -170,6 +170,36 @@ export class Logic {
                 format: 'html', text: '<p></p>'});
             this.refresh(node);
         } catch (error) { node.SET('site.message', error.message); }
+    }
+    seoClass(source, {item}) { return 'seo-state-' + item.attr.state; }
+    async saveSeo(node, _args) {
+        const site = this.siteId(node), initial = JSON.parse(node.GET('site.seo_initial'));
+        const fields = {};
+        for (const name of Object.keys(initial.fields)) {
+            const value = node.GET('site.seo.' + name) ?? '';
+            if (value !== initial.fields[name]) fields[name] = value;
+        }
+        node.SET('site.busy', true);
+        try {
+            if (Object.keys(fields).length) {
+                await this.callCommand('page_seo_set', {site_id: site, key: crypto.randomUUID(),
+                    page_id: initial.page, fields});
+            }
+            const url = node.GET('site.seo.url');
+            if (url !== initial.url) {
+                await this.callCommand('page_url_set', {site_id: site, key: crypto.randomUUID(),
+                    page_id: initial.page, url});
+            }
+            for (const [index, image] of initial.images.entries()) {
+                const alt = node.GET('site.seo.alt.i' + index) ?? '';
+                if (alt && alt !== image.alt) {
+                    await this.callCommand('page_alt_set', {site_id: site, key: crypto.randomUUID(),
+                        page_id: initial.page, image: image.image, alt});
+                }
+            }
+            node.SET('site.seo_version', node.GET('site.seo_version') + 1);
+        } catch (error) { node.SET('site.seo_message', error.message); }
+        node.SET('site.busy', false);
     }
     async createSite(node, _args) {
         const name = node.GET('site.new_name');

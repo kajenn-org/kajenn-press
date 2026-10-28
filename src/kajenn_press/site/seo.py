@@ -122,11 +122,17 @@ def set_page_seo(site, page_id, fields):
             seo.pop(field)
 
 
-def effective_seo(site, page_id):
-    """The SEO a page is published with: stored, else root, else derived."""
-    stored = stored_seo(site, page_id)
+def effective_seo(site, page_id, stored=None):
+    """The SEO a page is published with: stored, else root, else derived.
+
+    `stored` replaces the page's own fields: `{}` gives what every empty field would show.
+    """
+    stored = stored_seo(site, page_id) if stored is None else stored
     root_id = root_page_id(site)
-    root = stored_seo(site, root_id) if root_id is not None else {}
+    if page_id == root_id:
+        root = stored
+    else:
+        root = stored_seo(site, root_id) if root_id is not None else {}
     node = site.node("pages", page_id)
     url = node.attr["url"]
     origin = root.get("origin", "")
@@ -338,7 +344,9 @@ def seo_check(site, page_id=None):
     problems = []
 
     def report(pid, code, message):
-        problems.append({"page_id": pid, "code": code, "message": message})
+        problem = {"page_id": pid, "code": code, "message": message}
+        if problem not in problems:
+            problems.append(problem)
 
     root_id = root_page_id(site)
     for pid in pages if page_id is None else [site.page(page_id).page_id]:

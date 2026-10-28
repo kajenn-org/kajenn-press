@@ -346,6 +346,7 @@ class SiteService:
                     "outdated": bool(site.outdated_copies(node.label)),
                     "seo": stored_seo(site, node.label),
                     "seo_effective": effective_seo(site, node.label),
+                    "seo_inherited": effective_seo(site, node.label, {}),
                     "images": page_images(site, node.label),
                 }
             )
