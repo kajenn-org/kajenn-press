@@ -47,7 +47,8 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list"}
-OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY
+PUBLISHING = {"publish_plan", "publish"}
+OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
 
@@ -63,12 +64,13 @@ def decode_base64(value):
 
 
 class SiteService:
-    def __init__(self, root, store, policy, worker=None, connections=None):
+    def __init__(self, root, store, policy, worker=None, connections=None, publisher=None):
         self.root = private_directory(root)
         self.store = store
         self.policy = policy
         self.worker = worker
         self.connections = connections or {}
+        self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
@@ -112,6 +114,15 @@ class SiteService:
                 return handler(identity, **params)
             site_id = params["site_id"]
             scope = "site:" + site_id
+            if operation in PUBLISHING:
+                if self.publisher is None:
+                    raise DomainError("unavailable", "Configure the release bucket first")
+                self.policy.require(identity, scope, "publish")
+                if operation == "publish_plan":
+                    return handler(identity, **params)
+                self.policy.require(identity, scope, "write")
+                self.lock.require(site_id, identity)
+                return handler(identity, **params)
             if operation in READS:
                 self.policy.require(identity, scope, PERMISSIONS.get(operation, "read"))
                 return handler(identity, **params)
@@ -179,6 +190,23 @@ class SiteService:
         return self.receipts.run(
             identity, key, "starter_save", {"site_id": site_id, "name": name}, keep
         )
+
+    def _publish_plan(self, identity, site_id):
+        return self.publisher.plan(self.site(identity, site_id))
+
+    def _publish(self, identity, site_id, key, selected):
+        """Save the source, then publish the selected pages from that version."""
+
+        def run():
+            copy = self.working_copy(site_id)
+            site = copy.load()
+            site.record(identity, "publish", now(), pages=len(selected))
+            copy.save(site)
+            version = self.store.save_from(copy)
+            return {"source_version": version, **self.publisher.publish(site, version, selected)}
+
+        arguments = {"site_id": site_id, "selected": selected}
+        return self.receipts.run(identity, key, "publish", arguments, run)
 
     def _starters_list(self, identity):
         return self.store.starters()

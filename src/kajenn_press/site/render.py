@@ -1,25 +1,58 @@
 """Build the worker request that renders one page of a site.
 
 Data given to the template: `page.title` (the page name) and, for each page asset copy,
-`assets.<asset name>.url`, a `data:` URL of its bytes until publication assigns real URLs
-(N4). Slot contents travel as their copies' source and format.
+`assets.<asset name>.url`: a `data:` URL of its bytes for previews, or the
+content-addressed path `/_assets/<sha256>.<ext>` for publication (N4-D1). Slot contents
+travel as their copies' source and format.
 """
 
 import base64
+import hashlib
+import mimetypes
 
 from ..domain import DomainError
 
+EXTENSIONS = {
+    "text/css": "css",
+    "application/javascript": "js",
+    "text/javascript": "js",
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/svg+xml": "svg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+}
 
-def page_request(site, page_id, connections):
-    page = site.page(page_id)
-    template = page.template
+
+def published_asset_name(data, mime_type):
+    extension = EXTENSIONS.get(mime_type) or (mimetypes.guess_extension(mime_type) or ".bin")[1:]
+    return f"{hashlib.sha256(data).hexdigest()}.{extension}"
+
+
+def page_assets(site, page_id, published=False):
+    """Asset name -> (URL, published file name, bytes) for a page."""
     assets = {}
-    for node in page.assets.nodes:
+    for node in site.page(page_id).assets.nodes:
         name = node.attr["name"]
         if "." in name:
             raise DomainError("invalid_input", f"Asset name {name} cannot contain a dot")
-        encoded = base64.b64encode(node.value).decode("ascii")
-        assets[name] = {"url": f"data:{node.attr['mime_type']};base64,{encoded}"}
+        file_name = published_asset_name(node.value, node.attr["mime_type"])
+        if published:
+            url = "/_assets/" + file_name
+        else:
+            encoded = base64.b64encode(node.value).decode("ascii")
+            url = f"data:{node.attr['mime_type']};base64,{encoded}"
+        assets[name] = (url, file_name, node.value)
+    return assets
+
+
+def page_request(site, page_id, connections, published=False):
+    page = site.page(page_id)
+    template = page.template
+    assets = {
+        name: {"url": url}
+        for name, (url, _file, _data) in page_assets(site, page_id, published).items()
+    }
     slots = {
         node.attr["slot"]: {"format": node.attr["format"], "source": node.value}
         for node in page.slots.nodes

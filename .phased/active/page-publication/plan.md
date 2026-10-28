@@ -51,7 +51,10 @@ Known facts (2026-10-28):
   - Details: a published page object (zip): the page Bag, its rendered HTML, its asset bytes by content address, the digest of the page it was made from; the site index (JSON): for each page its URL, object key and pinned version id (N4-D2), assets by content address, redirects, `sitemap.xml` and `robots.txt` text, maintenance flag, the source version it was published from; read and write with integrity checks.
   - Done: objects and index survive a round trip; a malformed one fails closed.
 
-- [ ] **Phase 3**: Publish
+- [x] **Phase 3**: Publish
+  > Done: `src/kajenn_press/site/publish.py` (`Publisher`: `plan`, `publish`, `index`); `render.py` gives published asset URLs `/_assets/<sha256>.<ext>` (`page_assets`, `published_asset_name`); `store.require_versioning` shared by the source and release buckets; operations `publish_plan` and `publish` (28 site operations, 72 routes), needing the `publish` grant, the lock for `publish`, a key; `create_server(sites={..., "releases": ...})`. Plan states: new, changed, unchanged, removed; changes and removals selected; warnings for empty slots and unplaced contents (N4-D4). Publish saves the source, renders each selected page, writes page objects, then the index pinning their versions; a page that fails to render is reported and keeps its online version; an unselected changed page keeps its version and URL. `tests/site/test_publish.py` (6 tests).
+  > Note: a page whose template points at an asset it lacks fails to render (`unresolved_data`); the plan does not predict it.
+  > Suite: 242 passed, 20 skipped, 0 failed.
   - Run: opus / high
   - Files: new `src/kajenn_press/site/publish.py`, `src/kajenn_press/site/render.py`, `src/kajenn_press/site/service.py`, `src/kajenn_press/application.py`, `tests/site/`, `tests/api/`.
   - Details: a Publish plan lists the pages changed since the last publication (page digest against the index), all selected, with the warnings of N4-D4; Publish saves the source, renders each selected page with real asset URLs (N4-D1) in the worker, writes the page objects (new S3 versions), then the index with the pinned versions, `sitemap.xml` and `robots.txt`; records the audit entry; a page that fails to render is reported and left as it was.

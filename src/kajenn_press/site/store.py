@@ -16,6 +16,21 @@ from .storage import pack, unpack
 MOUNT = "sources"
 
 
+def require_versioning(config, role):
+    """Refuse an S3 bucket whose versioning is not enabled (genro-storage does not ask)."""
+    if config.get("protocol") != "s3":
+        raise DomainError("unavailable", f"The {role} bucket must be S3 with versioning")
+    filesystem = s3fs.S3FileSystem(
+        key=config["access_key"],
+        secret=config["secret_key"],
+        client_kwargs={"endpoint_url": config["endpoint_url"]},
+        skip_instance_cache=True,
+    )
+    state = filesystem.call_s3("get_bucket_versioning", Bucket=config["bucket"])
+    if state.get("Status") != "Enabled":
+        raise DomainError("unavailable", f"S3 versioning is not enabled on the {role} bucket")
+
+
 class SourceStore:
     """One versioned S3 bucket of site sources, written only by the manager."""
 
@@ -28,15 +43,7 @@ class SourceStore:
         self.qualify()
 
     def qualify(self):
-        filesystem = s3fs.S3FileSystem(
-            key=self.config["access_key"],
-            secret=self.config["secret_key"],
-            client_kwargs={"endpoint_url": self.config["endpoint_url"]},
-            skip_instance_cache=True,
-        )
-        state = filesystem.call_s3("get_bucket_versioning", Bucket=self.config["bucket"])
-        if state.get("Status") != "Enabled":
-            raise DomainError("unavailable", "S3 versioning is not enabled on the source bucket")
+        require_versioning(self.config, "source")
 
     def node(self, site_id, version_id=None):
         path = f"{MOUNT}:sites/{site_id}/source.zip"
