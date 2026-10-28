@@ -160,6 +160,39 @@ def indexable(seo):
     return not seo["robots"].startswith("noindex")
 
 
+def head_html(seo, image_path=None):
+    """The SEO tags written into the `head` of the rendered page (N6-D1).
+
+    `image_path` is the site path of the social image; Open Graph wants it absolute, so it
+    is written only when the site has a public origin.
+    """
+
+    def meta(attribute, name, content):
+        return f'<meta {attribute}="{name}" content="{escape(content, quote=True)}">'
+
+    tags = [f"<title>{escape(seo['title'], quote=False)}</title>"]
+    if seo["description"]:
+        tags.append(meta("name", "description", seo["description"]))
+    if seo["canonical"]:
+        tags.append(f'<link rel="canonical" href="{escape(seo["canonical"], quote=True)}">')
+    tags.append(meta("name", "robots", seo["robots"]))
+    tags.append(meta("property", "og:type", "website"))
+    tags.append(meta("property", "og:site_name", seo["site_name"]))
+    tags.append(meta("property", "og:title", seo["social_title"]))
+    if seo["social_description"]:
+        tags.append(meta("property", "og:description", seo["social_description"]))
+    if seo["canonical"]:
+        tags.append(meta("property", "og:url", seo["canonical"]))
+    image = seo["origin"] + image_path if image_path and seo["origin"] else ""
+    if image:
+        tags.append(meta("property", "og:image", image))
+    tags.append(meta("name", "twitter:card", "summary_large_image" if image else "summary"))
+    if seo["json_ld"]:
+        data = json.dumps(json.loads(seo["json_ld"]), ensure_ascii=False).replace("<", "\\u003c")
+        tags.append(f'<script type="application/ld+json">{data}</script>')
+    return "".join(tags)
+
+
 class StartTag(HTMLParser):
     """Attributes of one HTML start tag, in order."""
 

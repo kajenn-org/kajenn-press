@@ -27,6 +27,7 @@ def run_request(request):
             page_data_bag(request["page_data"]),
             request["connections"],
             request["resource_id"],
+            request["head"],
         )
         return {
             "ok": True,

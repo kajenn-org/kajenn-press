@@ -19,7 +19,7 @@ from .published import (
     read_index,
     unpack_page,
 )
-from .render import page_assets, page_request
+from .render import page_assets, page_request, social_image_file
 from .store import require_versioning
 
 MOUNT = "releases"
@@ -126,6 +126,9 @@ class Publisher:
                 failed.append({"page_id": page_id, "diagnostics": result["diagnostics"]})
                 continue
             assets = {name: data for _url, name, data in page_assets(site, page_id, True).values()}
+            image = social_image_file(site, page_id)
+            if image is not None:
+                assets[image[0]] = image[1]
             url = site.node("pages", page_id).attr["url"]
             fingerprint = page_fingerprint(site, page_id)
             refresh = refresh_seconds(site, page_id)

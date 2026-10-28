@@ -3,7 +3,8 @@
 Data given to the template: `page.title` (the page name) and, for each page asset copy,
 `assets.<asset name>.url`: a `data:` URL of its bytes for previews, or the
 content-addressed path `/_assets/<sha256>.<ext>` for publication (N4-D1). Slot contents
-travel as their copies' source and format.
+travel as their copies' source and format. `head` holds the SEO tags the worker writes into
+the page `head` (N6-D1).
 """
 
 import base64
@@ -11,6 +12,7 @@ import hashlib
 import mimetypes
 
 from ..domain import DomainError
+from .seo import effective_seo, head_html
 
 EXTENSIONS = {
     "text/css": "css",
@@ -46,6 +48,15 @@ def page_assets(site, page_id, published=False):
     return assets
 
 
+def social_image_file(site, page_id):
+    """(published file name, bytes) of the page's effective social image, or None."""
+    asset_id = effective_seo(site, page_id)["social_image"]
+    if not asset_id:
+        return None
+    node = site.node("assets", asset_id)
+    return published_asset_name(node.value, node.attr["mime_type"]), node.value
+
+
 def page_request(site, page_id, connections, published=False):
     page = site.page(page_id)
     template = page.template
@@ -58,6 +69,7 @@ def page_request(site, page_id, connections, published=False):
         for node in page.slots.nodes
     }
     data = page.bag.get_item("data")
+    image = social_image_file(site, page_id)
     return {
         "engine": template.attr["engine"],
         "template": template.value.to_tytx(transport="json"),
@@ -66,4 +78,5 @@ def page_request(site, page_id, connections, published=False):
         "page_data": data.to_tytx(transport="json") if len(data) else "",
         "connections": connections,
         "resource_id": page_id,
+        "head": head_html(effective_seo(site, page_id), image and "/_assets/" + image[0]),
     }

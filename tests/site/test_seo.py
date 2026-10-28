@@ -1,13 +1,16 @@
 """SEO in the site model (N6 Phase 1)."""
 
 import json
+import os
 
 import pytest
 from site_support import template_source
 
 from kajenn_press.domain import DomainError
+from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.site.model import Site
 from kajenn_press.site.published import page_fingerprint
+from kajenn_press.site.render import page_request
 from kajenn_press.site.seo import effective_seo, page_images, set_image_alt, set_page_seo
 from kajenn_press.site.storage import site_envelope, site_from_envelope
 
@@ -143,3 +146,50 @@ def test_sources_saved_before_n6_get_an_empty_seo_section():
     site.page(home).bag.pop("seo")
     loaded = site_from_envelope(json.loads(json.dumps(site_envelope(site))))
     assert len(loaded.page(home).seo) == 0
+
+
+SEO_LAYOUT = """
+def build(source, data):
+    doc = source.html(lang="en")
+    head = doc.head()
+    head.meta(charset="utf-8")
+    head.title("^page.title")
+    head.meta(name="description", content="Template description")
+    head.meta(property="og:title", content="Template")
+    doc.body().div(node_label="body", kpress_slot="body")
+"""
+
+
+def test_the_rendered_page_carries_the_seo_in_its_head():
+    worker = RenderWorker(os.environ["KAJENN_RENDER_PYTHON"], timeout=30)
+    site = Site.create("Kajenn")
+    template = site.add_template("T", "gramlot", worker.plain_template("gramlot", SEO_LAYOUT))
+    home = site.add_page("Home", template)
+    image = site.add_asset("share", "media", b"\x89PNG fake", "image/png")
+    set_page_seo(
+        site,
+        home,
+        {
+            "origin": "https://kajenn.org",
+            "title": 'Kajenn & "friends"',
+            "description": "The ASGI framework",
+            "social_image": image,
+            "json_ld": '{"@type": "WebSite", "name": "</script><b>"}',
+        },
+    )
+
+    html = worker.render_page(page_request(site, home, {}, published=True))["html"]
+    head = html[: html.index("</head>")]
+
+    assert head.count("<title>") == 1
+    assert '<title>Kajenn &amp; "friends"</title>' in head
+    assert head.count('name="description"') == 1
+    assert '<meta name="description" content="The ASGI framework">' in head
+    assert '<link rel="canonical" href="https://kajenn.org/">' in head
+    assert '<meta name="robots" content="index, follow">' in head
+    assert head.count('property="og:title"') == 1
+    assert '<meta property="og:url" content="https://kajenn.org/">' in head
+    assert 'property="og:image" content="https://kajenn.org/_assets/' in head
+    assert "</script><b>" not in head
+    assert '"name": "\\u003c/script>\\u003cb>"' in head
+    assert '<meta charset="utf-8"/>' in head
