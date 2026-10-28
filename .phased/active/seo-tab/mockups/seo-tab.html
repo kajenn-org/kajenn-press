@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEO tab mockup</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--soft:#f0eee9;--line:#dcd9d2;--fg:#1f1e1c;--muted:#6b6963;--faint:#9b988f;--accent:#1d5fa5;--accent-bg:#e6f0fb;--warn:#8a5a00;--warn-bg:#fbefd5;--err:#a32020;--ok:#2e6b12;--link:#1a0dab;--green:#006621}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1b1a;--panel:#232322;--soft:#2b2b29;--line:#3a3a37;--fg:#ecebe7;--muted:#a9a69e;--faint:#7c7a73;--accent:#7fb2ec;--accent-bg:#1f3550;--warn:#f0c46a;--warn-bg:#46350f;--err:#f08a8a;--ok:#9bd06b;--link:#8ab4f8;--green:#7fc98f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.app{display:grid;grid-template-rows:auto auto auto 1fr;height:100vh;min-height:680px}
+.bar,.tabs{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.tabs{gap:2px;padding:0 12px}.tab{padding:7px 12px;border-bottom:2px solid transparent;color:var(--muted)}.tab.on{border-color:var(--accent);color:var(--fg)}
+.grow{flex:1}.muted{color:var(--muted)}.faint{color:var(--faint)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:3px 10px;cursor:pointer}button.primary{border-color:var(--accent);color:var(--accent)}
+.work{display:grid;grid-template-columns:220px minmax(0,1fr) 340px;min-height:0}
+.list{border-right:1px solid var(--line);background:var(--panel);overflow:auto;padding:8px}
+.list div{padding:4px 6px;border-radius:6px;display:flex;gap:6px;align-items:center;cursor:pointer}
+.list .sel{background:var(--accent-bg);color:var(--accent)}
+.list .root{font-weight:600}.dot{width:8px;height:8px;border-radius:50%;flex:none}.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.err{background:var(--err)}
+.form{overflow:auto;padding:14px 18px}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 14px;padding:10px 12px;background:var(--panel)}
+legend{color:var(--muted);padding:0 4px}
+.row{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;align-items:start;margin:6px 0}
+.row label{color:var(--muted);padding-top:4px}
+input,textarea,select{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--panel);color:var(--fg)}
+textarea{min-height:52px;resize:vertical}
+.inherit{font-size:12px;color:var(--faint);margin-top:2px}.inherit b{font-weight:500;color:var(--muted)}
+.count{font-size:11px;color:var(--faint);text-align:right}
+.side{border-left:1px solid var(--line);background:var(--soft);overflow:auto;padding:12px}
+.side h4{margin:4px 0 8px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.serp{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.serp .u{color:var(--green);font-size:12px}.serp .t{color:var(--link);font-size:16px;margin:2px 0}.serp .d{color:var(--muted);font-size:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.card .img{height:120px;background:linear-gradient(135deg,var(--accent-bg),var(--soft));display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.card .c{padding:8px 10px}.card .h{font-size:11px;color:var(--faint);text-transform:uppercase}.card .t{font-weight:600;margin:2px 0}.card .d{font-size:12px;color:var(--muted)}
+.checks div{display:flex;gap:6px;padding:3px 0}.checks .w{color:var(--warn)}.checks .e{color:var(--err)}.checks .o{color:var(--ok)}
+@media (max-width:1100px){.app{height:auto}.work{grid-template-columns:180px minmax(0,1fr)}.side{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}}
+.note{font-size:12px;background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:6px 8px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar"><b>kajenn.org</b><span class="muted">· editing as operator · saved 10:42</span><span class="grow"></span><button>Versions</button><button class="primary">Save</button></div>
+  <div class="tabs"><span class="tab">Visual editor</span><span class="tab on">SEO</span><span class="tab">Published site</span></div>
+  <div class="bar"><span class="muted">Site checks:</span><span style="color:var(--err)">1 broken link</span><span style="color:var(--warn)">2 missing descriptions · 1 image without alt · 1 duplicate title</span><span class="grow"></span><span class="faint">Publish shows the same list</span></div>
+  <div class="work">
+    <div class="list">
+      <div class="root sel" data-p="home"><span class="dot warn"></span>Home <span class="faint">/</span></div>
+      <div data-p="about"><span class="dot ok"></span>About <span class="faint">/about/</span></div>
+      <div data-p="team"><span class="dot err"></span>Team <span class="faint">/about/team/</span></div>
+      <div data-p="history"><span class="dot warn"></span>History <span class="faint">/about/history/</span></div>
+      <div data-p="contacts"><span class="dot warn"></span>Contacts <span class="faint">/contacts/</span></div>
+      <div data-p="nf"><span class="dot ok"></span>Page not found <span class="faint">/404/</span></div>
+    </div>
+    <div class="form">
+      <fieldset id="defaults">
+        <legend>Site defaults · root page only</legend>
+        <div class="row"><label>Site name</label><input value="Kajenn"></div>
+        <div class="row"><label>Public origin</label><input value="https://kajenn.org"></div>
+        <div class="row"><label>Organisation</label><input value="Softwell"></div>
+        <div class="row"><label>Sharing image</label><select><option>kajenn-mark.png</option><option>— none —</option></select></div>
+        <div class="row"><label>Robots</label><select><option>index, follow</option><option>noindex (whole site)</option></select></div>
+      </fieldset>
+      <fieldset>
+        <legend id="pagelegend">Home</legend>
+        <div class="row"><label>Public URL</label><div><input id="url" value="/"><div class="inherit">Changing the URL adds a 301 redirect from the old one.</div></div></div>
+        <div class="row"><label>Title</label><div><input id="title" value="Kajenn — the ASGI framework of the Genro family"><div class="count">47 / 60</div></div></div>
+        <div class="row"><label>Description</label><div><textarea id="desc" placeholder="empty"></textarea><div class="inherit">Empty: no root value. <b>Missing description</b> is reported.</div></div></div>
+        <div class="row"><label>Canonical</label><div><input placeholder="empty"><div class="inherit">Empty: <b>https://kajenn.org/</b> (public origin + URL)</div></div></div>
+        <div class="row"><label>Robots</label><div><select><option>— root: index, follow —</option><option>index, follow</option><option>noindex</option><option>noindex, nofollow</option></select></div></div>
+      </fieldset>
+      <fieldset>
+        <legend>Social share</legend>
+        <div class="row"><label>Title</label><div><input placeholder="empty"><div class="inherit">Empty: the page title</div></div></div>
+        <div class="row"><label>Description</label><div><textarea placeholder="empty"></textarea><div class="inherit">Empty: the page description</div></div></div>
+        <div class="row"><label>Image</label><div><select><option>— root: kajenn-mark.png —</option><option>hero.jpg</option></select></div></div>
+      </fieldset>
+      <fieldset>
+        <legend>Images and structured data</legend>
+        <div class="row"><label>Alt texts</label><div>
+          <div>hero.jpg <span class="faint">· slot hero ← Welcome</span> <input value="People at the Genro meetup" style="margin-top:2px"></div>
+          <div style="margin-top:6px">diagram.svg <span class="faint">· slot body ← Intro</span> <input placeholder="missing" style="margin-top:2px;border-color:var(--warn)"></div>
+          <div class="inherit">Editing an alt text changes this page's copy of the content.</div></div></div>
+        <div class="row"><label>JSON-LD</label><textarea style="font-family:ui-monospace,monospace;font-size:12px">{"@type": "WebSite", "name": "Kajenn"}</textarea></div>
+      </fieldset>
+    </div>
+    <div class="side">
+      <h4>Search result</h4>
+      <div class="serp"><div class="u">https://kajenn.org</div><div class="t" id="st">Kajenn — the ASGI framework of the Genro family</div><div class="d" id="sd">Kajenn serves applications, REST and MCP from one router… <span class="faint">(no description: the search engine picks text from the page)</span></div></div>
+      <h4>Social share</h4>
+      <div class="card"><div class="img">kajenn-mark.png</div><div class="c"><div class="h">kajenn.org</div><div class="t" id="ct">Kajenn — the ASGI framework of the Genro family</div><div class="d">No description</div></div></div>
+      <h4>Checks for this page</h4>
+      <div class="checks">
+        <div class="w">▲ Missing description</div>
+        <div class="w">▲ diagram.svg has no alt text</div>
+        <div class="o">✓ Title unique</div>
+        <div class="o">✓ Internal links resolve</div>
+      </div>
+      <div class="note">Team: the link <b>/about/staff/</b> leads nowhere.</div>
+    </div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+$$('.list [data-p]').forEach(p=>p.onclick=()=>{$$('.list [data-p]').forEach(x=>x.classList.toggle('sel',x===p));$('#pagelegend').textContent=p.childNodes[1].textContent.trim();$('#defaults').style.display=p.dataset.p==='home'?'block':'none';$('#url').value=p.querySelector('.faint').textContent});
+$('#title').oninput=e=>{$('#st').textContent=e.target.value;$('#ct').textContent=e.target.value;e.target.nextElementSibling.textContent=e.target.value.length+' / 60'};
+</script>
+</body>
+</html>
