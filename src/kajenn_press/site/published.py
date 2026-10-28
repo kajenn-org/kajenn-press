@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 from ..catalog.errors import IntegrityError
 from ..catalog.filesystem import encode
+from .seo import effective_seo
 from .storage import FIXED_TIME
 
 SCHEMA = 1
@@ -30,9 +31,20 @@ def sha256(raw):
 
 
 def page_fingerprint(site, page_id):
-    """What makes a page change for Publish: its name, its URL and its whole Bag."""
+    """What makes a page change for Publish: name, URL, whole Bag and effective SEO.
+
+    The effective SEO also follows the root defaults, so changing them changes every page
+    that inherits them.
+    """
     node = site.node("pages", page_id)
-    raw = encode([node.attr["name"], node.attr["url"], node.value.to_tytx(transport="json")])
+    raw = encode(
+        [
+            node.attr["name"],
+            node.attr["url"],
+            node.value.to_tytx(transport="json"),
+            effective_seo(site, page_id),
+        ]
+    )
     return sha256(raw)
 
 

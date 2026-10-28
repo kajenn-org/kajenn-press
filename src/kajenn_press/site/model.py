@@ -33,7 +33,7 @@ SECTIONS = (
     "redirects",
     "audit",
 )
-PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data")
+PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data", "seo")
 
 
 def new_id():
@@ -132,6 +132,10 @@ class Page:
     @property
     def assets(self):
         return self.bag.get_item("assets")
+
+    @property
+    def seo(self):
+        return self.bag.get_item("seo")
 
 
 class Site:

@@ -279,6 +279,30 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_seo_set(
+        self, site_id: str, key: str, page_id: str, fields: dict, _request=None
+    ) -> dict:
+        """Set SEO fields of a page; an empty value clears the field (root page: site defaults)."""
+        return self._site(
+            _request, "page_seo_set", site_id=site_id, key=key, page_id=page_id, fields=fields
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_alt_set(
+        self, site_id: str, key: str, page_id: str, image: str, alt: str, _request=None
+    ) -> dict:
+        """Set the alt text of one image in this page's copy (a local change of the copy)."""
+        return self._site(
+            _request,
+            "page_alt_set",
+            site_id=site_id,
+            key=key,
+            page_id=page_id,
+            image=image,
+            alt=alt,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_asset_add(
         self, site_id: str, key: str, page_id: str, asset_id: str, _request=None
     ) -> dict:

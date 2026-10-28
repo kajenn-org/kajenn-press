@@ -22,6 +22,7 @@ from .model import Site, new_id
 from .published import page_fingerprint
 from .receipts import Receipts
 from .render import page_request
+from .seo import effective_seo, page_images, set_image_alt, set_page_seo, stored_seo
 from .slots import template_slots
 from .storage import WorkingCopy, unpack
 
@@ -41,6 +42,8 @@ CHANGES = {
     "asset_add",
     "page_add",
     "page_url_set",
+    "page_seo_set",
+    "page_alt_set",
     "folder_add",
     "tree_move",
     "page_asset_add",
@@ -333,6 +336,9 @@ class SiteService:
                     "changed": entry is None
                     or entry["fingerprint"] != page_fingerprint(site, node.label),
                     "outdated": bool(site.outdated_copies(node.label)),
+                    "seo": stored_seo(site, node.label),
+                    "seo_effective": effective_seo(site, node.label),
+                    "images": page_images(site, node.label),
                 }
             )
         return {
@@ -415,6 +421,14 @@ class SiteService:
     def _page_url_set(self, identity, site, page_id, url):
         site.set_page_url(page_id, url)
         return {"page_id": page_id, "url": url}
+
+    def _page_seo_set(self, identity, site, page_id, fields):
+        set_page_seo(site, page_id, fields)
+        return {"page_id": page_id, "seo": stored_seo(site, page_id)}
+
+    def _page_alt_set(self, identity, site, page_id, image, alt):
+        set_image_alt(site, page_id, image, alt)
+        return {"page_id": page_id, "image": image}
 
     def _page_asset_add(self, identity, site, page_id, asset_id):
         return {"copy": site.add_page_asset(page_id, asset_id)}
