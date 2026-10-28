@@ -38,6 +38,7 @@ CHANGES = {
     "content_save",
     "asset_add",
     "page_add",
+    "page_url_set",
     "page_asset_add",
     "slot_assign",
     "copies_update",
@@ -226,6 +227,7 @@ class SiteService:
                 {
                     "id": node.label,
                     "name": page.name,
+                    "url": node.attr["url"],
                     "template_id": page.template.attr["original_id"],
                     "slots": {n.attr["slot"]: n.attr["original_id"] for n in page.slots.nodes},
                     "unplaced": [n.label for n in page.unplaced.nodes],
@@ -239,6 +241,7 @@ class SiteService:
             "contents": items("contents"),
             "assets": items("assets"),
             "pages": pages,
+            "redirects": site.redirects(),
         }
 
     def _site_export(self, identity, site_id, version_id=None):
@@ -295,6 +298,10 @@ class SiteService:
 
     def _page_add(self, identity, site, name, template_id):
         return {"page_id": site.add_page(name, template_id)}
+
+    def _page_url_set(self, identity, site, page_id, url):
+        site.set_page_url(page_id, url)
+        return {"page_id": page_id, "url": url}
 
     def _page_asset_add(self, identity, site, page_id, asset_id):
         return {"copy": site.add_page_asset(page_id, asset_id)}

@@ -844,6 +844,13 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def page_url_set(self, site_id: str, key: str, page_id: str, url: str, _request=None) -> dict:
+        """Move a page to a new URL path; the old path redirects to it."""
+        return self._site(
+            _request, "page_url_set", site_id=site_id, key=key, page_id=page_id, url=url
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_asset_add(
         self, site_id: str, key: str, page_id: str, asset_id: str, _request=None
     ) -> dict:

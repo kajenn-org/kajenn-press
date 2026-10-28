@@ -35,7 +35,9 @@ Known facts (2026-10-28):
 
 ## Work Plan
 
-- [ ] **Phase 1**: Page URLs and redirects in the site model
+- [x] **Phase 1**: Page URLs and redirects in the site model
+  > Done: every page has a `url` attribute: the first page `/`, the others a slug of their name (accents transliterated to ASCII), unique among pages and redirect sources; new site section `redirects`; `Site.set_page_url` validates the path (starts with `/`, no query, fragment, spaces, `//` or dot segments), refuses a path of another page, records old -> new, retargets redirects that pointed at the old path and drops a redirect whose path is taken back; operation `page_url_set` (26 site operations); `site_read` returns URLs and redirects. `tests/site/test_page_urls.py` (13 tests).
+  > Suite: 228 passed, 20 skipped (the new Docker test is skipped without `KAJENN_DOCKER`), 0 failed.
   - Run: opus / high
   - Files: `src/kajenn_press/site/model.py`, `src/kajenn_press/site/service.py`, `src/kajenn_press/application.py`, `tests/site/`.
   - Details: every page has a URL path (the first page `/`), unique in the site; changing it records a redirect from the old path; a redirect never points at itself and chains collapse; one operation to set a page URL.
