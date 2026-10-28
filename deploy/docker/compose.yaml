@@ -30,6 +30,7 @@ services:
     entrypoint: ["sh", "/deploy/storage-init.sh"]
     volumes:
       - ./storage-init.sh:/deploy/storage-init.sh:ro
+      - ./child-policy.json:/deploy/child-policy.json:ro
       - rustfs-secrets:/rustfs:ro
       - websites-secrets:/websites:ro
       - child-secrets:/child:ro
@@ -51,6 +52,11 @@ services:
       RELEASE_S3_BUCKET: releases
       RELEASE_S3_ACCESS_FILE: /secrets/storage_access
       RELEASE_S3_SECRET_FILE: /secrets/storage_secret
+      # Site sources: a versioned bucket only websites can read (N3).
+      SOURCES_S3_ENDPOINT: http://rustfs:9000
+      SOURCES_S3_BUCKET: sources
+      SOURCES_S3_ACCESS_FILE: /secrets/storage_access
+      SOURCES_S3_SECRET_FILE: /secrets/storage_secret
     ports:
       - "127.0.0.1:8875:8875"
     volumes:

@@ -36,6 +36,22 @@ def release_storage():
     return config
 
 
+def site_sources():
+    """The versioned site source bucket named by SOURCES_S3_*, or None when it is not set."""
+    if not os.environ.get("SOURCES_S3_BUCKET"):
+        return None
+    return {
+        "root": "/data/sites",
+        "sources": {
+            "protocol": "s3",
+            "bucket": os.environ["SOURCES_S3_BUCKET"],
+            "endpoint_url": os.environ["SOURCES_S3_ENDPOINT"],
+            "access_key": Path(os.environ["SOURCES_S3_ACCESS_FILE"]).read_text().strip(),
+            "secret_key": Path(os.environ["SOURCES_S3_SECRET_FILE"]).read_text().strip(),
+        },
+    }
+
+
 class OperatorUsers(UserStore):
     """One operator, `operator`, with the generated password in /secrets/operator_password."""
 
@@ -74,6 +90,7 @@ def main():
             "release_storage": release_storage(),
         },
         administration={"origin": management_origin, "users": {"store_class": OperatorUsers}},
+        sites=site_sources(),
     )
     # Scheme and client address from X-Forwarded-* only when sent by these addresses (a reverse proxy).
     uvicorn.run(

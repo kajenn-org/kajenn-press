@@ -125,6 +125,41 @@ cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/
 
 Sign in at `https://kpress.genro.com/admin/` as `operator`.
 
+## 6. Site sources
+
+Site sources (N3) live in a separate private bucket, `kpress-sources`, with S3
+versioning enabled: every save is a version. Without `KPRESS_SOURCES_BUCKET` the
+site operations answer `unavailable` and the rest of kpress works as before.
+
+1. Create the bucket `kpress-sources` in the Hetzner console, in the same project
+   and location as `kpress-releases` (Falkenstein), private.
+2. Enable versioning on it from the websites container, which already holds the
+   project keys and s3fs. The command prints the state read back:
+
+```bash
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml exec -T websites python -c "
+import os, s3fs
+from pathlib import Path
+fs = s3fs.S3FileSystem(key=Path(os.environ['RELEASE_S3_ACCESS_FILE']).read_text().strip(), secret=Path(os.environ['RELEASE_S3_SECRET_FILE']).read_text().strip(), client_kwargs={'endpoint_url': os.environ['RELEASE_S3_ENDPOINT']})
+fs.call_s3('put_bucket_versioning', Bucket='kpress-sources', VersioningConfiguration={'Status': 'Enabled'})
+print(fs.call_s3('get_bucket_versioning', Bucket='kpress-sources').get('Status'))"
+```
+
+   Expected: `Enabled`. Versioning cannot be turned off afterwards, only suspended.
+3. Add the bucket to the server `.env` and update:
+
+```bash
+printf 'KPRESS_SOURCES_BUCKET=kpress-sources\n' >> /opt/kpress/deploy/docker/.env
+cd /opt/kpress && git pull --ff-only && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build
+```
+
+   At startup websites refuses a source bucket whose versioning is not enabled.
+
+Object Storage keys are valid for every bucket of the project, so these keys can read
+the sources. They must never be given to a child: when published sites are served
+from this host, children need keys limited to the release bucket. Whether Hetzner
+offers bucket-limited keys is not verified.
+
 ## Update
 
 ```bash

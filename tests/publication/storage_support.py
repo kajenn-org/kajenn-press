@@ -45,3 +45,18 @@ def bucket_objects(config):
     fs = filesystem()
     keys = fs.find(config["bucket"])
     return {key.split("/", 1)[1]: fs.cat_file(key) for key in keys}
+
+
+def versioned_bucket():
+    """A fresh bucket with S3 versioning enabled, as a Genro Storage mount configuration."""
+    config = release_bucket()
+    filesystem().call_s3(
+        "put_bucket_versioning",
+        Bucket=config["bucket"],
+        VersioningConfiguration={"Status": "Enabled"},
+    )
+    return config
+
+
+def versioning_status(bucket):
+    return filesystem().call_s3("get_bucket_versioning", Bucket=bucket).get("Status")

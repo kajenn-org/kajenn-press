@@ -87,6 +87,14 @@ docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s
 
 websites starts only if the release storage qualification accepts the bucket.
 
+## Site sources
+
+websites keeps site sources (N3) in a versioned S3 bucket named by `SOURCES_S3_*`. With
+RustFS, `storage-init` creates the bucket `sources` and enables versioning on it; the
+child's user can read only `releases` (`child-policy.json`). With an external bucket,
+`KPRESS_SOURCES_BUCKET` in `.env` names it (see `HETZNER.md`, step 6); when it is empty, and
+with the shared volume, the site operations answer `unavailable`.
+
 ## Shared volume instead of RustFS
 
 `compose.volume.yaml` replaces RustFS with a Docker volume, `releases`: websites
@@ -133,3 +141,21 @@ over `deploy/docker/.env`. `test_proxy_origin_contract.py` starts the manager wi
 the demo profile on an `https` origin and checks that only a forwarded `https`
 request with the configured `Host` reaches the administration. Never run these tests
 on a server with a real installation: they delete its volumes.
+
+## Environment of the full test suite
+
+Three interpreters and one S3 endpoint, all outside the repository:
+
+- `KAJENN_RENDER_PYTHON`: an interpreter with `pip install -e '.[render]' -c constraints/render-qualified.txt`. Editable, so the worker sees the current source.
+- `KAJENN_APP_PYTHON`: an interpreter with `pip install '.[release-s3]'`, not editable and without the render packages; reinstall it after changing `src/`.
+- `KAJENN_RELEASE_S3`: a private JSON file (mode 600) with `endpoint_url`, `access_key` and `secret_key` of a disposable S3 server. Each test creates its own bucket; the site source tests enable S3 versioning on theirs through `PutBucketVersioning`.
+
+A disposable RustFS for that file:
+
+```bash
+docker run -d --name kajenn-press-test-rustfs -p 127.0.0.1:19100:9000 -e RUSTFS_ACCESS_KEY=<access> -e RUSTFS_SECRET_KEY=<secret> -e RUSTFS_VOLUMES=/data rustfs/rustfs:1.0.3
+```
+
+```bash
+.venv/bin/python -m pytest -q tests
+```
