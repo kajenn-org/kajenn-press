@@ -83,7 +83,9 @@ Known facts (2026-10-28):
   - Details: an operation sets and clears maintenance (a flag in a new index); the server answers maintenance pages with 503 and `retry-after`; the Docker child serves the new layout from the versioned release bucket; the release bucket in RustFS gets versioning; the Mac demo publishes the Kajenn Press example site from `examples/kajenn_press_site/layout.py`.
   - Done: the Docker suite passes with a site published page by page, maintenance on and off, a page rollback served.
 
-- [ ] **Phase 7**: Hetzner steps
+- [x] **Phase 7**: Hetzner steps
+  > Done: `HETZNER.md` step 6 enables versioning on both `kpress-sources` and `kpress-releases` and says websites refuses either unversioned; new step 7 describes serving published sites from the host (not applied: bucket-limited read-only keys with version reads are needed and not verified for Hetzner). `README.md` section on the demo site publisher and site server.
+  > Pending owner actions: HETZNER.md steps 6 (and 7 when public serving is decided).
   - Run: opus / high
   - Files: `deploy/docker/HETZNER.md`, `deploy/docker/README.md`.
   - Details: enable versioning on `kpress-releases`; how a Kajenn server on the host serves a published site (left unapplied until public serving from the host is decided).
