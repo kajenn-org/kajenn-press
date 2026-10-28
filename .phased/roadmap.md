@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N3 (site source zip and S3 versioning), which needs bucket versioning enabled first.
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N4 (per-page publication and Kajenn serving).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -53,7 +53,9 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Objective: the page as a Bag holding a template Bag, a contents Bag and assets, able to produce its static HTML.
 - Delivers: the `kpress_slot` contract on hosting source nodes (`True` or a unique name); templates on Library, site and page level, linked or independent; copies carrying the original id; the Update operation with the list of affected pages and differences; slot kinds HTML, Markdown, dynamic iframe, resolver.
 
-### N3: Site source zip and S3 versioning
+### N3 (completed 2026-10-28, branch feat/site-source): Site source zip and S3 versioning
+
+- Result: `src/kajenn_press/site/` store, lock, receipts, audit and `SiteService`; 25 site operations on REST and MCP; Docker composition with a versioned `sources` bucket. Archived plan: [site-source](done/site-source/plan.md). Pending owner actions on Hetzner: `deploy/docker/HETZNER.md` step 6.
 
 - Objective: one zipped source Bag per site, unpacked for editing and zipped again on save.
 - Delivers: S3 versions per deliberate save; restore of a previous source; one editor at a time per site; export and import of a complete site as one zip; starting sites kept in Library.

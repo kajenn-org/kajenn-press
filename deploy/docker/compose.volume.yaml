@@ -19,6 +19,8 @@ services:
   websites:
     environment:
       RELEASE_STORAGE: local
+      # Site sources need a versioned S3 bucket; without RustFS the site operations are off.
+      SOURCES_S3_BUCKET: ""
     volumes:
       - releases:/releases
     depends_on: !override

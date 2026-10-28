@@ -82,7 +82,10 @@ Known facts (2026-10-27):
   - Details: export the current source as one zip; import a zip as a new site (new site id, same content); starting sites kept as zips in the Library; a new site from a starting site.
   - Done: export then import gives a site with the same pages, contents and templates; a new site starts from a starting site.
 
-- [ ] **Phase 7**: Deployment configuration
+- [x] **Phase 7**: Deployment configuration
+  > Done (Mac and runbook): `websites.py` passes `sites=` from `SOURCES_S3_*` (off when the bucket is empty); `compose.yaml` points websites at the RustFS bucket `sources`; `storage-init.sh` creates `sources`, enables its versioning and gives the child the policy `releases-read` (`child-policy.json`, `releases` only) instead of the global `readonly`; `compose.external-s3.yaml` reads `KPRESS_SOURCES_BUCKET`; `compose.volume.yaml` turns sources off; `HETZNER.md` step 6 and a `README.md` section. New Docker test: websites creates, saves and restores a site through MCP (4 versions) and the child's credentials are denied on `sources` but list `releases`. Docker suite: 12 passed.
+  > Deviation: bucket and versioning setup on RustFS stays in the `storage-init` container, which already runs `minio/mc` for users; the image is cached on the Mac but no longer pullable on a clean machine (unchanged since the kpress deployment).
+  > Pending owner actions on Hetzner (HETZNER.md step 6): create `kpress-sources`, enable its versioning, set `KPRESS_SOURCES_BUCKET`, update. Hetzner project keys read every bucket, so they must never reach a child.
   - Run: opus / high
   - Files: `deploy/docker/compose.yaml`, `deploy/docker/compose.external-s3.yaml`, `deploy/docker/websites.py`, `deploy/docker/HETZNER.md`, `tests/docker/`.
   - Details: the manager receives the source store configuration (bucket per N3-D1, credentials from secrets); the RustFS profile creates and versions the source bucket without `minio/mc`; the Hetzner runbook adds enabling versioning and the source bucket.

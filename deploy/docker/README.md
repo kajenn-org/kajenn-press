@@ -87,6 +87,14 @@ docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s
 
 websites starts only if the release storage qualification accepts the bucket.
 
+## Site sources
+
+websites keeps site sources (N3) in a versioned S3 bucket named by `SOURCES_S3_*`. With
+RustFS, `storage-init` creates the bucket `sources` and enables versioning on it; the
+child's user can read only `releases` (`child-policy.json`). With an external bucket,
+`KPRESS_SOURCES_BUCKET` in `.env` names it (see `HETZNER.md`, step 6); when it is empty, and
+with the shared volume, the site operations answer `unavailable`.
+
 ## Shared volume instead of RustFS
 
 `compose.volume.yaml` replaces RustFS with a Docker volume, `releases`: websites

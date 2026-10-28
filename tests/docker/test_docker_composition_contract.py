@@ -133,6 +133,28 @@ def mc(hosts, *arguments, stdin=None, mount=None):
     )
 
 
+def test_site_sources_are_versioned_and_hidden_from_the_child(composition, tmp_path):
+    """N3: websites saves and restores a site source; the child cannot read sources."""
+    mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
+    site = mcp("site_new", key="docker-site", name="Docker")["site_id"]
+    mcp("content_add", site_id=site, key="c", name="Hero", format="html", text="<p>hi</p>")
+    first = mcp("site_save", site_id=site)["version_id"]
+    mcp("content_add", site_id=site, key="d", name="Later", format="html", text="<p>x</p>")
+    mcp("site_save", site_id=site)
+    mcp("site_restore", site_id=site, version_id=first)
+
+    assert len(mcp("site_versions", site_id=site)) == 4
+    assert [c["name"] for c in mcp("site_read", site_id=site)["contents"]] == ["Hero"]
+    hosts = {
+        "MC_HOST_c": "http://{}:{}@rustfs:9000".format(
+            secret("child", "storage_access"), secret("child", "storage_secret")
+        )
+    }
+    denied = mc(hosts, "ls", "--recursive", "c/sources/")
+    assert denied.returncode != 0 and "Access Denied" in denied.stdout + denied.stderr
+    assert mc(hosts, "ls", "c/releases/").returncode == 0
+
+
 def test_update_and_rollback_reach_the_child_within_the_cache_interval(composition):
     """Done criterion: an update and a rollback in websites reach the child within its cache."""
     update_and_rollback()
