@@ -435,6 +435,11 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "page_check", site_id=site_id, page_id=page_id)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def seo_check(self, site_id: str, page_id: str | None = None, _request=None) -> dict:
+        """SEO problems of one page or of the whole site: titles, descriptions, alt, links."""
+        return self._site(_request, "seo_check", site_id=site_id, page_id=page_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_render(self, site_id: str, page_id: str, _request=None) -> dict:
         """Static HTML of a page, rendered in the worker."""
         return self._site(_request, "page_render", site_id=site_id, page_id=page_id)

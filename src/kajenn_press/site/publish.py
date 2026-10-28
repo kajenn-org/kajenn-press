@@ -22,7 +22,7 @@ from .published import (
     unpack_page,
 )
 from .render import page_assets, page_request, social_image_file
-from .seo import effective_seo, indexable
+from .seo import effective_seo, indexable, seo_check
 from .store import require_versioning
 
 MOUNT = "releases"
@@ -80,6 +80,7 @@ class Publisher:
         """Each page with its state against the index online; changes are selected."""
         index = self.index(site.site_id) or {"pages": {}}
         online = index["pages"]
+        problems = seo_check(site)
         plan = []
         for node in site.section("pages").nodes:
             page_id = node.label
@@ -94,6 +95,7 @@ class Publisher:
             check = site.page_check(page_id)
             warnings = [f"empty slot {name}" for name in check["empty_slots"]]
             warnings += [f"unplaced content {key}" for key in check["unplaced"]]
+            warnings += [p["message"] for p in problems if p["page_id"] == page_id]
             plan.append(
                 {
                     "page_id": page_id,

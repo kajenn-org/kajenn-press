@@ -22,7 +22,14 @@ from .model import Site, new_id
 from .published import page_fingerprint
 from .receipts import Receipts
 from .render import page_request
-from .seo import effective_seo, page_images, set_image_alt, set_page_seo, stored_seo
+from .seo import (
+    effective_seo,
+    page_images,
+    seo_check,
+    set_image_alt,
+    set_page_seo,
+    stored_seo,
+)
 from .slots import template_slots
 from .storage import WorkingCopy, unpack
 
@@ -34,6 +41,7 @@ READS = {
     "template_switch_plan",
     "page_check",
     "page_render",
+    "seo_check",
 }
 CHANGES = {
     "template_add",
@@ -373,6 +381,9 @@ class SiteService:
 
     def _page_check(self, identity, site_id, page_id):
         return self.site(identity, site_id).page_check(page_id)
+
+    def _seo_check(self, identity, site_id, page_id=None):
+        return seo_check(self.site(identity, site_id), page_id)
 
     def _page_render(self, identity, site_id, page_id):
         if self.worker is None:

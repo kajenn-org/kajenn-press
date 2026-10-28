@@ -48,7 +48,8 @@ Entry: main `594e755`; the 35 site operations; page Bag sections `template`, `sl
   - Details: the site index carries per page `indexable` and the root `robots`; `sitemap.xml` lists only indexable pages; `robots.txt` disallows everything when the root robots is `noindex`; schema bump (shared decision).
   - Done: a `noindex` page is served but missing from the sitemap; a site-wide `noindex` gives `Disallow: /`.
 
-- [ ] **Phase 4**: SEO checks
+- [x] **Phase 4**: SEO checks
+  > Done: `seo.seo_check` and operation `seo_check` (38 site operations): `missing_origin` (root page), `duplicate_title` and `missing_description` (indexable pages), `iframe_without_fallback` (indexable pages), `missing_alt`, `broken_link` (template `a` nodes, HTML and Markdown links of placed contents; relative links resolved against the page URL; page URLs, redirect sources, a missing trailing slash, `/_assets/`, `sitemap.xml` and `robots.txt` resolve). A missing title is not a check: the effective title falls back to the page name. The publish plan adds the messages to each page's warnings; Publish never refuses (N6-D5). `tests/site/test_seo_check.py` (7 tests); `test_warnings_are_listed_but_do_not_block` now also expects "Missing description". Main suite: 164 passed, 11 skipped.
   - Files: `src/kajenn_press/site/seo.py`, `model.py`, `publish.py`, `service.py`, `application.py`, `tests/site/`.
   - Details: operation `seo_check` (site-wide and per page): missing title (effective title equal to the page name is accepted), duplicate titles among indexable pages, missing description, images without alt (slot copies and template), internal links whose path is neither a page URL, a redirect source nor an asset, indexable pages with a `kpress_iframe` slot without fallback, empty origin. The publish plan adds them to each page's warnings (N6-D5).
   - Done: each check has a test that triggers it and one that clears it.

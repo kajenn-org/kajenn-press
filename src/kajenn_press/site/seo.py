@@ -15,9 +15,10 @@ import json
 import re
 from html import escape
 from html.parser import HTMLParser
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from ..domain import DomainError
+from .slots import template_slots
 
 ROOT_URL = "/"
 NOT_FOUND_URL = "/404/"
@@ -288,3 +289,88 @@ def set_image_alt(site, page_id, image, alt):
         copy.value = html_with_alt(copy.value, int(position[4:]), alt)
     else:
         copy.value = markdown_with_alt(copy.value, int(position[8:]), alt)
+
+
+HTML_LINK = re.compile(r"<a\b[^>]*>", re.IGNORECASE)
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]\n]*\]\(([^)\s]+)[^)]*\)")
+SERVED_PATHS = ("/sitemap.xml", "/robots.txt")
+
+
+def page_links(site, page_id):
+    """(where, href) of the links of a page: template `a` nodes and placed contents."""
+    page = site.page(page_id)
+    links = [
+        ("template", node.attr["href"])
+        for _path, node in page.template.value.query("#p,#n", deep=True)
+        if node.node_tag == "a"
+        and isinstance(node.attr.get("href"), str)
+        and not node.attr["href"].startswith("^")
+    ]
+    for node in page.slots.nodes:
+        where = "slot " + node.attr["slot"]
+        for match in HTML_LINK.finditer(node.value):
+            href = dict(StartTag(match.group(0)).attrs).get("href")
+            if href:
+                links.append((where, href))
+        if node.attr["format"] == "markdown":
+            links += [(where, match.group(1)) for match in MARKDOWN_LINK.finditer(node.value)]
+    return links
+
+
+def internal_path(page_url, href):
+    """The site path a link leads to, or None for external, fragment and scheme links."""
+    parts = urlsplit(href)
+    if parts.scheme or parts.netloc or not parts.path:
+        return None
+    return urljoin(page_url, parts.path)
+
+
+def seo_check(site, page_id=None):
+    """SEO problems of one page or of the whole site, as {page_id, code, message}."""
+    pages = [node.label for node in site.section("pages").nodes]
+    effective = {pid: effective_seo(site, pid) for pid in pages}
+    urls = set(site.page_urls())
+    redirects = set(site.redirects())
+    titles = {}
+    for pid in pages:
+        if indexable(effective[pid]):
+            titles.setdefault(effective[pid]["title"], []).append(pid)
+    problems = []
+
+    def report(pid, code, message):
+        problems.append({"page_id": pid, "code": code, "message": message})
+
+    root_id = root_page_id(site)
+    for pid in pages if page_id is None else [site.page(page_id).page_id]:
+        seo = effective[pid]
+        if pid == root_id and not seo["origin"]:
+            report(
+                pid, "missing_origin", "No public origin: canonical URLs and og:image are left out"
+            )
+        if indexable(seo):
+            if len(titles[seo["title"]]) > 1:
+                report(pid, "duplicate_title", f"Title also used by another page: {seo['title']}")
+            if not seo["description"]:
+                report(pid, "missing_description", "Missing description")
+            filled = {node.attr["slot"] for node in site.page(pid).slots.nodes}
+            for slot in template_slots(site.page(pid).template.value):
+                if slot.kind == "iframe" and slot.name not in filled:
+                    report(
+                        pid,
+                        "iframe_without_fallback",
+                        f"Iframe slot {slot.name} has no fallback content",
+                    )
+        for image in page_images(site, pid):
+            if image["alt"] is None:
+                report(
+                    pid,
+                    "missing_alt",
+                    f"Image {image['src']} in the {image['where']} has no alt text",
+                )
+        for where, href in page_links(site, pid):
+            path = internal_path(seo["url"], href)
+            if path is None or path.startswith("/_assets/") or path in SERVED_PATHS:
+                continue
+            if path not in urls and path not in redirects and path + "/" not in urls:
+                report(pid, "broken_link", f"The link {href} in the {where} leads nowhere")
+    return problems

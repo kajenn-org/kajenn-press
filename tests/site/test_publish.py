@@ -194,6 +194,6 @@ def test_warnings_are_listed_but_do_not_block(service):
     logo = run(service, "site_read", site_id=site)["assets"][0]["id"]
     run(service, "page_asset_add", site_id=site, key="ea", page_id=extra["page_id"], asset_id=logo)
     plan = {p["page_id"]: p for p in run(service, "publish_plan", site_id=site)}
-    assert plan[extra["page_id"]]["warnings"] == ["empty slot body"]
+    assert plan[extra["page_id"]]["warnings"] == ["empty slot body", "Missing description"]
     result = run(service, "publish", site_id=site, key="p", selected=list(plan))
     assert result["failed"] == []
