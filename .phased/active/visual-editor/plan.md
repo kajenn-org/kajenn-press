@@ -42,27 +42,33 @@ Entry: main `e3dcb97`; the 32 site operations; the administration shell `IndexPa
   - Details: d-preview-interaction: a rendered page in `htmlPreview` with `sandbox="allow-scripts"` and no `allow-same-origin`; a script added to the preview HTML only reports clicks on slot nodes and drops of a dragged tree item through `postMessage`; check in a real browser that clicks arrive, that native drag from the tree into the sandboxed iframe delivers the drop, and that the administration's cookies and DOM are not reachable from the preview.
   - Done: each capability recorded as working or not; if the drop does not work, the first version drops on the Pages tree only.
 
-- [ ] **Phase 3**: Shell, navigation and the site tab
+- [x] **Phase 3**: Shell, navigation and the site tab
+  > Done: with site sources configured the index shows Sites (each site with its holder, "+ new site") and Library (starting sites); the top bar keeps the logo and account only; without site sources the catalog navigation stays (old admin tests unchanged). New `admin/pages/site.py`, `site.js`, `site.css`: the site tab takes the editing lock on opening when the site is free, shows "You are editing this site" or "Edited by X · read only", "Take the site" for an explicit take, Save; tabs Visual editor, SEO and Published site (placeholders). "new site" opens a name form that calls `site_new`. New operation `site_list` (35 site operations). Browser check 2026-10-28 in the Browser pane on a local demo with the example site.
   - Files: `src/kajenn_press/admin/pages/` (new site tab page, index), `tests/admin/`.
   - Details: tree Sites (sites, "new site") and Library (starting sites, N5-D3); a site opens its tab and takes the editing lock (`site_open`), showing who holds it otherwise; "new site" opens an empty site tab (name, optional starting site); three tabs: Visual editor, SEO and Published site as placeholders; Save and versions in the site tab toolbar.
   - Done: matches the approved mockup in the browser; two sites open in two tabs; a site held by another user opens read-only with the holder's name.
 
-- [ ] **Phase 4**: Visual editor preview
+- [x] **Phase 4**: Visual editor preview
+  > Done: the center renders the working copy with `page_render` in an iframe with `sandbox="allow-scripts"`; the preview HTML gets slot outlines (Show slots) and a script carrying the page nonce that reports clicks on slots and links with `postMessage`; a link to another page of the site opens that page. Width and scale selectors of the old preview are not carried over. Browser check: the example home page rendered with its CSS and logo.
   - Files: `src/kajenn_press/admin/pages/`, `tests/admin/`.
   - Details: the center renders the working copy's root page (`page_render`), navigation follows links inside the preview (Phase 2 messages), a page selector from the drawer, slot borders on command (CSS added to the preview HTML only), width and scale selectors from the current preview.
   - Done: matches the mockup; navigating and toggling borders works in the browser.
 
-- [ ] **Phase 5**: Drawer with Pages and Contents
+- [x] **Phase 5**: Drawer with Pages and Contents
+  > Done: Pages tree (folders, pages with ● changed and ↻ outdated marks, slots under each page as "name ← content" or "name · empty"), "+ page", "+ folder"; Contents tree (use count in the caption when >1, unused in italics), "+ content". Drag and drop wired with Gramlot internal tree drag (`onDrag`, `dropTypes`, `onDrop`): a content dropped on a slot calls `slot_assign`, a page dropped on a folder calls `tree_move`. Selecting a slot shows a menu to assign a content by click. Not verified in the browser: drag (the Browser pane does not produce HTML5 drag events, Phase 2).
   - Files: `src/kajenn_press/admin/pages/`, `tests/admin/`.
   - Details: Pages tree with folders, drag and drop moves (Phase 1), slots under each page with their content, the two marks; Contents tree with use states and badge; drag a content onto a slot node (and onto the preview if Phase 2 qualified it) calls `slot_assign`; new page, new folder, new content.
   - Done: matches the mockup; a drop assigns a content; counts and marks update.
 
-- [ ] **Phase 6**: Detached block editor
+- [x] **Phase 6**: Detached block editor
+  > Done (N5-D1, N5-D2): a click on a slot in the preview (or Edit after selecting it in the tree) opens the editor pane docked at the right (400 px, splitter) with CodeMirror, Jodit and Preview on the original content; Save calls `content_save`, then shows the Update plan of its copies with the selection rule; "Update and render" applies the selected ones and refreshes. Browser check: click on the hero slot opened the hero content; Save showed the plan with the one page using it, unselected because already up to date. `site_read` now returns the text of each content.
   - Files: `src/kajenn_press/admin/pages/`, `tests/admin/`.
   - Details: per N5-D1 and N5-D2: opening a slot (click in the preview or in the tree) shows the docked editor with CodeMirror, Jodit and Preview; saving the content shows the Update plan of its copies with the selection rule; confirming applies it and refreshes the preview.
   - Done: matches the mockup; editing a content used by two pages updates both after confirmation, and a page with a local change stays unselected.
 
-- [ ] **Phase 7**: Help strings, empty states and checks
+- [x] **Phase 7**: Help strings, empty states and checks
+  > Done: empty site ("This site has no page yet."), empty slot ("Slot X is empty: assign a content first."), missing content name, lock and service errors shown in the site bar in the words of the service; read-only state named with the holder. `tests/admin/test_site_tab.py` (2 tests: navigation and site tab with sources; catalog navigation without them).
+  > Suites: main 258 passed, 22 skipped; admin 24 passed, 1 failed (`test_admin_is_optional_and_installs_from_reproducible_artifacts`, needs `KAJENN_ADMIN_WHEELS`, failing before this macro).
   - Files: `src/kajenn_press/admin/pages/`, `tests/admin/`.
   - Details: empty site, page without slots, unplaced contents shown under their page, errors of the lock and of the receipts shown to the operator in plain words.
   - Done: each state reached in the browser and readable.

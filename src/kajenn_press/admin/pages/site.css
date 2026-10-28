@@ -1,0 +1,15 @@
+.site-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line, #ddd)}
+.site-bar h1{font-size:18px;margin:0}
+.site-holder,.muted{color:var(--muted, #6b6963)}
+.site-actions{display:flex;gap:6px;margin-left:auto}
+.site-drawer{border-right:1px solid var(--line, #ddd)}
+.drawer-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.slot-assign{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.content-unused{font-style:italic;opacity:.6}
+.site-stage{display:flex;flex-direction:column;padding:10px;gap:8px}
+.stage-bar{display:flex;gap:12px;align-items:center}
+.site-preview{flex:1;width:100%;min-height:480px;border:1px solid var(--line, #ddd);border-radius:8px;background:#fff}
+.block-editor{width:360px;padding:10px;border-left:1px solid var(--line, #ddd)}
+.editor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.update-plan{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.new-site{max-width:420px;padding:24px;display:flex;flex-direction:column;gap:8px}

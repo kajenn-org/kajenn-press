@@ -9,6 +9,7 @@ from kajenn_press.admin.host import (
     CURRENT_REQUEST,
     LOGO_SRC,
     execute_read,
+    execute_service,
     execute_site_create,
 )
 from kajenn_press.admin.views import AdminPage, caption, literal_text
@@ -35,8 +36,18 @@ class Page(AdminPage, IndexPage):
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)
             return
-        self.sites = await execute_read("sites_list")
         self.identity = avatar.identity
+        press = CURRENT_REQUEST.get().server.applications["press"]
+        if press.sites is not None:
+            # Site sources configured (N5): Sites and Library replace the catalog navigation.
+            self.can_create = True
+            self.sites_mode = True
+            root.dataSetter("admin.site", "")
+            root.dataSetter("admin.nav_drawer", True)
+            self.navigation = await self.sites_navigation()
+            IndexPage.main(self, root)
+            return
+        self.sites = await execute_read("sites_list")
         self.can_create = (
             "create_site"
             in (await execute_read("scope_capabilities", scope="installation"))["permissions"]
@@ -57,6 +68,37 @@ class Page(AdminPage, IndexPage):
             root.dataSetter(f"admin.{name}", value)
         self.navigation = await self.navigation_bag(site, self.sites)
         IndexPage.main(self, root)
+
+    @staticmethod
+    async def sites_navigation():
+        """Sites (each site, "new site") and Library (starting sites)."""
+        navigation, sites, library = Bag(), Bag(), Bag()
+        for item in await execute_service("site_list", {}):
+            holder = f" · {item['holder']}" if item["holder"] else ""
+            sites.set_item(
+                "s_" + item["site_id"],
+                None,
+                label=item["name"] + holder,
+                title=item["name"],
+                url="site?site=" + item["site_id"],
+                site=item["site_id"],
+                section="site_tab",
+            )
+        sites.set_item(
+            "new", None, label="+ new site", title="New site", url="site", section="site_new"
+        )
+        for item in await execute_service("starters_list", {}):
+            library.set_item(
+                "t_" + item["starter_id"],
+                None,
+                label=item["name"],
+                title="Starting site · " + item["name"],
+                url="site",
+                section="site_new",
+            )
+        navigation.set_item("sites", sites, label="Sites", title="Sites")
+        navigation.set_item("library", library, label="Library", title="Library · starting sites")
+        return navigation
 
     @staticmethod
     async def navigation_bag(site, sites):
@@ -150,6 +192,13 @@ class Page(AdminPage, IndexPage):
         brand = bar.div(class_="admin-brand")
         brand.img(src=LOGO_SRC, width="48", height="48", alt="")
         brand.strong("Kajenn Press")
+        if getattr(self, "sites_mode", False):
+            account = bar.div(class_="account")
+            account.span(self.identity)
+            account.button("Sign out", class_="button--quiet").dataRpc(
+                "sign_out", _onResult="window.location.reload()"
+            )
+            return
         bar.html_label("Current site", for_="site")
         bar.div(class_="site-selector").remote("site_selector", version="^admin.sites_version")
         bar.button(
@@ -247,6 +296,8 @@ class Page(AdminPage, IndexPage):
             "if(group&&record_id){this.SET('index.navigationSelection','site.'+group+'.r_'+record_id)}",
             subscribe_open_object=True,
         )
+        if getattr(self, "sites_mode", False):
+            return
         shell.dataController(
             "this.SET('index.navigationSelection',this.GET('admin.site') ? 'site.pages.new_page' : 'home');"
             # Narrow viewports start with the navigation drawer closed.
@@ -275,7 +326,12 @@ class Page(AdminPage, IndexPage):
         # Navigation is client Data: validate its scope and derive the URL again.
         node = selection.get_node("#0")
         section, site = node.attr.get("section"), node.attr.get("site", "")
-        if section == "home":
+        if section == "site_tab":
+            read = await execute_service("site_read", {"site_id": site})
+            url, title = "site?site=" + site, read["name"]
+        elif section == "site_new":
+            url, title = "site", "New site"
+        elif section == "home":
             url, title = "home", "Home · How it works"
         elif section == "library":
             await execute_read("records_index", scope="library")

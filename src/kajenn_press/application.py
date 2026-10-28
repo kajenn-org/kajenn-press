@@ -759,6 +759,11 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "starter_save", key=key, site_id=site_id, name=name)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_list(self, _request=None) -> dict:
+        """Sites with a source the caller can read, and who holds each."""
+        return self._site(_request, "site_list")
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def starters_list(self, _request=None) -> dict:
         """Starting sites in the Library."""
         return self._site(_request, "starters_list")

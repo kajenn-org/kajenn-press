@@ -50,7 +50,7 @@ CHANGES = {
     "unplaced_place",
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
-LIBRARY = {"site_import", "starter_save", "starters_list"}
+LIBRARY = {"site_import", "starter_save", "starters_list", "site_list"}
 PUBLISHING = {
     "publish_plan",
     "publish",
@@ -116,6 +116,8 @@ class SiteService:
         with self._mutex:
             if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
+                return handler(identity, **params)
+            if operation == "site_list":
                 return handler(identity, **params)
             if operation == "starters_list":
                 self.policy.require(identity, "library", "read")
@@ -264,6 +266,14 @@ class SiteService:
         site.record(identity, operation, now(), **details)
         copy.save(site)
 
+    def _site_list(self, identity):
+        """Sites the caller can read, with the holder of each."""
+        return [
+            {**item, "holder": self.lock.holder(item["site_id"])}
+            for item in self.store.sites()
+            if self.policy.allows(identity, "site:" + item["site_id"], "read")
+        ]
+
     def _starters_list(self, identity):
         return self.store.starters()
 
@@ -330,7 +340,10 @@ class SiteService:
             "name": site.name,
             "holder": self.lock.holder(site_id),
             "templates": items("templates"),
-            "contents": items("contents"),
+            "contents": [
+                {**item, "text": site.node("contents", item["id"]).value}
+                for item in items("contents")
+            ],
             "assets": items("assets"),
             "pages": pages,
             "tree": site.tree(),

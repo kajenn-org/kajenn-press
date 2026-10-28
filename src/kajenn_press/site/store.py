@@ -86,6 +86,18 @@ class SourceStore:
         restored.bag.set_item("audit", current.audit)
         return self.save(restored)
 
+    def sites(self):
+        """Every site with a source in the store: id and name, by name."""
+        folder = self.storage.node(f"{MOUNT}:sites")
+        if not folder.exists():
+            return []
+        found = []
+        for child in folder.children():
+            source = self.node(child.basename)
+            if source.exists():
+                found.append({"site_id": child.basename, "name": unpack(source.read_bytes()).name})
+        return sorted(found, key=lambda item: item["name"].casefold())
+
     def export(self, site_id, version_id=None):
         """Zip bytes of a saved version: a complete site in one file."""
         self.open(site_id, version_id)
