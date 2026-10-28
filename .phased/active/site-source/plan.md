@@ -41,7 +41,9 @@ Known facts (2026-10-27):
   - Details: enable versioning on a fresh RustFS bucket through `PutBucketVersioning`; with genro-storage write an object three times, list its versions, read each one, restore an old one by writing it as current; check that a bucket without versioning is detected by querying `GetBucketVersioning`.
   - Done: the version cycle passes on RustFS; the 11 existing S3 tests pass with the endpoint file; an unversioned bucket is reported.
 
-- [ ] **Phase 2**: Site source store
+- [x] **Phase 2**: Site source store
+  > Done: `src/kajenn_press/site/store.py` (`pack`, `unpack`, `SourceStore` with `save`, `versions`, `open`, `restore`, `load_into`, `save_from`); `storage.py` now exposes `site_envelope`, `site_from_envelope`, `check_structure`, shared by the working copy and the zip; `tests/site/test_source_store.py` (10 tests). The zip is deterministic (one `site.json` entry, fixed date). The source of a site is `sites/<site id>/source.zip`; each save returns its S3 version id; restore writes an old version as current (a new version). The store accepts only `protocol: s3` and refuses a bucket whose versioning is not `Enabled` (checked with `GetBucketVersioning` through s3fs, since genro-storage does not query it); a corrupted object, a zip with other entries or a source of another site fail closed.
+  > Suite: 189 passed, 19 skipped, 0 failed.
   - Run: opus / high
   - Files: new `src/kajenn_press/site/store.py`, `tests/site/`.
   - Details: pack a site into a zip (layout per N3-D2) and unpack it with integrity checks; a store on a Genro Storage S3 mount with one object per site; save writes a new version; list versions with date and size; open a version as a site; restore a version as the new current one; startup refuses a bucket without versioning; the working copy is filled from the store and saved back to it.
