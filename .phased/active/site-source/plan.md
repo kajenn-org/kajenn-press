@@ -56,7 +56,9 @@ Known facts (2026-10-27):
   - Details: one holder per site (identity, taken at, last activity); expiry after 30 minutes of inactivity (configurable); an explicit take by another identity records the previous holder and warns it; save and every mutation check the holder; Help me acts under the holder's identity (d-editing-lock).
   - Done: a second identity cannot save; expiry frees the site; an explicit take works and is recorded; a stale holder's save is refused.
 
-- [ ] **Phase 4**: Receipts and audit
+- [x] **Phase 4**: Receipts and audit
+  > Done: `src/kajenn_press/site/receipts.py` (`Receipts.run`, `read`, `purge`); site section `audit` with `Site.audit` and `Site.record` (identity, operation, time, optional `via="help_me"`, details); `SourceStore.restore` keeps the current audit log instead of the restored one; `tests/site/test_receipts_and_audit.py` (7 tests). A receipt per (identity, key) holds the input fingerprint and the JSON result; a repeat returns the result, other input is a conflict, receipts older than 24 hours are ignored and purged.
+  > Limit: the receipt is written after the mutation; a crash between the two lets the retry apply again. The site is saved to the store only on deliberate saves, so the window covers working-copy edits.
   - Run: opus / high
   - Files: `src/kajenn_press/site/`, `tests/site/`.
   - Details: every mutation carries a key; a repeated key with the same input returns the first result, with different input it is a conflict; receipts are kept 24 hours in the working directory (d-idempotency). The site Bag keeps an audit log of saves, restores, lock takes and Publish (later), with identity, time and operation; actions through Help me are recorded as such (d-audit).

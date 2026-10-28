@@ -21,7 +21,7 @@ from .slots import template_slots
 ENGINES = {"gramlot", "htmlbuilder"}
 CONTENT_FORMATS = {"html", "markdown"}
 ASSET_KINDS = {"css", "javascript", "media"}
-SECTIONS = ("templates", "template_bases", "contents", "assets", "pages")
+SECTIONS = ("templates", "template_bases", "contents", "assets", "pages", "audit")
 PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data")
 
 
@@ -133,6 +133,18 @@ class Site:
     @property
     def name(self):
         return self.bag.get_node("info").attr["name"]
+
+    @property
+    def audit(self):
+        """Who did what and when, oldest first (d-audit)."""
+        return self.section("audit")
+
+    def record(self, identity, operation, at, via=None, **details):
+        """Append an audit entry; `via="help_me"` marks actions made through Help me."""
+        attributes = {"identity": identity, "operation": operation, "at": at, **details}
+        if via is not None:
+            attributes["via"] = via
+        self.audit.set_item(new_id(), None, _attributes=attributes)
 
     def section(self, name):
         return self.bag.get_item(name)

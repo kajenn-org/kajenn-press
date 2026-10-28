@@ -99,8 +99,14 @@ class SourceStore:
         return site
 
     def restore(self, site_id, version_id):
-        """Make an older version current again, as a new version; returns its id."""
-        return self.save(self.open(site_id, version_id))
+        """Make an older version current again, as a new version; returns its id.
+
+        The audit log is not rolled back: the restored site keeps the current log.
+        """
+        current = self.open(site_id)
+        restored = self.open(site_id, version_id)
+        restored.bag.set_item("audit", current.audit)
+        return self.save(restored)
 
     def load_into(self, site_id, working_copy, version_id=None):
         """Fill the local working copy from the store."""
