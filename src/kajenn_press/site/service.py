@@ -47,7 +47,14 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list"}
-PUBLISHING = {"publish_plan", "publish", "page_versions", "page_rollback", "site_rollback"}
+PUBLISHING = {
+    "publish_plan",
+    "publish",
+    "page_versions",
+    "page_rollback",
+    "site_rollback",
+    "maintenance_set",
+}
 PUBLISHING_READS = {"publish_plan", "page_versions"}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
@@ -236,6 +243,16 @@ class SiteService:
 
         arguments = {"site_id": site_id, "version_id": version_id}
         return self.receipts.run(identity, key, "site_rollback", arguments, run)
+
+    def _maintenance_set(self, identity, site_id, key, on):
+        def run():
+            result = self.publisher.set_maintenance(site_id, on)
+            self._record(identity, site_id, "maintenance_set", on=bool(on))
+            return result
+
+        return self.receipts.run(
+            identity, key, "maintenance_set", {"site_id": site_id, "on": bool(on)}, run
+        )
 
     def _record(self, identity, site_id, operation, **details):
         copy = self.working_copy(site_id)

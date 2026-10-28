@@ -228,3 +228,14 @@ def test_an_unknown_host_is_not_found(setup, tmp_path):
             return (await http.get("/")).status_code
 
     assert asyncio.run(scenario()) == 404
+
+
+def test_maintenance_answers_503_and_clears(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    run(service, "maintenance_set", site_id=site, key="m1", on=True)
+    (down,) = get(server(setup, site, tmp_path), "/")
+    run(service, "maintenance_set", site_id=site, key="m2", on=False)
+    (up,) = get(server(setup, site, tmp_path), "/")
+    assert (down.status_code, down.headers["retry-after"]) == (503, "300")
+    assert up.status_code == 200

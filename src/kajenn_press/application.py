@@ -954,6 +954,11 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def maintenance_set(self, site_id: str, key: str, on: bool, _request=None) -> dict:
+        """Put the published site in maintenance (503) or take it out."""
+        return self._site(_request, "maintenance_set", site_id=site_id, key=key, on=on)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_check(self, site_id: str, page_id: str, _request=None) -> dict:
         """Empty slots and unplaced contents of a page."""
         return self._site(_request, "page_check", site_id=site_id, page_id=page_id)

@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir --no-deps /src \
 
 COPY deploy/docker/websites.py /app/websites.py
 COPY examples/kajenn_org /app/kajenn_org
+COPY examples/kajenn_press_site /app/kajenn_press_site
 
 RUN useradd --uid 10002 --create-home app && mkdir -p /data /config && chown app:app /data /config
 USER app

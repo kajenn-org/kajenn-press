@@ -6,6 +6,7 @@ root="http://$(cat /rustfs/access):$(cat /rustfs/secret)@rustfs:9000"
 export MC_HOST_r="$root"
 until mc ls r >/dev/null 2>&1; do sleep 1; done
 mc mb --ignore-existing r/releases
+mc version enable r/releases
 mc mb --ignore-existing r/sources
 mc version enable r/sources
 mc admin policy create r releases-read /deploy/child-policy.json

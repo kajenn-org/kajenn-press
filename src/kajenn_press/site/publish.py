@@ -220,3 +220,15 @@ class Publisher:
             "url": earlier.url,
             "index_version": node.versions[-1]["version_id"],
         }
+
+    def set_maintenance(self, site_id, on):
+        """A new index with the maintenance flag set or cleared; pages stay as they are."""
+        index = self.index(site_id)
+        if index is None:
+            raise DomainError("not_found", f"Site {site_id} was never published")
+        raw = make_index(
+            site_id, index["source_version"], index["pages"], index["redirects"], bool(on)
+        )
+        node = self.node(self.index_path(site_id))
+        node.write_bytes(raw)
+        return {"maintenance": bool(on), "index_version": node.versions[-1]["version_id"]}

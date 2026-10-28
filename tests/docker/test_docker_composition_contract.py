@@ -5,6 +5,7 @@ They remove the composition's volumes first, so they always start from nothing.
 """
 
 import http.client
+import json
 import os
 import subprocess
 import sys
@@ -153,6 +154,43 @@ def test_site_sources_are_versioned_and_hidden_from_the_child(composition, tmp_p
     denied = mc(hosts, "ls", "--recursive", "c/sources/")
     assert denied.returncode != 0 and "Access Denied" in denied.stdout + denied.stderr
     assert mc(hosts, "ls", "c/releases/").returncode == 0
+
+
+def press_get(path):
+    connection = http.client.HTTPConnection("127.0.0.1", 8877, timeout=10)
+    try:
+        connection.request("GET", path, headers={"Host": "press.localhost:8877"})
+        response = connection.getresponse()
+        return response.status, response.read()
+    finally:
+        connection.close()
+
+
+def test_site_server_serves_the_site_published_page_by_page(composition):
+    """N4: the example site is published page by page and served by the site server."""
+    deadline = time.monotonic() + 300
+    while time.monotonic() < deadline:
+        try:
+            if press_get("/_health/health")[0] == 200:
+                break
+        except OSError:
+            pass
+        time.sleep(2)
+    assert "published site" in compose("logs", "site-publisher").stdout
+    status, home = press_get("/")
+    assert status == 200 and b"Write it. Review it." in home
+    assert press_get("/features/")[0] == 200 and press_get("/get-started/")[0] == 200
+    assert b"http://press.localhost:8877/features/" in press_get("/sitemap.xml")[1]
+
+    sites = compose("exec", "-T", "site-server", "cat", "/config/sites.json").stdout
+    (site,) = json.loads(sites)["bindings"].values()
+    mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
+    mcp("maintenance_set", site_id=site, key="docker-maintenance-on", on=True)
+    time.sleep(2)
+    assert press_get("/")[0] == 503
+    mcp("maintenance_set", site_id=site, key="docker-maintenance-off", on=False)
+    time.sleep(2)
+    assert press_get("/")[0] == 200
 
 
 def test_update_and_rollback_reach_the_child_within_the_cache_interval(composition):
