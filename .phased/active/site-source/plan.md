@@ -33,7 +33,9 @@ Known facts (2026-10-27):
 
 ## Work Plan
 
-- [ ] **Phase 1**: Versioned S3 for development and tests
+- [x] **Phase 1**: Versioned S3 for development and tests
+  > Done: `versioned_bucket` and `versioning_status` in `tests/publication/storage_support.py`; `tests/site/test_s3_versions.py` (2 tests). On RustFS 1.0.3 versioning is enabled through `PutBucketVersioning` (no `minio/mc`); through Genro Storage three writes give three versions, each readable by version id, and writing an old version as current makes it the fourth version. A bucket never versioned reports no `Status`. `deploy/docker/README.md` documents the three interpreters and the endpoint file of the full suite.
+  > Suite with `KAJENN_RENDER_PYTHON`, `KAJENN_APP_PYTHON` (non-editable `.[release-s3]`) and `KAJENN_RELEASE_S3` (RustFS on 127.0.0.1:19100): 179 passed, 19 skipped, 0 failed. The 11 earlier failures were only missing environment.
   - Run: opus / high
   - Files: `tests/publication/storage_support.py` (versioned bucket helper), new `tests/site/test_s3_versions.py`, `deploy/docker/README.md` (how to start the test endpoint and write the `KAJENN_RELEASE_S3` file).
   - Details: enable versioning on a fresh RustFS bucket through `PutBucketVersioning`; with genro-storage write an object three times, list its versions, read each one, restore an old one by writing it as current; check that a bucket without versioning is detected by querying `GetBucketVersioning`.
