@@ -19,11 +19,11 @@ Entry: main `7e19ed9`. Inventory:
 - New components available in 0.3.20: `framePane` (`frame.top/left/center/bottom`), `menu(presentation="bar")` with `menuline` and `spacer`, `floatingPane` (title bar, `open`, `beforeClose`, exactly one `framePane` child through `window.frame`), `tabContainer` panes with `detachable`. Reference: gramlot-examples `gallery/page.py` and `pages/05-menus/14_floating_editor.py` at tag v0.3.22.
 - Assets: pages hold copies of site assets with their original's id and digest; operations exist for `asset_add` and `page_asset_add`, none to rewrite an asset.
 
-## Owner decisions (to take at the gate)
+## Owner decisions (2026-10-29): all recommended options chosen; mockup `mockups/shell.html` approved
 
-- **GS-D1 · Which Gramlot moves.** (a) The administration only (`admin` extra to gramlot 0.3.20 and gramlot-py-server 0.3.20); the render worker keeps gramlot 0.3.8 and its contract. (b) Both. Recommended: (a): the published HTML does not change and the render contract stays as it is.
-- **GS-D2 · Rewriting a style sheet.** (a) A new operation `asset_save` (site_id, key, asset_id, data_base64) rewrites a site asset; the pages holding a copy come in the existing Update plan (`copies_update_plan`, `copies_update`). (b) `asset_save` also updates every copy at once. Recommended: (a): the same review as for contents.
-- **GS-D3 · Which rules the CSS tab shows.** (a) The preview script, inside the page, reads the page's style sheets and returns the rules whose selector matches the slot element or an element inside it, with the style sheet's asset name (the administration tells the script which `data:` URL is which asset); a click in the Preview tab narrows to one element. (b) The server parses the CSS and matches selectors. Recommended: (a): the browser matches exactly what is seen.
+- **GS-D1 · Which Gramlot moves.** (a) The administration only (`admin` extra to gramlot 0.3.20 and gramlot-py-server 0.3.20); the render worker keeps gramlot 0.3.8 and its contract. (b) Both. Decided: (a): the published HTML does not change and the render contract stays as it is.
+- **GS-D2 · Rewriting a style sheet.** (a) A new operation `asset_save` (site_id, key, asset_id, data_base64) rewrites a site asset; the pages holding a copy come in the existing Update plan (`copies_update_plan`, `copies_update`). (b) `asset_save` also updates every copy at once. Decided: (a): the same review as for contents.
+- **GS-D3 · Which rules the CSS tab shows.** (a) The preview script, inside the page, reads the page's style sheets and returns the rules whose selector matches the slot element or an element inside it, with the style sheet's asset name (the administration tells the script which `data:` URL is which asset); a click in the Preview tab narrows to one element. (b) The server parses the CSS and matches selectors. Decided: (a): the browser matches exactly what is seen.
 
 ## Decisions shared by all phases
 
@@ -32,7 +32,8 @@ Entry: main `7e19ed9`. Inventory:
 
 ## Work Plan
 
-- [ ] **Phase 1**: Gramlot 0.3.20 without visible change
+- [x] **Phase 1**: Gramlot 0.3.20 without visible change
+  > Done: `admin` extra on gramlot 0.3.20 and gramlot-py-server 0.3.20. Finding: gramlot-py-server 0.3.20 requires kajenn >= 0.6.0, so the core dependency moved from `kajenn==0.5.0` to `kajenn==0.7.0` for every image; the main suite passed unchanged on kajenn 0.7.0 before any code change. `AdminApplication` passes Gramlot's prepared collections (`layout`, `tree`, `inputs`, `editors`) and no longer serves `resources/components`; the adapter serves collections under `/gramlot/collections`. Locks regenerated: kajenn 0.7.0 in the three images, gramlot 0.3.20 and gramlot-py-server 0.3.20 in websites; render keeps gramlot 0.3.8 (GS-D1). Checked in the browser on the demo: sign-in, navigation, a site opens, the block window opens; Jodit's height inside the current window shrinks with 0.3.20 (the window is rebuilt in Phase 4). Suites: main 231 passed, admin 3 passed, Docker 12 passed.
   - Files: `pyproject.toml`, `src/kajenn_press/admin/host.py`, `src/kajenn_press/admin/pages/*.py`, `deploy/docker/lock.sh`, `deploy/docker/requirements-websites.txt`, `tests/admin/`.
   - Details: per GS-D1: gramlot 0.3.20 and gramlot-py-server 0.3.20 in the `admin` extra; collections as `GramlotCollection` packages chosen per page; the host serves them as gramlot-py-server 0.3.20 expects; pages adapted to relative index paths and consumed `dataSetter`s; locks regenerated for websites.
   - Done: full, admin and Docker suites green; the demo opens, edits and publishes as before.
