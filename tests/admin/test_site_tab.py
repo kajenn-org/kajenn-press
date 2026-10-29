@@ -211,3 +211,16 @@ def test_without_site_sources_the_administration_says_so(tmp_path):
             assert "Site sources are not configured" in shell
 
     asyncio.run(scenario())
+
+
+def test_without_a_key_help_me_says_it_is_not_configured(tmp_path):
+    async def scenario():
+        config = {k: v for k, v in sites_config(tmp_path).items() if k != "help"}
+        async with admin_client(tmp_path / "c", grants=GRANTS, sites=config) as (http, server):
+            site = (await call(server, "site_new", key="n", name="Demo site"))["site_id"]
+            await login(http)
+            tab = await open_page(http, "/admin/site?site=" + site)
+            panel = (await rpc(http, tab, "help_panel", "source", site=site))["value"]
+            assert "Help me is not configured on this installation." in panel
+
+    asyncio.run(scenario())

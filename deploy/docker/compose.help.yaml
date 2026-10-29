@@ -1,0 +1,10 @@
+# Help me (N8): the owner's Claude API key, read by websites from a private host file.
+# The key is never generated and never enters a volume of the composition.
+#   KPRESS_HELP_KEY_FILE=/opt/kpress-secrets/anthropic_api_key
+#   docker compose -f deploy/docker/compose.yaml [-f compose.external-s3.yaml] -f deploy/docker/compose.help.yaml up -d
+services:
+  websites:
+    environment:
+      ANTHROPIC_API_KEY_FILE: /run/help/anthropic_api_key
+    volumes:
+      - ${KPRESS_HELP_KEY_FILE:?set KPRESS_HELP_KEY_FILE}:/run/help/anthropic_api_key:ro

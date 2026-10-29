@@ -65,7 +65,8 @@ Known API facts (Claude API reference, cached 2026-10-06): model `claude-sonnet-
   - Details: per the approved mockup: Help me button, chat pane at the right of the Visual editor, choice cards, actions list, chat list and New chat, tokens and cost per chat and per site; the Visual editor refreshes after each turn.
   - Done: matches the mockup in the browser with a scripted client; a live turn from the tab after the owner's go-ahead.
 
-- [ ] **Phase 6**: Configuration and documentation
+- [x] **Phase 6**: Configuration and documentation
+  > Done: `deploy/docker/websites.py` gives Help me the key from `ANTHROPIC_API_KEY_FILE` when set; `compose.help.yaml` mounts the owner's key file (`KPRESS_HELP_KEY_FILE`) read-only into websites; `lock.sh` and `requirements-websites.txt` add the `help` extra (only additions: `anthropic` 2.3.0 and its dependencies, no existing pin changed); HETZNER.md step 8, both READMEs. Admin test: without a key the pane says Help me is not configured. Suites: main 191 passed, 11 skipped; admin 3 passed; Docker 9 passed (external S3 included).
   - Files: `deploy/docker/websites.py`, `compose.yaml`, `compose.external-s3.yaml`, `HETZNER.md`, `README.md`, `deploy/docker/README.md`, `deploy/docker/requirements-websites.txt`.
   - Details: `ANTHROPIC_API_KEY_FILE` read from a secret provided by the owner, never generated; Hetzner step for the key; the websites requirements with hashes for the SDK.
   - Done: full, admin and Docker suites green; without the key the button says Help me is not configured.
