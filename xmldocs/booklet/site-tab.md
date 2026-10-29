@@ -15,7 +15,9 @@ How an operator builds, translates and publishes a site in the Kajenn Press admi
 
 #### 1. Open or create a site
 
-The navigation tree has two groups. **Sites** lists every site the account can read, with who is editing it, and **+ new site**; **Library** lists the starting sites. A site opens in a tab of its own.
+The navigation tree has two groups. **Sites** lists every site the account can read, with who is editing it, and **+ new site**; **Library** lists the starting sites. One site is shown at a time: choosing another in the tree shows it, and a site already opened keeps its state.
+
+The site tab starts with one bar: the site's name and who holds it, the three tabs, the language shown, **Help me**, **Take the site** when another person holds it, and **Save**. Every pane below it takes the full height.
 
 Opening a site takes it: one person edits a site at a time. The others see who holds it and can only look; **Take the site** takes it from the holder, whose unsaved changes are lost. The lock expires after 30 minutes without changes.
 
@@ -28,9 +30,15 @@ The Visual editor has a drawer with two trees and, in the centre, the page rende
 - **Pages**: pages and folders. Folders only organise the editor; they never change URLs. Each page shows its slots and the content assigned to each. **+ page** adds a page with the site's template, **+ folder** a folder; pages and folders move by drag and drop.
 - **Contents**: every HTML or Markdown content of the site. An unused content is in italics; a content used by several pages shows how many. **+ content** adds one.
 
-A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing **Assign**. **Show slots** outlines the slots in the preview; a click on a slot opens it.
+A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing **Assign**. **Show slots** outlines the slots in the preview.
 
-A page holds a *copy* of each content it shows. Editing a content in the block editor changes the original; **Save** then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. **Update and render** brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.
+In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a window over the preview:
+
+- the window takes the full height; its header moves it sideways and its edge widens it; one block is open at a time;
+- it opens on Jodit, ready to write; **</> HTML** shows the source beside it in CodeMirror, and the two stay in step;
+- the footer says whether there are changes not saved; **Cancel** discards them, **Save** writes them and shows the page again.
+
+A page holds a *copy* of each content it shows. Editing a content in the block window changes the original; **Save** then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. **Update and render** brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.
 
 #### 3. SEO
 
@@ -46,7 +54,7 @@ The site's languages are set in the root page's site defaults, main language fir
 
 - A content shown in another language has its own translation. In the Pages and Contents trees a translation is marked ○ missing, ↻ to update (its main text changed since) or ◐ to review (proposed by Help me).
 - A missing translation shows the main text: the preview outlines those slots in red, the published page shows the main text without marks.
-- The block editor shows the main text above the translation; **Save** writes the translation, **Confirm translation** accepts one proposed by Help me.
+- The block window shows the main text above the translation; **Save** writes the translation, **Confirm translation** accepts one proposed by Help me.
 - In the SEO tab each language has its own URL and fields; the URL of another language is written without its prefix, which Kajenn Press adds (`/en/about/`). An empty field takes the main language's value.
 
 #### 5. Help me
@@ -87,6 +95,9 @@ A site server reads its addresses from the release bucket and serves a new one w
 
 ### Verified facts
 
+- `RUN` `src/kajenn_press/admin/pages/site.js:9` · 2026-10-29 — In the preview a click selects a block, a link inside a block is followed, and the pen or a double click asks to edit it.
+- `RUN` `src/kajenn_press/admin/pages/site.py:499` · 2026-10-29 — The block window opens on Jodit at full height; text typed in Jodit appears in CodeMirror and the reverse; Cancel discards; Save and Update and render show the change in the preview.
+- `READ` `src/kajenn_press/admin/pages/index.py:89` · 2026-10-29 — The administration shows one site at a time, without a strip of open-site tabs.
 - `READ` `src/kajenn_press/admin/pages/index.py:33` · 2026-10-29 — The navigation lists Sites (with holder and `+ new site`) and Library (starting sites).
 - `READ` `src/kajenn_press/site/lock.py:15` · 2026-10-29 — The editing lock expires after 30 minutes without activity.
 - `READ` `src/kajenn_press/site/service.py:344` · 2026-10-29 — `site_save` writes the working copy as a new version of the source zip.

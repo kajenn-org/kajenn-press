@@ -48,7 +48,8 @@ Entry: main `8f3d402`. Inventory:
   - Details: per BE-D2: the docked `block-editor` region is removed; one window over the stage, full height, header with the slot and content, `</> HTML` and close; Jodit on open; the HTML drawer with CodeMirror on the same value, in step both ways; the main-language reference, Confirm translation and the Update plan move into the window; footer with the change state, Cancel and Save; Save re-renders the preview. Per BE-D3 the slot box keeps Assign only.
   - Done: matches the mockup in the browser: open by pen and double click, write in Jodit, see the HTML change, edit the HTML and see Jodit change, Save updates the preview, Cancel discards.
 
-- [ ] **Phase 4**: Documentation and close
+- [x] **Phase 4**: Documentation and close
+  > Done: booklet site tab: one site shown at a time, the one-row bar, selection in the preview, the pen and the double click, the block window (full height, sideways, Jodit, HTML beside it, Cancel and Save); three facts verified by run or read. Suites: main 231 passed, 15 skipped; admin 3 passed.
   - Files: `xmldocs/booklet/site-tab.xml` (and its renders), `tests/admin/`.
   - Details: the booklet's Visual editor section describes selection, the pen, the floating window and the bar; facts verified by run.
   - Done: full and admin suites green; booklet valid and rendered; plan archived, roadmap updated.
