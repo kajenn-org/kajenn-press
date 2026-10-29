@@ -152,6 +152,25 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "starter_save", key=key, site_id=site_id, name=name)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_list(self, _request=None) -> dict:
+        """The servers that can serve published sites: name, addresses, agent URL."""
+        return self._site(_request, "server_list")
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_add(
+        self, key: str, name: str, ipv4: list, ipv6: list, agent_url: str, _request=None
+    ) -> dict:
+        """Register a server (grant servers): public IPv4 and IPv6 addresses and its agent URL."""
+        return self._site(
+            _request, "server_add", key=key, name=name, ipv4=ipv4, ipv6=ipv6, agent_url=agent_url
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_remove(self, key: str, name: str, _request=None) -> dict:
+        """Remove a server that serves no site (grant servers)."""
+        return self._site(_request, "server_remove", key=key, name=name)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def site_list(self, _request=None) -> dict:
         """Sites with a source the caller can read, and who holds each."""
         return self._site(_request, "site_list")

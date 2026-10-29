@@ -41,6 +41,7 @@ from .seo import (
     set_page_seo,
     stored_seo,
 )
+from .servers import ServerRegistry
 from .slots import template_slots
 from .storage import WorkingCopy, unpack
 
@@ -77,6 +78,7 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list", "site_list"}
+SERVERS = {"server_add", "server_list", "server_remove"}
 PUBLISHING = {
     "publish_plan",
     "publish",
@@ -89,7 +91,7 @@ PUBLISHING = {
     "publication_state",
 }
 PUBLISHING_READS = {"publish_plan", "page_versions", "private_link", "publication_state"}
-OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
+OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING | SERVERS
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
 
@@ -113,6 +115,7 @@ class SiteService:
         self.connections = connections or {}
         self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
+        self.servers = ServerRegistry(store)
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
 
@@ -147,8 +150,15 @@ class SiteService:
             if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
                 return handler(identity, **params)
-            if operation == "site_list":
+            if operation in ("site_list", "server_list"):
                 return handler(identity, **params)
+            if operation in SERVERS:
+                # Registering servers is an installation grant (N7b-D2).
+                self.policy.require(identity, "installation", "servers")
+                key = params.pop("key")
+                return self.receipts.run(
+                    identity, key, operation, params, lambda: handler(identity, key, **params)
+                )
             if operation == "starters_list":
                 self.policy.require(identity, "library", "read")
                 return handler(identity, **params)
@@ -325,6 +335,21 @@ class SiteService:
             for item in self.store.sites()
             if self.policy.allows(identity, "site:" + item["site_id"], "read")
         ]
+
+    def _server_list(self, identity):
+        return [{"name": name, **entry} for name, entry in sorted(self.servers.servers().items())]
+
+    def _server_add(self, identity, key, name, ipv4, ipv6, agent_url):
+        return self.servers.add(name, ipv4, ipv6, agent_url)
+
+    def _server_remove(self, identity, key, name):
+        bound = []
+        if self.publisher is not None:
+            bound = [
+                e["site_id"] for e in self.publisher.bindings().values() if e["server"] == name
+            ]
+        self.servers.remove(name, bound)
+        return {"name": name}
 
     def _starters_list(self, identity):
         return self.store.starters()

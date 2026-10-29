@@ -28,7 +28,8 @@ Entry: main `f66db9b`. Inventory: `bindings.json` (schema 1) maps origin → sit
 
 ## Work Plan
 
-- [ ] **Phase 1**: Server registry
+- [x] **Phase 1**: Server registry
+  > Done: `src/kajenn_press/site/servers.py` (`servers.json` in the source bucket: name, IPv4, IPv6, agent URL; https, http only on loopback; no token stored); operations `server_add`, `server_list`, `server_remove` (48 operations); add and remove need the grant `servers` on `installation` and an idempotency key; list is open to any signed-in editor. Removal is refused while a site is bound to the server: the check reads the bindings' `server`, which Phase 2 adds. Tests: `tests/site/test_servers.py` (8).
   - Files: `src/kajenn_press/site/servers.py`, `service.py`, `application.py`, `tests/site/`.
   - Details: per N7b-D2: `servers.json` in the source bucket (name, IPv4, IPv6, agent URL; token file names, never tokens); operations `server_add`, `server_list`, `server_remove` (refused while a site is bound to it).
   - Done: servers are added, listed and removed by the right grant only; a server with sites cannot be removed.
