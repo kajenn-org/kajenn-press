@@ -1,0 +1,18 @@
+# systemd unit of the site server container; the proxy reaches it on 127.0.0.1:8877.
+[Unit]
+Description=kajenn-press site server
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker rm -f kpress-site
+ExecStart=/usr/bin/docker run --rm --name kpress-site \
+    --env-file /etc/kpress-site/site.env \
+    -v /etc/kpress-site/secrets:/secrets:ro \
+    -p 127.0.0.1:8877:8877 \
+    kajenn-child:local python /app/site_server.py
+ExecStop=/usr/bin/docker stop kpress-site
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

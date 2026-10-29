@@ -58,7 +58,8 @@ Entry: main `f66db9b`. Inventory: `bindings.json` (schema 1) maps origin → sit
   - Details: per the approved mockup: for a site never published, steps server → domain and canonical name → DNS records and check → Publish (pages, then `domain_add` on the agent, then certificate status) → address check; the same steps to move a site; operation `site_go_live` that orchestrates them and reports each outcome.
   - Done: matches the mockup in the browser against a local server registered with a local agent (Caddy internal CA).
 
-- [ ] **Phase 6**: Deployment and documentation
+- [x] **Phase 6**: Deployment and documentation
+  > Done: `deploy/agent/install.sh <nginx|caddy|traefik> <source>`: user `kpress-agent`, agent venv and unit, sudoers lines of the chosen proxy only (checked by `visudo -cf`), token in `/etc/kpress-agent/token`, `agent.env` and `site.env` templates, `kpress-site.service` (the `kajenn-child` image on `127.0.0.1:8877`); it starts nothing and prints what is left (allow-list, agent TLS, ACME e-mail, release keys, token to the manager, proxy include, firewall). `kpress-agent.service` gains `ReadWritePaths` for the proxy directories under `ProtectSystem=full`. Run in a Debian container for nginx and Caddy: the installed agent answered 200 with its token, 401 with another. Booklets: install (Prepare a server for published sites), publication (Go live on a registered server, agent per proxy), site tab (Go live…), operations (52 operations, Servers table); README. `ruff format` applied to four Docker tests. Suites: main 231 passed, 15 skipped; admin 3 passed; Docker 12 passed.
   - Files: `deploy/agent/`, `deploy/docker/`, `xmldocs/booklet/install.xml`, `xmldocs/booklet/publication.xml`, `xmldocs/booklet/site-tab.xml`, `README.md`.
   - Details: install script of a server for each proxy (site server image, agent, sudoers, firewall note); booklets updated.
   - Done: full, admin and Docker suites green; booklets valid and rendered.

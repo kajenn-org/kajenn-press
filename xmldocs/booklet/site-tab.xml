@@ -57,7 +57,14 @@
       <item><b>Maintenance on</b> makes the site answer 503 to visitors.</item>
       <item><b>Private link</b> creates a link valid 8 hours or 7 days that shows the real site while it is private or in maintenance, and switches the site between private (404 to visitors) and public.</item>
     </list>
-    <p>The site gets its address at the first Publish after the root page has a public origin; a site server bound to the release bucket serves it without restart (booklet <em>Publication and serving</em>).</p>
+    <p><b>Go live…</b> puts the site online on a registered server, or moves it to another one:</p>
+    <list ordered="true">
+      <item><b>Server</b>: one of the registered servers, with its addresses.</item>
+      <item><b>Address</b>: the domain and which name is the address (the domain or <c>www.</c>); the other answers 301. <b>Save server and address</b> writes the root page's public origin and the server.</item>
+      <item><b>DNS records</b>: the records to create at the DNS provider and what public resolvers see; <b>Check again</b> reads them again.</item>
+      <item><b>Publish and go live</b>: publishes, asks the server to serve the address and obtain its certificate, checks the address, and shows each step.</item>
+    </list>
+    <p>A site server reads its addresses from the release bucket and serves a new one without restart (booklet <em>Publication and serving</em>).</p>
   </step>
 
   <rules>
@@ -68,7 +75,7 @@
 
   <limits>
     <limit source="src/kajenn_press/site/seo.py:398">SEO checks run in the main language only.</limit>
-    <limit>The first publication on a server other than the installation's own (registry, DNS, TLS) is not available yet.</limit>
+    <limit>Servers are registered through <c>server_add</c> (REST or MCP); the tab has no form for it.</limit>
     <limit>While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.</limit>
   </limits>
 
@@ -83,6 +90,7 @@
     <fact source="src/kajenn_press/admin/pages/site.py:357" method="run" verified="2026-10-29">The language selector re-renders the Visual editor and outlines main-text slots in red in the preview.</fact>
     <fact source="src/kajenn_press/help/tools.py:45" method="test" verified="2026-10-29">Translations written by Help me are always to review.</fact>
     <fact source="src/kajenn_press/help/chat.py:111" method="run" verified="2026-10-29">A Help me turn from the tab added a page and saved the site against the Claude API.</fact>
+    <fact source="src/kajenn_press/admin/pages/site.py:895" method="run" verified="2026-10-29">Go live on the local demo saved server and address, showed the DNS records seen, and reported dns, publish, certificate and online.</fact>
     <fact source="src/kajenn_press/admin/pages/site.py:783" method="run" verified="2026-10-29">The Published site tab published one page, set maintenance, created a private link and rolled back one page on the local demo.</fact>
   </facts>
 

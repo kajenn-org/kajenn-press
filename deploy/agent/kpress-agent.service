@@ -10,6 +10,8 @@ ExecStart=/opt/kpress-agent/venv/bin/python /opt/kpress-agent/agent.py
 Restart=on-failure
 NoNewPrivileges=false
 ProtectSystem=full
+# The proxy directories the agent writes (nginx, Traefik).
+ReadWritePaths=-/etc/nginx/kpress.d -/etc/traefik/kpress
 
 [Install]
 WantedBy=multi-user.target

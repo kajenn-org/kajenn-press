@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <booklet id="booklet/publication" title="Publication and serving" date="2026-10-29" lang="en" author="Giovanni Porcari">
   <purpose>
-    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, and how rollback, maintenance, private sites and private links work.</p>
+    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, how a site goes live on a registered server, and how rollback, maintenance, private sites and private links work.</p>
   </purpose>
 
   <requires>
@@ -18,7 +18,7 @@
       <row><cell><c>sites/&lt;site&gt;/pages/&lt;page&gt;.zip</c></cell><cell>The page in the main language.</cell></row>
       <row><cell><c>sites/&lt;site&gt;/pages/&lt;page&gt;.&lt;language&gt;.zip</c></cell><cell>The page in another language.</cell></row>
       <row><cell><c>sites/&lt;site&gt;/index.json</c></cell><cell>The site index: for every page and language, its URL, object key, the S3 version online, fingerprint, assets, refresh time, whether it is indexable and its language; the redirects; maintenance.</cell></row>
-      <row><cell><c>bindings.json</c></cell><cell>Public origin → site id and state (public or private), for every site.</cell></row>
+      <row><cell><c>bindings.json</c></cell><cell>Public origin → site id, state (public or private), server, and for an alias the address it redirects to; for every site.</cell></row>
     </table>
     <p>A page object holds <c>page.json</c> (the page Bag, URL, fingerprint, the SHA-256 of the HTML, language), <c>index.html</c> (the pre-rendered page), its assets by content address, and for a page whose Data uses resolvers <c>request.json</c>, the render request without connections. The index is written after the pages and pins their versions, so a reader never sees half a publication.</p>
     <p>A page is selected when its fingerprint differs from the one online: name, URL, the page as its language sees it, effective SEO, site texts and the site's languages. A translation changes only its own language.</p>
@@ -34,7 +34,24 @@
       <item>a page URL answers its HTML; a page with resolvers is rendered again by the worker when its refresh time has passed and kept in a local cache;</item>
       <item>anything else answers the 404 page of the path's language, else the main one.</item>
     </list>
+    <p>A site server serves only the origins bound to its own name (<c>SITE_SERVER_NAME</c>, default <c>default</c>); an alias answers 301 to the address with the same path. <c>/_kpress/ask?domain=&lt;name&gt;</c> answers 200 only for a name bound to it: Caddy asks it before obtaining a certificate on demand.</p>
     <p>Public pages carry no cookie and no session; only the private link sets one.</p>
+  </step>
+
+  <step id="s-golive" title="Go live on a registered server">
+    <p>Servers are registered in <c>servers.json</c> of the source bucket by name, IPv4 and IPv6 addresses and agent URL (<c>server_add</c>, grant <c>servers</c>). A server runs a site server and the server agent behind nginx, Caddy or Traefik; the agent is a small service with four actions (<c>domain_add</c>, <c>domain_remove</c>, <c>domain_status</c>, <c>proxy_reload</c>), a bearer token per server and an allow-list of client addresses.</p>
+    <list ordered="true">
+      <item><c>site_server_set</c> chooses the server; with <c>alias</c>, the other name answers 301 to the address.</item>
+      <item><c>dns_plan</c> lists the A and AAAA records to create; <c>dns_check</c> reads them through 1.1.1.1 and 8.8.8.8.</item>
+      <item><c>site_go_live</c> checks the records, publishes, calls <c>domain_add</c> on the agent, which configures the proxy and obtains the certificate, then checks the address. It stops at the first failed step and reports each one.</item>
+    </list>
+    <p>The same steps move a site to another server: the binding names the new server, and the old one stops serving it at its next read of <c>bindings.json</c>.</p>
+    <table title="What the agent does per proxy">
+      <row head="true"><cell>Proxy</cell><cell>Configuration</cell><cell>Certificate</cell></row>
+      <row><cell>nginx</cell><cell>One server block per site in the agent's directory; <c>nginx -t</c> and reload.</cell><cell><c>certbot certonly --webroot</c>.</cell></row>
+      <row><cell>Caddy</cell><cell>None: the binding is the configuration.</cell><cell>On demand, after the <c>ask</c> endpoint.</cell></row>
+      <row><cell>Traefik</cell><cell>One file per site in the file provider's directory.</cell><cell>The configured certificate resolver.</cell></row>
+    </table>
   </step>
 
   <step id="s-rollback" title="Roll back">
@@ -57,7 +74,8 @@
 
   <limits>
     <limit source="src/kajenn_press/site/publish.py:81">An index of an earlier schema reads as absent: the next Publish writes every page again; until then the site server answers 503 for that site.</limit>
-    <limit>A site server serves the sites of one release bucket; there is no registry of servers yet.</limit>
+    <limit>A site server serves the sites of one release bucket.</limit>
+    <limit>The agent runs the proxy commands through <c>sudo</c>, limited to the lines of <c>deploy/agent/sudoers-kpress-agent</c>.</limit>
   </limits>
 
   <facts>
@@ -70,6 +88,9 @@
     <fact source="src/kajenn_press/site/serving.py:346" method="test" verified="2026-10-29">The sitemap lists indexable pages of every language; a noindex root gives <c>Disallow: /</c>.</fact>
     <fact source="src/kajenn_press/site/private.py:35" method="test" verified="2026-10-29">Private links last 8 or 168 hours; forged, foreign and expired tokens are refused.</fact>
     <fact source="src/kajenn_press/site/serving.py:224" method="test" verified="2026-10-29">A valid private link answers 303 with an HttpOnly cookie for its host.</fact>
+    <fact source="src/kajenn_press/site/serving.py:71" method="test" verified="2026-10-29">A site server serves only the origins bound to its name; moving a site to another server moves its serving.</fact>
+    <fact source="src/kajenn_press/site/golive.py:59" method="test" verified="2026-10-29"><c>site_go_live</c> reports dns, publish, certificate and online, and stops at the first failed step.</fact>
+    <fact source="tests/docker/test_proxies_contract.py:1" method="run" verified="2026-10-29">Caddy with its internal CA obtains a certificate on demand only for a name the site server binds; nginx accepts the agent's block; Traefik loads the agent's router.</fact>
     <fact source="tests/docker/test_docker_composition_contract.py:1" method="run" verified="2026-10-29">The Docker composition publishes the example site in two languages, serves it, and opens it through a private link during maintenance.</fact>
   </facts>
 

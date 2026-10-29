@@ -5,7 +5,7 @@
 
 ### Purpose
 
-How a program or an agent works on Kajenn Press sites through the 45 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.
+How a program or an agent works on Kajenn Press sites through the 52 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.
 
 ### Requirements
 
@@ -108,6 +108,18 @@ Every operation except `site_list`, `starters_list`, `site_new` and `site_import
 | `publish_plan` | — | publish | no | no | Pages changed since the last publication, selected, with their warnings. |
 | `site_rollback` | version\_id | publish, write | yes | yes | Restore a source version and publish the whole site from it. |
 | `site_visibility_set` | state | publish, write | yes | yes | Make the site public or private at its address (the root page's public origin). |
+| `site_server_set` | server, alias | publish, write | yes | yes | Choose the registered server that serves the site; with alias, the other name (with or without `www.`) answers 301 to the address. |
+| `dns_plan` | — | publish | no | no | The A and AAAA records to create for the address and its alias, towards the server's addresses. |
+| `dns_check` | — | publish | no | no | What public resolvers (1.1.1.1, 8.8.8.8) answer for each record: ok, missing, wrong or unknown. |
+| `site_go_live` | — | publish, write | yes | yes | Check the DNS records, publish, ask the server's agent to serve the address and obtain its certificate, then check the address; reports each step. |
+
+*Servers*
+
+| Operation | Arguments | Permission | Lock | Key | What it does |
+|---|---|---|---|---|---|
+| `server_list` | — | any principal | no | no | The registered servers with their addresses and agent URL. |
+| `server_add` | name, ipv4, ipv6, agent\_url | servers (installation) | no | yes | Register a server; the agent URL is https, or http on the loopback. |
+| `server_remove` | name | servers (installation) | no | yes | Remove a server that serves no site. |
 
 ### Rules
 
@@ -121,7 +133,7 @@ Every operation except `site_list`, `starters_list`, `site_new` and `site_import
 
 ### Verified facts
 
-- `TEST` `src/kajenn_press/site/service.py:92` · 2026-10-29 — The operations are the union of READS, CHANGES, CONTROLS, LIBRARY and PUBLISHING: 45, each a route of `PressApplication` (`tests/site/test_site_service.py`).
+- `TEST` `src/kajenn_press/site/service.py:107` · 2026-10-29 — The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 52, each a route of `PressApplication` (`tests/site/test_site_service.py`).
 - `READ` `src/kajenn_press/application.py:18` · 2026-10-29 — REST maps `unauthenticated`, `forbidden`, `not_found`, `conflict`, `unavailable` to 401, 403, 404, 409, 503 and other errors to 422.
 - `TEST` `tests/api/support.py:49` · 2026-10-29 — REST calls are `POST /<operation>`; MCP calls are JSON-RPC `tools/call` on `/mcp`.
 - `READ` `src/kajenn_press/site/receipts.py:24` · 2026-10-29 — Idempotency receipts are kept 24 hours.
