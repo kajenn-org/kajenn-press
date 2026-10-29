@@ -118,15 +118,16 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 "Pages",
                 "Contents",
                 "Show slots",
-                # The block window (d-block-editing): Jodit, the HTML source, Cancel and Save.
-                "block-window",
+                # The block in Gramlot's floating window: Preview, Jodit, HTML, CSS, Cancel, Save.
+                "floatingPane",
+                "block-preview",
                 "htmlEditor",
                 "codeMirror",
-                "toggleSource",
+                "blockBeforeClose",
                 "Cancel",
             ):
                 assert text in view, text
-            assert "block-editor" not in view
+            assert "block-window" not in view
             assert "hero ← Welcome" in view and "body · empty" in view
             # Each tab is a frame with its own toolbar, a Gramlot menu bar (d-gramlot-shell).
             assert "tabContainer" in view and "framePane" in view and "tab-toolbar" in view

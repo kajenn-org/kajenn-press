@@ -34,6 +34,16 @@ const PREVIEW_SCRIPT = `
     place();
   }
   window.addEventListener('resize', place);
+  // The chain of elements holding each slot, for the block window's own preview and Jodit.
+  var chains = {};
+  document.querySelectorAll('[kpress_slot]').forEach(function (slot) {
+    var chain = [];
+    for (var el = slot; el && el.nodeType === 1; el = el.parentElement) {
+      chain.unshift({tag: el.tagName.toLowerCase(), id: el.id || '', cls: el.getAttribute('class') || ''});
+    }
+    chains[slot.getAttribute('kpress_slot')] = chain;
+  });
+  parent.postMessage({kind: 'chains', chains: chains}, '*');
   document.addEventListener('click', function (event) {
     if (event.target.closest('[kpress_chrome]')) return;
     var link = event.target.closest('a[href]');
@@ -68,6 +78,7 @@ export class Logic {
     initialize(node, _args) {
         const listener = event => {
             if (!event.data || typeof event.data !== 'object') return;
+            if (event.data.kind === 'chains') { this.chains = event.data.chains; return; }
             if (event.data.kind === 'select' || event.data.kind === 'edit') {
                 const page = node.GET('site.page');
                 const path = this.slotPath(node.GET('site.pages_tree'), page, event.data.slot);
@@ -196,25 +207,90 @@ export class Logic {
         node.SET('site.editor_main', main ? '' : read[content].text);
         node.SET('site.editor_text', main ? read[content].text : (translation.text ?? ''));
         node.SET('site.editor_original', node.GET('site.editor_text'));
+        node.SET('site.block_preview', this.blockPreviewHtml(node, slot, node.GET('site.editor_text')));
+        node.SET('site.editor_tab', 'rich');
+        this.styleBlockEditor(node, {});
         node.SET('site.editor_state', main ? '' : translation.state);
         node.SET('site.editor_note', main || translation.state === 'done' ? '' : translation.state.replace('_', ' '));
         node.SET('site.plan_json', '');
         node.SET('site.editor_open', true);
     }
     closeEditor(node, _args) { node.SET('site.editor_open', false); }
-    toggleSource(node, _event) { node.SET('site.editor_source', !node.GET('site.editor_source')); }
-    dragWindow(_node, event) {
-        // Full height always: the window moves sideways only, inside the stage.
-        if (event.target.closest('button')) return;
-        const win = event.currentTarget.closest('.block-window'), stage = win.parentElement;
-        const start = event.clientX - win.offsetLeft;
-        const move = m => {
-            const left = Math.max(0, Math.min(m.clientX - start, stage.clientWidth - win.offsetWidth));
-            win.style.right = 'auto';
-            win.style.left = left + 'px';
+    blockBeforeClose(node) {
+        // The title bar's close button: changes not saved are lost only on confirmation.
+        if (node.GET('site.editor_text') === node.GET('site.editor_original')) return true;
+        return window.confirm('Close the block and lose the changes not saved?');
+    }
+    pageStyleTexts(node) {
+        // The text of the page's style sheets: the admin renders them as data: URLs (render.py).
+        const doc = new DOMParser().parseFromString(node.GET('site.preview') || '', 'text/html');
+        const texts = [];
+        for (const el of doc.querySelectorAll('link[rel="stylesheet"], style')) {
+            if (el.tagName === 'STYLE') {
+                if (!el.textContent.includes('kpress_slot') && !el.textContent.includes('kpress_chrome')) texts.push(el.textContent);
+                continue;
+            }
+            const href = el.getAttribute('href') || '', comma = href.indexOf(',');
+            if (!href.startsWith('data:') || comma < 0) continue;
+            const data = href.slice(comma + 1);
+            const bytes = href.slice(0, comma).endsWith(';base64')
+                ? Uint8Array.from(atob(data), c => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(data));
+            texts.push(new TextDecoder().decode(bytes));
+        }
+        return texts;
+    }
+    pageStyles(node) {
+        // `<` cannot close a style element's text, but `</style` could: it is escaped.
+        return this.pageStyleTexts(node).map(text => `<style>${text.replace(/<\/style/gi, '<\\/style')}</style>`).join('');
+    }
+    blockPreviewHtml(node, slot, text) {
+        // The block inside the chain of elements that holds its slot in the page.
+        const chain = (this.chains || {})[slot] || [];
+        const attrs = item => (item.id ? ` id="${item.id}"` : '') + (item.cls ? ` class="${item.cls}"` : '');
+        const html = chain.find(item => item.tag === 'html'), body = chain.find(item => item.tag === 'body');
+        const inner = chain.filter(item => item.tag !== 'html' && item.tag !== 'body');
+        const open = inner.map(item => `<${item.tag}${attrs(item)}>`).join('');
+        const close = inner.slice().reverse().map(item => `</${item.tag}>`).join('');
+        return `<!doctype html><html${html ? attrs(html) : ''}><head><meta charset="utf-8">${this.pageStyles(node)}</head>`
+            + `<body${body ? attrs(body) : ''}>${open}${text}${close}</body></html>`;
+    }
+    styleBlockEditor(node, _args) {
+        // Jodit edits inside a same-origin iframe: it gets the page's style sheets and, on its
+        // root elements, the classes of the chain that holds the slot.
+        const slot = node.GET('site.assign_slot'), chain = (this.chains || {})[slot] || [];
+        if (node.GET('site.editor_tab') === 'preview') {
+            // The Preview tab shows the text as it is now, saved or not.
+            node.SET('site.block_preview', this.blockPreviewHtml(node, slot, node.GET('site.editor_text')));
+        }
+        const styles = this.pageStyleTexts(node);
+        let tries = 0;
+        const apply = () => {
+            const editor = document.querySelector('.block-rich');
+            const frame = editor && editor.shadowRoot && editor.shadowRoot.querySelector('iframe');
+            const doc = frame && frame.contentDocument;
+            if (!doc || !doc.body) { if (tries++ < 20) setTimeout(apply, 100); return; }
+            doc.querySelectorAll('[data-kpress-page-css]').forEach(el => el.remove());
+            // The editor's own unlayered styles would beat a site's layered ones: they move into
+            // a layer declared first, so the page's rules win as they do in the page.
+            if (!doc.querySelector('[data-kpress-layer]')) {
+                doc.querySelectorAll('style').forEach(el => { el.textContent = `@layer kpress-editor{${el.textContent}}`; });
+                const order = doc.createElement('style');
+                order.setAttribute('data-kpress-layer', '');
+                order.textContent = '@layer kpress-editor;';
+                doc.head.prepend(order);
+            }
+            for (const text of styles) {
+                const el = doc.createElement('style');
+                el.setAttribute('data-kpress-page-css', '');
+                el.textContent = text;
+                doc.head.appendChild(el);
+            }
+            const classes = chain.filter(item => item.tag !== 'html' && item.tag !== 'body')
+                .flatMap(item => item.cls.split(/\s+/)).filter(Boolean);
+            doc.documentElement.classList.add(...(chain.find(item => item.tag === 'html')?.cls.split(/\s+/).filter(Boolean) ?? []));
+            doc.body.classList.add(...classes);
         };
-        document.addEventListener('mousemove', move);
-        document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once: true});
+        apply();
     }
     async confirmTranslation(node, _args) {
         try {
@@ -243,6 +319,7 @@ export class Logic {
             const pages = JSON.parse(node.GET('site.pages_json'));
             node.SET('site.plan_json', JSON.stringify(plan.map(item => ({...item, page_name: pages[item.page_id].name}))));
             node.SET('site.editor_original', node.GET('site.editor_text'));
+            node.SET('site.block_preview', this.blockPreviewHtml(node, node.GET('site.assign_slot'), node.GET('site.editor_text')));
             // Without copies to update, the window closes and the preview shows the change.
             if (!plan.length) { node.SET('site.editor_open', false); this.refresh(node); }
         } catch (error) { node.SET('site.message', error.message); }

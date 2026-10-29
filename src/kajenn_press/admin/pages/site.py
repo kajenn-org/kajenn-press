@@ -340,7 +340,8 @@ class Page(AdminPage):
             "editor_title": "",
             "editor_text": "",
             "editor_original": "",
-            "editor_source": False,
+            "editor_tab": "rich",
+            "block_preview": "",
             "plan_json": "",
             "assign_slot": "",
             "assign_page": "",
@@ -349,21 +350,11 @@ class Page(AdminPage):
         }.items():
             pane.dataSetter("site." + name, value)
         pane.dataFormula("site.assign_hidden", "!slot", slot="^site.assign_slot", _init=True)
-        pane.dataFormula("site.editor_hidden", "!open", open="^site.editor_open", _init=True)
         pane.dataFormula(
             "site.editor_change",
             "text === original ? 'No changes' : 'Changed, not saved'",
             text="^site.editor_text",
             original="^site.editor_original",
-            _init=True,
-        )
-        pane.dataFormula(
-            "site.editor_source_hidden", "!shown", shown="^site.editor_source", _init=True
-        )
-        pane.dataFormula(
-            "site.editor_source_class",
-            "shown ? 'bw-toggle on' : 'bw-toggle'",
-            shown="^site.editor_source",
             _init=True,
         )
         pane.dataSetter("site.pages_tree", pages_bag(read, language))
@@ -478,41 +469,66 @@ class Page(AdminPage):
         self.block_window(pane, center)
 
     def block_window(self, pane, center):
-        """The block in a floating window over the preview (d-block-editing): full height,
-        moved sideways by its header, Jodit first and the HTML source beside it on demand."""
-        window = center.div(class_="block-window", hidden="^site.editor_hidden")
-        head = window.div(class_="bw-head", connect_onmousedown="dragWindow")
-        head.strong("^site.editor_title")
-        head.html_button(
-            "</> HTML",
-            type="button",
-            class_="^site.editor_source_class",
-            connect_onclick="toggleSource",
+        """The block in Gramlot's floating window (d-block-editing, d-gramlot-shell): a title
+        bar, and a frame with the tabs Preview, Jodit, HTML and CSS and a footer bar."""
+        window = pane.floatingPane(
+            title="^site.editor_title",
+            open="^site.editor_open",
+            beforeClose="blockBeforeClose",
+            movable=True,
+            resizable=True,
+            collapsible=True,
+            maximizable=True,
+            width="760px",
+            height="86vh",
+            top="48px",
+            left="calc(100vw - 800px)",
+            minWidth="460px",
+            minHeight="320px",
         )
-        head.html_button(
-            "✕", type="button", title="Close", class_="bw-close", connect_onclick="closeEditor"
-        )
+        frame = window.frame
         pane.dataFormula("site.editor_main_hidden", "!main", main="^site.editor_main", _init=True)
-        original = window.div(class_="editor-main", hidden="^site.editor_main_hidden")
+        original = frame.top.div(class_="editor-main", hidden="^site.editor_main_hidden")
         original.span("Main language", class_="muted")
         original.htmlPreview(value="^site.editor_main", height="96px")
-        body = window.div(class_="bw-body")
-        body.div(class_="bw-rich").htmlEditor(value="^site.editor_text", height="100%")
-        body.div(class_="bw-source", hidden="^site.editor_source_hidden").codeMirror(
-            value="^site.editor_text", language="html", height="100%"
+        tabs = frame.center.tabContainer(height="100%", selectedPage="^site.editor_tab")
+        # Preview: the block inside the chain of elements that holds its slot, with the
+        # page's style sheets; built in Logic (blockPreviewHtml).
+        tabs.contentPane(title="Preview", pageName="preview", overflow="hidden").iframe(
+            srcdoc="^site.block_preview",
+            sandbox="allow-scripts",
+            title="Block preview",
+            class_="block-preview",
         )
-        window.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
-        foot = window.div(class_="bw-foot")
-        foot.span("^site.editor_change", class_="muted")
-        foot.span("^site.editor_note", class_="muted")
+        tabs.contentPane(
+            title="Jodit", pageName="rich", overflow="hidden", class_="block-editor-pane"
+        ).htmlEditor(value="^site.editor_text", height="100%", class_="block-rich")
+        tabs.contentPane(
+            title="HTML", pageName="html", overflow="hidden", class_="block-editor-pane"
+        ).codeMirror(value="^site.editor_text", language="html", height="100%")
+        tabs.contentPane(title="CSS", pageName="css", class_="block-css").p(
+            "The rules acting on this block come here.", class_="muted"
+        )
+        frame.bottom.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
+        bar = frame.bottom.menu(presentation="bar", class_="tab-toolbar block-footer")
+        group = bar.menuline(group=True, overflowable=False)
+        group.span("^site.editor_change", class_="tab-crumb")
+        group.span("^site.editor_note", class_="tab-crumb")
+        bar.spacer(flex=1)
         pane.dataFormula(
             "site.confirm_hidden", "state !== 'to_review'", state="^site.editor_state", _init=True
         )
-        foot.button(
-            "Confirm translation", class_="button--secondary", hidden="^site.confirm_hidden"
-        ).dataController(func="confirmTranslation")
-        foot.button("Cancel", class_="button--secondary").dataController(func="closeEditor")
-        foot.button("Save", disabled="^site.busy").dataController(func="saveContent")
+        bar.menuline(
+            caption="Confirm translation",
+            action="confirmTranslation",
+            hidden="^site.confirm_hidden",
+            overflowable=False,
+        )
+        bar.menuline(caption="Cancel", action="closeEditor", overflowable=False)
+        bar.menuline(
+            caption="Save", action="saveContent", disabled="^site.busy", overflowable=False
+        )
+        pane.dataController(func="styleBlockEditor", tab="^site.editor_tab")
 
     @source(auth="editor")
     async def seo_panel(self, pane, site="", page_id="", version=0, language=""):
