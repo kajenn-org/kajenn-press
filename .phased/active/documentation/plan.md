@@ -42,7 +42,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `xmldocs/booklet/operations.{xml,md,html}`.
   - Done: the table lists exactly `OPERATIONS` of `site/service.py`, each with its permission and whether it needs the lock and a key.
 
-- [ ] **Phase 4**: Booklet "Publication and serving"
+- [x] **Phase 4**: Booklet "Publication and serving"
+  > Done: `xmldocs/booklet/publication.xml` (objects and keys table, page object content, fingerprint, the site server's order of answers, rollback, maintenance, private sites and links; 10 facts). Valid, rendered.
   - Files: `xmldocs/booklet/publication.{xml,md,html}`.
   - Done: object names, index schema 3, bindings and private links match `published.py`, `publish.py`, `private.py`, `serving.py`.
 
