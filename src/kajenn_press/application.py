@@ -325,6 +325,74 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_languages_set(self, site_id: str, key: str, languages: list, _request=None) -> dict:
+        """Set the site's languages (BCP 47 tags such as it, en), main language first."""
+        return self._site(
+            _request, "site_languages_set", site_id=site_id, key=key, languages=languages
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def content_translate(
+        self,
+        site_id: str,
+        key: str,
+        content_id: str,
+        language: str,
+        text: str,
+        proposed: bool = False,
+        _request=None,
+    ) -> dict:
+        """Write the translation of a content into one of the site's other languages."""
+        return self._site(
+            _request,
+            "content_translate",
+            site_id=site_id,
+            key=key,
+            content_id=content_id,
+            language=language,
+            text=text,
+            proposed=proposed,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_text_set(
+        self,
+        site_id: str,
+        key: str,
+        name: str,
+        text: str,
+        language: str | None = None,
+        proposed: bool = False,
+        _request=None,
+    ) -> dict:
+        """Set a template text of the site (such as a menu label), main language by default;
+        templates read it as ^texts.<name>."""
+        return self._site(
+            _request,
+            "site_text_set",
+            site_id=site_id,
+            key=key,
+            name=name,
+            text=text,
+            language=language,
+            proposed=proposed,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def translation_confirm(
+        self, site_id: str, key: str, translation: str, language: str, _request=None
+    ) -> dict:
+        """Confirm a translation proposed by Help me (translation: content_<id> or text_<name>)."""
+        return self._site(
+            _request,
+            "translation_confirm",
+            site_id=site_id,
+            key=key,
+            translation=translation,
+            language=language,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_asset_add(
         self, site_id: str, key: str, page_id: str, asset_id: str, _request=None
     ) -> dict:

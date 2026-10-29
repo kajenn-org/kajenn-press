@@ -30,7 +30,8 @@ Entry: main `1029f6d`. Inventory: no part of the code knows a language today. A 
 
 ## Work Plan
 
-- [ ] **Phase 1**: Languages and translated texts in the site model
+- [x] **Phase 1**: Languages and translated texts in the site model
+  > Done: `src/kajenn_press/site/languages.py`: site languages (info attribute `languages`, main first; without it the root template's `lang` or `en`, N9-D3), BCP 47 check, at most 8; the main language changes only before any translation; removing a language drops its translations. Translations live in the site section `translations` (`content_<id>`, `text_<name>` → language → text with `main_digest` and `review`); site texts (template texts, read as `^texts.<name>`) in the site section `texts`. Page copies of contents carry their translations in the page section `translations`; a changed translation makes the copy outdated and Update brings it along. States: missing, to_update, to_review, done. Operations `site_languages_set`, `content_translate`, `site_text_set`, `translation_confirm` (45 site operations); `site_read` returns languages, texts and translation states. Older sources get `texts` and `translations` sections on load; any other missing section still fails closed. Tests: `tests/site/test_languages.py` (11). Main suite: 203 passed, 11 skipped.
   - Files: `src/kajenn_press/site/model.py`, `service.py`, `application.py`, `storage.py`, `tests/site/`.
   - Details: per N9-D1, N9-D3 and N9-D4: site languages (main and others) and operation `site_languages_set`; content translations (`content_translate`, confirm of a proposed one); copies carry translations; per language states missing, to update (main digest changed), to review; Update brings translations along; page data (template texts) per language; `site_read` reports states per language.
   - Done: a two-language site shows missing, to update and to review correctly; a one-language site reads and saves as before.

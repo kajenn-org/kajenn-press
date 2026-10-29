@@ -18,6 +18,14 @@ from genro_bag import Bag, BagException
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
+from .languages import (
+    confirm_translation,
+    set_languages,
+    set_site_text,
+    set_translation,
+    site_languages,
+    translation_states,
+)
 from .lock import EditingLock
 from .model import ENGINES, Site, new_id
 from .published import page_fingerprint
@@ -53,6 +61,10 @@ CHANGES = {
     "page_url_set",
     "page_seo_set",
     "page_alt_set",
+    "site_languages_set",
+    "content_translate",
+    "site_text_set",
+    "translation_confirm",
     "folder_add",
     "tree_move",
     "page_asset_add",
@@ -380,10 +392,22 @@ class SiteService:
         return {
             "site_id": site.site_id,
             "name": site.name,
+            "languages": site_languages(site),
+            "texts": {
+                n.label: {
+                    "text": n.value,
+                    "translations": translation_states(site, "text_" + n.label),
+                }
+                for n in site.section("texts").nodes
+            },
             "holder": self.lock.holder(site_id),
             "templates": items("templates"),
             "contents": [
-                {**item, "text": site.node("contents", item["id"]).value}
+                {
+                    **item,
+                    "text": site.node("contents", item["id"]).value,
+                    "translations": translation_states(site, "content_" + item["id"]),
+                }
                 for item in items("contents")
             ],
             "assets": items("assets"),
@@ -475,6 +499,22 @@ class SiteService:
     def _page_alt_set(self, identity, site, page_id, image, alt):
         set_image_alt(site, page_id, image, alt)
         return {"page_id": page_id, "image": image}
+
+    def _site_languages_set(self, identity, site, languages):
+        set_languages(site, languages)
+        return {"languages": site_languages(site)}
+
+    def _content_translate(self, identity, site, content_id, language, text, proposed=False):
+        set_translation(site, "content_" + content_id, language, text, proposed)
+        return {"content_id": content_id, "language": language}
+
+    def _site_text_set(self, identity, site, name, text, language=None, proposed=False):
+        set_site_text(site, name, text, language, proposed)
+        return {"name": name, "language": language}
+
+    def _translation_confirm(self, identity, site, translation, language):
+        confirm_translation(site, translation, language)
+        return {"translation": translation, "language": language}
 
     def _page_asset_add(self, identity, site, page_id, asset_id):
         return {"copy": site.add_page_asset(page_id, asset_id)}
