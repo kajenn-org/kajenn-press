@@ -48,11 +48,15 @@ Library
 
 The site tab has three tabs: Visual editor, SEO, Published site.
 
+The site and its tabs fit in one bar 40 pixels high: the site's name and holder, the three tabs, the language shown, Help me and Save. The administration's own bar is as thin, with a small logo. Below the bar every pane, editor and preview takes the full remaining height.
+
 #### Visual editor
 
 - The center shows the site rendered as it would be served locally. It opens on the root page; the operator moves to other pages through the links, as a visitor would.
 - On command, a very thin border marks every slot.
-- A block can be detached into a floating window with three tabs: CodeMirror (source), Jodit (visual editing), Preview.
+- A single click on a block selects it: a border, a label with the slot and its content, and a round button with a pen. A single click on a link follows it, as a visitor would.
+- The pen, or a double click on the block, opens the block in a floating window over the preview, full height, moved sideways by its header and widened by its edge. One window is open at a time.
+- The window opens on Jodit, ready to write. A `</> HTML` button slides the source out beside it in CodeMirror; the two stay in step. The window ends with the state of the change, Cancel and Save; Save updates the preview.
 
 A side drawer holds a tab container with two tabs.
 
@@ -314,6 +318,10 @@ A site is edited by one person at a time. Whoever opens the editor takes the sit
    1. **One is the address; the other answers 301 to it**
    2. **Only the name entered**
    → Choice: **One is the address; the other answers 301 to it** (GP, 2026-10-29) — Visitors reach the site with or without www, on one canonical address.
+- **d-block-editing** `decided` — How does the operator open a block for editing?
+   1. **A click opens a side panel with CodeMirror, Jodit and Preview tabs**
+   2. **A click selects; the pen or a double click opens a floating window on Jodit, with the HTML source beside it on demand**
+   → Choice: **A click selects; the pen or a double click opens a floating window on Jodit, with the HTML source beside it on demand** (GP, 2026-10-29) — Writing comes first; the source is there when needed; links in blocks keep working.
 - **d-manager-host** `decided` — Does the Hetzner manager host serve public sites?
    1. **No: public sites go to separate servers**
    2. **Yes, behind its nginx**

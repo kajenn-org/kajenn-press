@@ -45,12 +45,15 @@ Library
 
     <section title="The site tab">
       <p>The site tab has three tabs: Visual editor, SEO, Published site.</p>
+      <p>The site and its tabs fit in one bar 40 pixels high: the site's name and holder, the three tabs, the language shown, Help me and Save. The administration's own bar is as thin, with a small logo. Below the bar every pane, editor and preview takes the full remaining height.</p>
 
       <section title="Visual editor">
         <list>
           <item>The center shows the site rendered as it would be served locally. It opens on the root page; the operator moves to other pages through the links, as a visitor would.</item>
           <item>On command, a very thin border marks every slot.</item>
-          <item>A block can be detached into a floating window with three tabs: CodeMirror (source), Jodit (visual editing), Preview.</item>
+          <item>A single click on a block selects it: a border, a label with the slot and its content, and a round button with a pen. A single click on a link follows it, as a visitor would.</item>
+          <item>The pen, or a double click on the block, opens the block in a floating window over the preview, full height, moved sideways by its header and widened by its edge. One window is open at a time.</item>
+          <item>The window opens on Jodit, ready to write. A <c>&lt;/&gt; HTML</c> button slides the source out beside it in CodeMirror; the two stay in step. The window ends with the state of the change, Cancel and Save; Save updates the preview.</item>
         </list>
         <p>A side drawer holds a tab container with two tabs.</p>
         <list>
@@ -392,6 +395,12 @@ Library
       <option id="d-www-canonical" title="One is the address; the other answers 301 to it"/>
       <option id="d-www-one" title="Only the name entered"/>
       <choice option="d-www-canonical" by="GP" date="2026-10-29">Visitors reach the site with or without www, on one canonical address.</choice>
+    </decision>
+    <decision id="d-block-editing" status="decided">
+      <question>How does the operator open a block for editing?</question>
+      <option id="d-block-editing-panel" title="A click opens a side panel with CodeMirror, Jodit and Preview tabs"/>
+      <option id="d-block-editing-float" title="A click selects; the pen or a double click opens a floating window on Jodit, with the HTML source beside it on demand"/>
+      <choice option="d-block-editing-float" by="GP" date="2026-10-29">Writing comes first; the source is there when needed; links in blocks keep working.</choice>
     </decision>
     <decision id="d-manager-host" status="decided">
       <question>Does the Hetzner manager host serve public sites?</question>

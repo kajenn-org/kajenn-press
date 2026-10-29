@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block editing mockup</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--line:#d5dbe3;--fg:#1d2633;--muted:#6b7686;--accent:#2f6fde;--accent-soft:#e3edfc}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif;height:100vh;display:flex;flex-direction:column}
+.note{background:#fff8e0;border-bottom:1px solid #ecd98f;padding:6px 14px;font-size:12px}
+.top{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#1d2633;color:#e8ecf2;flex:none}
+.top .mark{width:22px;height:22px;border-radius:5px;background:#2f6fde;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+.top .sep{color:#6b7686}.top .who{color:#9aa6b6;font-size:12px}
+.top nav{display:flex;gap:2px;margin-left:16px;margin-right:auto}
+.top nav a{padding:10px 12px;color:#9aa6b6;cursor:pointer;border-bottom:2px solid transparent}
+.top nav a.on{color:#fff;border-color:#7fb2ec}
+.top .btn{padding:3px 10px;background:#243042;border-color:#3a4658;color:#e8ecf2}
+.top .btn.primary{background:#2f6fde;border-color:#2f6fde}
+.top .sel{font:inherit;background:#243042;color:#e8ecf2;border:1px solid #3a4658;border-radius:6px;padding:3px 6px}
+.top .user{color:#9aa6b6;font-size:12px;margin-left:6px}
+.frame{flex:1;display:flex;min-height:0}
+.drawer{width:240px;background:var(--panel);border-right:1px solid var(--line);padding:10px;color:var(--muted)}
+.stage{flex:1;position:relative;padding:14px;min-height:0}
+.page{background:#fff;border:1px solid var(--line);border-radius:8px;height:100%;overflow:auto;font-family:Georgia,serif;color:#1d2633}
+.site-nav{display:flex;gap:18px;align-items:center;padding:16px 28px;border-bottom:1px solid #eee;font:600 14px system-ui}
+.site-nav .logo{font-size:22px;margin-right:auto}
+.site-nav a{color:#1d2633;text-decoration:none}
+.block{position:relative;margin:10px 18px;padding:14px 10px;border:1px dashed transparent;border-radius:6px;cursor:default}
+.block:hover{border-color:#c4ccd8}
+.block.selected{border:2px solid var(--accent);background:rgba(47,111,222,.03)}
+.block .tag{display:none;position:absolute;top:-11px;left:10px;background:var(--accent);color:#fff;font:600 11px system-ui;padding:1px 7px;border-radius:4px}
+.block.selected .tag{display:block}
+.pen{display:none;position:absolute;top:-15px;right:10px;width:30px;height:30px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25);align-items:center;justify-content:center}
+.block.selected .pen{display:flex}
+.pen svg{width:15px;height:15px}
+h1{font-size:44px;margin:.2em 0}
+.lead{font:17px/1.6 system-ui;color:#4a5566;max-width:640px}
+/* floating window */
+.float{position:absolute;top:14px;bottom:14px;right:14px;width:620px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 40px rgba(20,30,50,.25);display:none;flex-direction:column;resize:horizontal;overflow:hidden;min-width:420px;max-width:calc(100% - 28px)}
+.float.open{display:flex}
+.float.wide{width:960px}
+.fhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:move;background:#f7f9fc;border-radius:10px 10px 0 0}
+.fhead b{margin-right:auto}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--fg);border-radius:6px;padding:4px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.fbody{flex:1;display:flex;min-height:0}
+.jodit{flex:1;display:flex;flex-direction:column;min-width:0}
+.tools{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tools span{padding:3px 8px;border-radius:4px;color:#3b4554;font-weight:600}
+.tools span:hover{background:#eef1f5}
+.area{flex:1;padding:12px 16px;overflow:auto;outline:none;font-family:Georgia,serif}
+.area h1{font-size:30px}
+.html{width:0;overflow:hidden;border-left:1px solid var(--line);display:flex;flex-direction:column;transition:width .2s;background:#1e2430}
+.float.wide .html{width:380px}
+.html .hl{color:#9aa6b6;font:600 11px system-ui;padding:6px 10px;border-bottom:1px solid #2d3545}
+.html textarea{flex:1;border:none;resize:none;background:#1e2430;color:#d8e0ea;font:12px/1.5 ui-monospace,monospace;padding:10px;outline:none}
+.ffoot{display:flex;gap:8px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--line);align-items:center}
+.ffoot .muted{margin-right:auto;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="note">Mockup · click a block to select it · the pen (or a double click) opens the floating editor, full height, moved sideways by its header and widened by its edge · &lt;/&gt; HTML slides the source out beside Jodit · links in the page are followed on a single click</div>
+<div class="top">
+  <span class="mark">k</span><b>Kajenn Press</b><span class="sep">/</span><span>Kajenn Press</span><span class="who">you hold it</span>
+  <nav><a class="on">Visual editor</a><a>SEO</a><a>Published site</a></nav>
+  <select class="sel"><option>EN · main</option><option>IT</option></select>
+  <button class="btn">Help me</button><button class="btn primary">Save</button>
+  <span class="user">operator ▾</span>
+</div>
+<div class="frame">
+  <div class="drawer">Pages / Contents drawer (unchanged in this mockup)</div>
+  <div class="stage">
+    <div class="page" id="page">
+      <div class="site-nav"><span class="logo">kajenn press</span><a href="#">Overview</a><a href="#">Features</a><a href="#">Get started</a><a href="#">EN</a><a href="#">IT</a></div>
+      <div class="block" data-slot="hero" data-content="home hero">
+        <span class="tag">hero · home hero</span>
+        <button class="pen" title="Edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        <div class="content"><p style="font:600 12px system-ui;letter-spacing:.1em;color:#4a5566">● WEBSITE EDITING · GENRO FAMILY</p><h1>Build it. Review it. <em>Publish</em> it.</h1><p class="lead">Kajenn Press builds a website page by page in the browser, in one or more languages, and publishes each page as its own versioned object.</p></div>
+      </div>
+      <div class="block" data-slot="body" data-content="home body">
+        <span class="tag">body · home body</span>
+        <button class="pen" title="Edit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        <div class="content"><h2>Per-page publication</h2><p class="lead">Each page is a versioned object in the release bucket. See <a href="#">how publication works</a>.</p></div>
+      </div>
+    </div>
+
+    <div class="float" id="float">
+      <div class="fhead" id="fhead"><b id="ftitle">hero · home hero</b>
+        <button class="btn" id="htmlBtn">&lt;/&gt; HTML</button>
+        <button class="btn" id="closeBtn" title="Close">✕</button></div>
+      <div class="fbody">
+        <div class="jodit">
+          <div class="tools"><span>B</span><span><i>I</i></span><span><u>U</u></span><span>H1</span><span>H2</span><span>¶</span><span>• list</span><span>1. list</span><span>🔗</span><span>🖼</span><span>↶</span><span>↷</span></div>
+          <div class="area" id="area" contenteditable="true"></div>
+        </div>
+        <div class="html"><div class="hl">HTML · CodeMirror</div><textarea id="src" spellcheck="false"></textarea></div>
+      </div>
+      <div class="ffoot"><span class="muted" id="state">No changes</span><button class="btn" id="cancelBtn">Cancel</button><button class="btn primary" id="saveBtn">Save</button></div>
+    </div>
+  </div>
+</div>
+<script>
+const page = document.getElementById('page'), win = document.getElementById('float');
+const area = document.getElementById('area'), src = document.getElementById('src'), state = document.getElementById('state');
+let current = null;
+function select(block) {
+  document.querySelectorAll('.block.selected').forEach(b => b.classList.remove('selected'));
+  if (block) block.classList.add('selected');
+}
+function open(block) {
+  select(block); current = block;
+  document.getElementById('ftitle').textContent = block.querySelector('.tag').textContent;
+  area.innerHTML = block.querySelector('.content').innerHTML;
+  src.value = area.innerHTML.replace(/></g, '>\n<');
+  state.textContent = 'No changes';
+  win.classList.add('open'); area.focus();
+}
+page.addEventListener('click', e => {
+  if (e.target.closest('.pen')) { open(e.target.closest('.block')); return; }
+  if (e.target.closest('a')) { e.preventDefault(); state.textContent = ''; alert('Link followed: the preview moves to that page'); return; }
+  select(e.target.closest('.block'));
+});
+page.addEventListener('dblclick', e => { const b = e.target.closest('.block'); if (b) open(b); });
+area.addEventListener('input', () => { src.value = area.innerHTML.replace(/></g, '>\n<'); state.textContent = 'Changed, not saved'; });
+src.addEventListener('input', () => { area.innerHTML = src.value; state.textContent = 'Changed, not saved'; });
+document.getElementById('htmlBtn').onclick = e => { win.classList.toggle('wide'); e.currentTarget.classList.toggle('on'); };
+document.getElementById('closeBtn').onclick = document.getElementById('cancelBtn').onclick = () => win.classList.remove('open');
+document.getElementById('saveBtn').onclick = () => { current.querySelector('.content').innerHTML = area.innerHTML; win.classList.remove('open'); };
+// drag by the header
+const head = document.getElementById('fhead');
+head.addEventListener('mousedown', e => {
+  if (e.target.closest('button')) return;
+  // Full height always: the window moves sideways only.
+  const sx = e.clientX - win.offsetLeft;
+  const move = m => { win.style.right = 'auto'; win.style.left = (m.clientX - sx) + 'px'; };
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once: true});
+});
+</script>
+</body>
+</html>
