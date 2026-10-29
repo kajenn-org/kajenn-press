@@ -28,6 +28,7 @@ def sites_config(tmp_path):
         "sources": versioned_bucket(),
         "releases": versioned_bucket(),
         "render_python": os.environ["KAJENN_RENDER_PYTHON"],
+        "private_secret": b"admin-test-private-link-secret",
     }
 
 
@@ -136,6 +137,30 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 "No image on this page.",
             ):
                 assert text in seo, text
+
+            published = (await rpc(http, tab, "published_panel", "source", site=site))["value"]
+            for text in (
+                "Not published",
+                "Publish…",
+                "Rollback…",
+                "Maintenance on",
+                "Private link",
+                "Whole site",
+                "The next Publish puts the site at https://demo.example",
+            ):
+                assert text in published, text
+            reply = await rpc(
+                http,
+                tab,
+                "command",
+                operation="site_visibility_set",
+                arguments={"site_id": site, "key": "private", "state": "private"},
+            )
+            assert reply["value"]["ok"] is True
+            link = await rpc(
+                http, tab, "command", operation="private_link", arguments={"site_id": site}
+            )
+            assert link["value"]["result"]["url"].startswith("https://demo.example/_private/")
 
     asyncio.run(scenario())
 

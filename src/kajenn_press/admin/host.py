@@ -75,7 +75,10 @@ class AdminApplication(Application):
             content_security_policy=(
                 "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-{nonce}'; "
                 "style-src 'self' 'unsafe-inline' data:; img-src 'self' data:; "
-                "connect-src 'self'; frame-src 'self' about:; object-src 'none'; "
+                # Published sites open in the Published site tab: their addresses are https,
+                # or http on loopback hosts (publication.routes.origin).
+                "connect-src 'self'; frame-src 'self' about: https: http://localhost:* "
+                "http://*.localhost:* http://127.0.0.1:*; object-src 'none'; "
                 "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
             ),
             **kwargs,

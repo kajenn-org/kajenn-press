@@ -40,6 +40,12 @@ COMMANDS = frozenset(
         "page_seo_set",
         "page_url_set",
         "page_alt_set",
+        "publish",
+        "page_rollback",
+        "site_rollback",
+        "maintenance_set",
+        "site_visibility_set",
+        "private_link",
     }
 )
 ROBOTS = ("index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow")
@@ -116,6 +122,46 @@ def contents_bag(read):
             unused=uses == 0,
         )
     return bag
+
+
+def publication_label(state):
+    """Text and kind of the state chip of the Published site tab."""
+    if not state["published"] and state["state"] is None:
+        return "Not published", "none"
+    if state["maintenance"]:
+        return "Maintenance", "maintenance"
+    if state["state"] == "private":
+        return "Private", "private"
+    return "Public", "public"
+
+
+def publication_summary(state):
+    parts = []
+    if state["last_publish"]:
+        parts.append("published " + state["last_publish"][:16])
+    changed = state["changed"]
+    parts.append(
+        f"{changed} page{'s' if changed != 1 else ''} changed since"
+        if state["published"]
+        else f"{changed} page{'s' if changed != 1 else ''} to publish"
+    )
+    return " · ".join(parts)
+
+
+def address_note(state):
+    if state["address_problem"]:
+        return "The root page's public origin cannot be an address: " + state["address_problem"]
+    if state["address"] is None:
+        return "The next Publish puts the site at " + state["next_address"]
+    return "The next Publish moves the site to " + state["next_address"]
+
+
+def stage_message(state):
+    if not state["address"]:
+        return "Give the root page a public origin in the SEO tab, then publish."
+    if state["state"] == "private":
+        return "The site is private: visitors get 404. Open it with a private link."
+    return "The site is in maintenance: visitors get 503. Open it with a private link."
 
 
 def image_source(src):
@@ -240,8 +286,11 @@ class Page(AdminPage):
         tabs.contentPane(title="SEO", pageName="seo", overflow="hidden").remote(
             "seo_panel", site=site, page_id="^site.seo_page", version="^site.seo_version"
         )
-        tabs.contentPane(title="Published site", pageName="published", padding="24px").p(
-            "The published site comes with N7.", class_="muted"
+        pane.dataSetter("site.pub_version", 0)
+        pane.dataSetter("site.pub_panel", "")
+        pane.dataSetter("site.pub_message", "")
+        tabs.contentPane(title="Published site", pageName="published", overflow="hidden").remote(
+            "published_panel", site=site, version="^site.pub_version"
         )
 
     def visual_editor(self, pane, contents):
@@ -531,6 +580,152 @@ class Page(AdminPage):
         literal_text(body, "div", inherited["site_name"] or site_name, class_="seo-card-site")
         body.div("^site.seo_shown.social_title", class_="seo-card-title")
         body.div("^site.seo_shown.social_description", class_="seo-card-text")
+
+    @source(auth="editor")
+    async def published_panel(self, pane, site="", version=0):
+        try:
+            state = await execute_service("publication_state", {"site_id": site})
+            plan = await execute_service("publish_plan", {"site_id": site})
+        except DomainError as error:
+            literal_text(pane, "p", str(error), class_="muted pub-empty")
+            return
+        read = await execute_service("site_read", {"site_id": site})
+        hidden = state["state"] == "private" or state["maintenance"]
+        for name, value in {
+            "pub_maintenance": state["maintenance"],
+            "pub_state": state["state"] or "",
+            "pub_plan": json.dumps([item["page_id"] for item in plan]),
+            "pub_link": "",
+            "pub_hours": "8",
+            "pub_target": "site",
+            "pub_rollback_version": "",
+        }.items():
+            pane.dataSetter("site." + name, value)
+        for name in ("publish", "rollback", "private"):
+            pane.dataFormula(
+                f"site.pub_hide_{name}", f"p !== '{name}'", p="^site.pub_panel", _init=True
+            )
+        layout = pane.borderContainer(height="100%", class_="pub-tab")
+        bar = layout.contentPane(region="top").div(class_="pub-bar")
+        label, kind = publication_label(state)
+        bar.span(label, class_="pub-chip pub-" + kind)
+        if state["address"]:
+            literal_text(
+                bar, "a", state["address"] + "/", href=state["address"] + "/", target="_blank"
+            )
+        else:
+            bar.span("No address yet", class_="muted")
+        bar.span(publication_summary(state), class_="muted")
+        actions = bar.div(class_="pub-actions")
+        actions.button("Publish…").dataController(func="showPublish")
+        actions.button("Rollback…", class_="button--secondary").dataController(func="showRollback")
+        actions.button(
+            "Maintenance off" if state["maintenance"] else "Maintenance on",
+            class_="button--secondary",
+        ).dataController(func="toggleMaintenance")
+        actions.button("Private link", class_="button--secondary").dataController(
+            func="showPrivate"
+        )
+        bar.span("^site.pub_message", role="status", class_="pub-message")
+        if state["next_address"] or state["address_problem"]:
+            note = layout.contentPane(region="bottom").div(class_="pub-note")
+            literal_text(note, "span", address_note(state))
+        stage = layout.contentPane(region="center", class_="pub-stage")
+        self.publish_panel(stage, plan)
+        self.rollback_panel(stage, read["pages"], site)
+        self.private_panel(stage, state)
+        if state["address"] and not hidden:
+            stage.iframe(
+                src=state["address"] + "/",
+                sandbox="allow-scripts allow-same-origin allow-popups",
+                title="Published site",
+                class_="pub-frame",
+            )
+        else:
+            box = stage.div(class_="pub-empty")
+            literal_text(box, "p", stage_message(state))
+            if state["address"]:
+                box.button("Open with a private link").dataController(func="openPrivate")
+
+    def publish_panel(self, stage, plan):
+        panel = stage.div(class_="pub-panel", hidden="^site.pub_hide_publish")
+        head = panel.div(class_="pub-panel-head")
+        head.strong("Publish")
+        head.button("Close", class_="button--quiet").dataController(func="closePanel")
+        for index, item in enumerate(plan):
+            stage.dataSetter(f"site.pub_sel.i{index}", item["selected"])
+            row = panel.div(class_="pub-row")
+            row.input(id=f"pub-{index}", type="checkbox", value=f"^site.pub_sel.i{index}")
+            text = row.div()
+            name = item["name"] or "(removed page)"
+            text.html_label(f"{name} · {item['url']} · {item['state']}", for_=f"pub-{index}")
+            for warning in item["warnings"]:
+                literal_text(text, "div", "▲ " + warning, class_="pub-warning")
+        panel.button("Publish selected pages").dataController(func="publishSelected")
+        panel.div("Warnings never block Publish.", class_="muted pub-small")
+
+    def rollback_panel(self, stage, pages, site):
+        panel = stage.div(class_="pub-panel", hidden="^site.pub_hide_rollback")
+        head = panel.div(class_="pub-panel-head")
+        head.strong("Rollback")
+        head.button("Close", class_="button--quiet").dataController(func="closePanel")
+        menu = panel.select(value="^site.pub_target", aria_label="What to roll back")
+        menu.option("Whole site", value="site")
+        for page in pages:
+            menu.option("Page: " + page["name"], value=page["id"])
+        panel.div(class_="pub-versions").remote(
+            "rollback_view", site=site, target="^site.pub_target"
+        )
+        panel.div(
+            "Whole site: restores a saved source version and republishes its pages.",
+            class_="muted pub-small",
+        )
+
+    @source(auth="editor")
+    async def rollback_view(self, pane, site="", target="site"):
+        try:
+            if target == "site":
+                versions = await execute_service("site_versions", {"site_id": site})
+                online = {v["version_id"] for v in versions if v["is_latest"]}
+            else:
+                versions = await execute_service(
+                    "page_versions", {"site_id": site, "page_id": target}
+                )
+                online = {v["version_id"] for v in versions if v["online"]}
+        except DomainError as error:
+            literal_text(pane, "p", str(error), class_="muted")
+            return
+        pane.dataSetter("site.pub_rollback_version", "")
+        menu = pane.select(value="^site.pub_rollback_version", aria_label="Version")
+        menu.option("Choose a version…", value="")
+        for item in reversed(versions):
+            mark = " · online" if item["version_id"] in online else ""
+            menu.option(item["last_modified"][:19] + mark, value=item["version_id"])
+        pane.button("Put online").dataController(func="rollbackChosen")
+
+    def private_panel(self, stage, state):
+        panel = stage.div(class_="pub-panel", hidden="^site.pub_hide_private")
+        head = panel.div(class_="pub-panel-head")
+        head.strong("Private link")
+        head.button("Close", class_="button--quiet").dataController(func="closePanel")
+        row = panel.div(class_="pub-row")
+        menu = row.select(value="^site.pub_hours", aria_label="Validity")
+        menu.option("valid 8 hours", value="8")
+        menu.option("valid 7 days", value="168")
+        row.button("Create link").dataController(func="createPrivateLink")
+        panel.input(value="^site.pub_link", readonly=True, aria_label="Private link")
+        panel.button("Copy", class_="button--secondary").dataController(func="copyPrivateLink")
+        panel.div(
+            "Shows the real site during maintenance or while the site is private."
+            " Anyone with the link can open it until it expires.",
+            class_="muted pub-small",
+        )
+        if state["state"] == "private":
+            panel.button("Make public").dataController(func="makePublic")
+        else:
+            panel.button("Make private", class_="button--secondary").dataController(
+                func="makePrivate"
+            )
 
     @source(auth="editor")
     async def plan_view(self, pane, plan=""):
