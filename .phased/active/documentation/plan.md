@@ -37,7 +37,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `xmldocs/booklet/templates.{xml,md,html}`.
   - Done: the example layout and a minimal template both appear and match `examples/kajenn_press_site/layout.py` and the tests.
 
-- [ ] **Phase 3**: Booklet "The site operations over REST and MCP"
+- [x] **Phase 3**: Booklet "The site operations over REST and MCP"
+  > Done: `xmldocs/booklet/operations.xml`: calling (REST, MCP, answers, error statuses), editing session, idempotency keys, and five tables generated from `site/service.py` and the route docstrings: 45 rows, checked equal to `OPERATIONS`, each with arguments, permission, lock and key. Valid, rendered.
   - Files: `xmldocs/booklet/operations.{xml,md,html}`.
   - Done: the table lists exactly `OPERATIONS` of `site/service.py`, each with its permission and whether it needs the lock and a key.
 
