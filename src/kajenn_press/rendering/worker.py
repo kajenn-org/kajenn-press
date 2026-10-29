@@ -28,6 +28,8 @@ def run_request(request):
             request["connections"],
             request["resource_id"],
             request["head"],
+            request["language"],
+            request["fallback"],
         )
         return {
             "ok": True,

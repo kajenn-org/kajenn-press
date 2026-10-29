@@ -451,11 +451,14 @@ class SiteService:
     def _seo_check(self, identity, site_id, page_id=None):
         return seo_check(self.site(identity, site_id), page_id)
 
-    def _page_render(self, identity, site_id, page_id):
+    def _page_render(self, identity, site_id, page_id, language=None):
         if self.worker is None:
             raise DomainError("unavailable", "Configure the render worker first")
         site = self.site(identity, site_id)
-        return self.worker.render_page(page_request(site, page_id, self.connections))
+        if language is not None and language not in site_languages(site):
+            raise DomainError("invalid_input", f"{language} is not a language of the site")
+        request = page_request(site, page_id, self.connections, language=language)
+        return self.worker.render_page(request)
 
     # Changes on the working copy
 

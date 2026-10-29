@@ -226,7 +226,7 @@ def indexable(seo):
     return not seo["robots"].startswith("noindex")
 
 
-def head_html(seo, image_path=None):
+def head_html(seo, image_path=None, alternates=()):
     """The SEO tags written into the `head` of the rendered page (N6-D1).
 
     `image_path` is the site path of the social image; Open Graph wants it absolute, so it
@@ -253,6 +253,11 @@ def head_html(seo, image_path=None):
     if image:
         tags.append(meta("property", "og:image", image))
     tags.append(meta("name", "twitter:card", "summary_large_image" if image else "summary"))
+    for language, href in alternates:
+        tags.append(
+            f'<link rel="alternate" hreflang="{escape(language, quote=True)}"'
+            f' href="{escape(href, quote=True)}">'
+        )
     if seo["json_ld"]:
         data = json.dumps(json.loads(seo["json_ld"]), ensure_ascii=False).replace("<", "\\u003c")
         tags.append(f'<script type="application/ld+json">{data}</script>')

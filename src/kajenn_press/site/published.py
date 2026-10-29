@@ -24,7 +24,7 @@ from ..catalog.filesystem import encode
 from .seo import effective_seo
 from .storage import FIXED_TIME
 
-SCHEMA = 2
+SCHEMA = 3
 ASSET_NAME = re.compile(r"[0-9a-f]{64}\.[a-z0-9]{1,8}")
 
 
@@ -32,19 +32,41 @@ def sha256(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def page_fingerprint(site, page_id):
-    """What makes a page change for Publish: name, URL, whole Bag and effective SEO.
+def language_bag(site, page_id, language):
+    """The page Bag as one language sees it: only that language's translations and URL."""
+    from .languages import main_language
+
+    bag = site.node("pages", page_id).value.deepcopy()
+    main = language == main_language(site)
+    for copy in bag.get_item("translations").values():
+        for code in [n.label for n in copy.nodes if main or n.label != language]:
+            copy.pop(code)
+    languages = bag.get_item("languages")
+    for code in [n.label for n in languages.nodes if main or n.label != language]:
+        languages.pop(code)
+    return bag
+
+
+def page_fingerprint(site, page_id, language=None):
+    """What makes a page in a language change for Publish: name, URL, the page Bag as
+    that language sees it, effective SEO, site texts and the site's languages.
 
     The effective SEO also follows the root defaults, so changing them changes every page
-    that inherits them.
+    that inherits them; a translation in one language leaves the others unchanged.
     """
+    from .languages import language_url, main_language, site_languages
+    from .render import page_texts
+
+    language = language or main_language(site)
     node = site.node("pages", page_id)
     raw = encode(
         [
             node.attr["name"],
-            node.attr["url"],
-            node.value.to_tytx(transport="json"),
-            effective_seo(site, page_id),
+            language_url(site, page_id, language),
+            language_bag(site, page_id, language).to_tytx(transport="json"),
+            effective_seo(site, page_id, language=language),
+            page_texts(site, language),
+            site_languages(site),
         ]
     )
     return sha256(raw)
@@ -59,6 +81,7 @@ class PublishedPage:
     html: str
     assets: dict
     indexable: bool
+    language: str
     request: str | None = None
     refresh: int = 0
 
@@ -76,6 +99,7 @@ def pack_page(published):
                 "page": published.page,
                 "refresh": published.refresh,
                 "indexable": published.indexable,
+                "language": published.language,
             }
         ),
         "index.html": published.html.encode("utf-8"),
@@ -129,6 +153,7 @@ def unpack_page(raw):
             "page",
             "refresh",
             "indexable",
+            "language",
         }
         or meta["schema"] != SCHEMA
         or not isinstance(meta["indexable"], bool)
@@ -143,6 +168,7 @@ def unpack_page(raw):
         html,
         assets,
         meta["indexable"],
+        meta["language"],
         request,
         meta["refresh"],
     )
@@ -154,7 +180,9 @@ def make_index(site_id, source_version, pages, redirects, maintenance=False):
     `pages` maps page ids to {"url", "key", "version_id", "fingerprint", "assets",
     "refresh"}: `assets` lists the content-addressed asset names the page object holds;
     `refresh` is how many seconds its rendering stays valid (0 for a static page);
-    `indexable` is false for a `noindex` page, left out of `sitemap.xml`.
+    `indexable` is false for a `noindex` page, left out of `sitemap.xml`; `language` is
+    the language of the object. The main language's entry is keyed by the page id, every
+    other language's by `<page id>.<language>` (N9-D5).
     """
     urls = [entry["url"] for entry in pages.values()]
     if len(urls) != len(set(urls)):
@@ -195,7 +223,16 @@ def read_index(raw):
         or not isinstance(index["redirects"], dict)
         or any(
             set(entry)
-            != {"url", "key", "version_id", "fingerprint", "assets", "refresh", "indexable"}
+            != {
+                "url",
+                "key",
+                "version_id",
+                "fingerprint",
+                "assets",
+                "refresh",
+                "indexable",
+                "language",
+            }
             for entry in index["pages"].values()
         )
         or len({e["url"] for e in index["pages"].values()}) != len(index["pages"])

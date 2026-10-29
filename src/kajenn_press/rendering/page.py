@@ -56,13 +56,16 @@ def with_head(html, head):
     return html[:index] + head + html[index:]
 
 
-def render_page(engine, template, slots, data, page_data, connections, resource_id, head):
+def render_page(
+    engine, template, slots, data, page_data, connections, resource_id, head, language, fallback
+):
     """HTML of a page and the preparation diagnostics.
 
     `slots` maps slot names to {"format", "source"}; `data` is plain JSON Data such as
     `page.title` and asset URLs; `page_data` is the page's Data Bag, possibly with
     connection resolvers; `head` holds the SEO tags written before `</head>`, replacing
-    the template's own.
+    the template's own; `language` becomes the `lang` of the document; the slots named in
+    `fallback` show the main language and get `kpress_fallback` for the preview (N9).
     """
     template = without_seo_tags(template)
     declared = template_slots(template)
@@ -88,9 +91,14 @@ def render_page(engine, template, slots, data, page_data, connections, resource_
         else:
             builder.data.set_item(node.label, node.static_value, _attributes=dict(node.attr))
     replay(builder.source, template)
+    for _path, node in builder.source.query("#p,#n", deep=True):
+        if node.node_tag == "html":
+            node.attr["lang"] = language
     for slot in declared:
         if slot.name in prepared:
             builder.source.get_node(slot.path).value = prepared[slot.name]
+        if slot.name in fallback:
+            builder.source.get_node(slot.path).attr["kpress_fallback"] = True
     validate_static_source(builder)
     result = builder.render(mode="html", target=False, doctype=True)
     if not result.lower().startswith("<!doctype html>"):

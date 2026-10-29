@@ -573,9 +573,14 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "seo_check", site_id=site_id, page_id=page_id)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def page_render(self, site_id: str, page_id: str, _request=None) -> dict:
-        """Static HTML of a page, rendered in the worker."""
-        return self._site(_request, "page_render", site_id=site_id, page_id=page_id)
+    def page_render(
+        self, site_id: str, page_id: str, language: str | None = None, _request=None
+    ) -> dict:
+        """Static HTML of a page in a language (main by default), rendered in the worker;
+        slots shown in the main language for lack of a translation carry kpress_fallback."""
+        return self._site(
+            _request, "page_render", site_id=site_id, page_id=page_id, language=language
+        )
 
 
 def create_server(root, *, auth, grants, administration=None, sites=None):
