@@ -61,10 +61,10 @@ class Page(AdminPage, IndexPage):
         return navigation
 
     def top(self, pane):
-        pane.set_attr({"height": "64px", "class": "admin-top"})
+        pane.set_attr({"height": "40px", "class": "admin-top"})
         bar = pane.header(class_="admin-toolbar")
         brand = bar.div(class_="admin-brand")
-        brand.img(src=LOGO_SRC, width="48", height="48", alt="")
+        brand.img(src=LOGO_SRC, width="24", height="24", alt="")
         brand.strong("Kajenn Press")
         account = bar.div(class_="account")
         account.span(self.identity)
@@ -88,20 +88,12 @@ class Page(AdminPage, IndexPage):
 
     def center(self, pane):
         pane.set_attr({"overflow": "hidden"})
-        IndexPage.center(self, pane)
+        # One site at a time, chosen in the navigation: no strip of open-site tabs (BE-D1).
+        # The retained panes keep the node label `tabs` the index runtime looks for.
+        pane.stackContainer(node_label="tabs", height="100%", selectedPage="^index.active")
 
-    def bottom(self, pane):
-        pane.set_attr({"height": "30px", "class": "admin-footer"})
-        pane.dataSetter("admin.active_title", "No site open")
-        pane.dataController(
-            "var node=path?navigation.getNode(path):null;"
-            "if(node&&node.attr.url){this.SET('admin.active_title',node.attr.title)}",
-            path="^index.navigationSelection",
-            navigation="=index.navigation",
-        )
-        pane.div(class_="admin-status", role="status").span(
-            "^admin.active_title", class_="active-title"
-        )
+    # No status bar: the open site's name is in its own bar.
+    bottom = None
 
     @source(auth="editor")
     async def index_panel(self, pane, selection):

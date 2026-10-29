@@ -261,6 +261,8 @@ class Page(AdminPage):
             "help_busy": False,
             "help_message": "",
             "language": "",
+            # The tab shown is page state too: a refresh keeps it.
+            "tab": "visual",
         }.items():
             root.dataSetter(f"site.{name}", value)
         root.dataController(
@@ -340,28 +342,49 @@ class Page(AdminPage):
             func="renderPage", page="^site.page", slots="^site.show_slots", _onBuilt=True
         )
         layout = pane.borderContainer(height="100vh", class_="site-tab")
-        top = layout.contentPane(region="top", class_="site-bar")
-        literal_text(top, "h1", read["name"])
+        # One 40-pixel row: the site, its three tabs and its commands (proposal, The site tab).
+        pane_top = layout.contentPane(region="top", height="40px", class_="site-bar")
+        # A content pane lays its children out in its own box: the row is a div of ours.
+        top = pane_top.div(class_="site-bar-row")
+        literal_text(top, "strong", read["name"], class_="site-name")
         pane.dataFormula(
             "site.holder_text",
-            "editing ? 'You are editing this site' : (holder ? 'Edited by ' + holder"
-            " + ' · read only' : 'Nobody is editing this site')",
+            "editing ? 'you hold it' : (holder ? 'read only · ' + holder : 'nobody holds it')",
             editing="^site.editing",
             holder="^site.holder",
             _init=True,
         )
         top.span("^site.holder_text", class_="site-holder")
+        nav = top.nav(class_="site-tabs", aria_label="Site tabs")
+        for page_name, title in (
+            ("visual", "Visual editor"),
+            ("seo", "SEO"),
+            ("published", "Published site"),
+        ):
+            pane.dataFormula(
+                f"site.tab_class_{page_name}",
+                f"tab === '{page_name}' ? 'site-tab-link on' : 'site-tab-link'",
+                tab="^site.tab",
+                _init=True,
+            )
+            nav.html_button(
+                title,
+                type="button",
+                class_=f"^site.tab_class_{page_name}",
+                tab=page_name,
+                connect_onclick="showTab",
+            )
+        top.span("^site.message", role="status", class_="site-message")
         actions = top.div(class_="site-actions")
-        actions.button(
-            "Take the site", class_="button--secondary", hidden="^site.editing"
-        ).dataController(func="takeSite")
         if len(languages) > 1:
             menu = actions.select(value="^site.language", aria_label="Language shown")
             for code in languages:
                 menu.option(code.upper() + (" · main" if code == languages[0] else ""), value=code)
         actions.button("Help me", class_="button--secondary").dataController(func="toggleHelp")
+        actions.button(
+            "Take the site", class_="button--secondary", hidden="^site.editing"
+        ).dataController(func="takeSite")
         actions.button("Save", disabled="^site.busy").dataController(func="save")
-        top.span("^site.message", role="status", class_="site-message")
         pane.dataFormula("site.help_hidden", "!open", open="^site.help_open", _init=True)
         chat = layout.contentPane(
             region="right",
@@ -371,7 +394,9 @@ class Page(AdminPage):
             hidden="^site.help_hidden",
         )
         self.help_pane(chat, site)
-        tabs = layout.contentPane(region="center").tabContainer(height="100%")
+        tabs = layout.contentPane(region="center").stackContainer(
+            height="100%", selectedPage="^site.tab"
+        )
         visual = tabs.contentPane(title="Visual editor", pageName="visual")
         self.visual_editor(visual, read["contents"])
         root = [p["id"] for p in read["pages"] if p["url"] == "/"]
@@ -440,7 +465,7 @@ class Page(AdminPage):
         add = contents.div(class_="drawer-actions")
         add.input(value="^site.new_content_name", placeholder="New content name")
         add.button("+ content", class_="button--quiet").dataController(func="addContent")
-        stage = layout.contentPane(region="center", class_="site-stage")
+        stage = layout.contentPane(region="center", class_="site-stage").div(class_="stage-box")
         bar = stage.div(class_="stage-bar")
         bar.span("^site.status", class_="muted")
         bar.html_label("Show slots", for_="show-slots")
@@ -840,7 +865,7 @@ class Page(AdminPage):
         servers = await execute_service("server_list", {})
         self.golive_panel(pane, stage, site, read, servers)
         if state["address"] and not hidden:
-            stage.iframe(
+            stage.div(class_="stage-box").iframe(
                 src=state["address"] + "/",
                 sandbox="allow-scripts allow-same-origin allow-popups",
                 title="Published site",

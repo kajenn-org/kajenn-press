@@ -17,11 +17,11 @@ Entry: main `8f3d402`. Inventory:
 - `site.js`: `PREVIEW_SCRIPT` sends `slot` on any click in a slot (links inside a slot are not followed) and `link` on other links; `initialize` opens the docked editor on `slot`; `openSlot`, `closeEditor`, `saveContent`, `confirmTranslation`.
 - Gramlot offers no floating pane; it has the HTML `dialog` element and absolutely positioned `div`s.
 
-## Owner decisions (to take at the gate)
+## Owner decisions (2026-10-29): all recommended options chosen; mockup `mockups/block-editing.html` approved
 
-- **BE-D1 · The bars above the editor.** The site tab is a page inside the administration's iframe, so one row cannot span both. (a) Administration bar 40 pixels with a 22-pixel logo, the open-sites tab strip removed (one site open at a time, chosen in the navigation), the site bar 40 pixels with the three tabs inline; 80 pixels in all. (b) The same, keeping the open-sites strip; about 112 pixels. (c) The site bar alone, the administration bar hidden while a site is open; 40 pixels, sign-out moves into the site bar. Recommended: (a).
-- **BE-D2 · The floating window.** (a) An absolutely positioned `div` inside the stage, dragged sideways by its header in `Logic`, widened with CSS `resize: horizontal`. (b) A non-modal HTML `dialog`. Recommended: (a): it stays inside the stage and needs no top layer.
-- **BE-D3 · The Pages tab's slot box.** The box under the tree (slot name, content select, Assign, Edit) duplicates the selection. (a) Keep Assign for a slot chosen in the tree, drop Edit (the tree's slot node opens the window like the pen). (b) Keep both. Recommended: (a).
+- **BE-D1 · The bars above the editor.** The site tab is a page inside the administration's iframe, so one row cannot span both. (a) Administration bar 40 pixels with a 22-pixel logo, the open-sites tab strip removed (one site open at a time, chosen in the navigation), the site bar 40 pixels with the three tabs inline; 80 pixels in all. (b) The same, keeping the open-sites strip; about 112 pixels. (c) The site bar alone, the administration bar hidden while a site is open; 40 pixels, sign-out moves into the site bar. Decided: (a).
+- **BE-D2 · The floating window.** (a) An absolutely positioned `div` inside the stage, dragged sideways by its header in `Logic`, widened with CSS `resize: horizontal`. (b) A non-modal HTML `dialog`. Decided: (a): it stays inside the stage and needs no top layer.
+- **BE-D3 · The Pages tab's slot box.** The box under the tree (slot name, content select, Assign, Edit) duplicates the selection. (a) Keep Assign for a slot chosen in the tree, drop Edit (the tree's slot node opens the window like the pen). (b) Keep both. Decided: (a).
 
 ## Decisions shared by all phases
 
@@ -30,7 +30,8 @@ Entry: main `8f3d402`. Inventory:
 
 ## Work Plan
 
-- [ ] **Phase 1**: Thin bars and full height
+- [x] **Phase 1**: Thin bars and full height
+  > Done: administration bar 40 pixels with a 24-pixel logo; the open-sites strip replaced by a `stackContainer` (node label `tabs`, which Gramlot's index runtime fills), one site shown at a time; no status bar. The site bar is one 40-pixel row (name, holder, three tab buttons driving a `stackContainer` on `site.tab`, which lives outside the refreshed workspace; language, Help me, Take the site, Save). A Gramlot content pane lays its children in its own box, so the row and the stages are divs of ours; the preview and the published-site frame fill the pane through an absolutely placed box. Checked in the browser at 1280×800: one row, the three tabs switch, Visual editor, SEO and Published site at full height. Admin test extended; admin suite 3 passed.
   - Files: `src/kajenn_press/admin/pages/index.py`, `index.css` (or the admin stylesheet in use), `site.py`, `site.css`, `tests/admin/`.
   - Details: per BE-D1: administration bar 40 pixels, small logo, user and Sign out; the site bar one row of 40 pixels with name, holder, the three tabs, language, Help me, Save (Take the site in place of Save when read only); the tabs drive the existing panes. Drawer, stage, preview iframe, SEO and Published site panes take the full height.
   - Done: the site tab matches the mockup's bar; no pane leaves empty space below it at 1280×800.

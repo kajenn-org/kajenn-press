@@ -21,6 +21,7 @@ export class Logic {
         return reply.result;
     }
     siteId(node) { return node.GET('site.id'); }
+    showTab(node, _event) { node.SET('site.tab', node.getAttr('tab')); }
     refresh(node) { node.SET('site.version', node.GET('site.version') + 1); }
     initialize(node, _args) {
         const listener = event => {
