@@ -26,7 +26,7 @@ This proposal designs the administration from the operator's point of view first
 - Sites are always served by Kajenn under its rules. A fully static site is a choice, not a limit: a slot can be a dynamic iframe backed by Gramlot and the database.
 - Versioning is delegated to S3. Kajenn Press keeps no version history of its own.
 - Pages hold autonomous copies of templates, contents and assets. Every copy carries the id of its original, so all copies of an original can be found and updated on request.
-- Languages are out of scope for now; they come back later.
+- A site can speak several languages; one is the main language (see Languages).
 
 #### Navigation
 
@@ -135,6 +135,19 @@ The site tab has a Help me button that opens a chat with Sonnet. Sonnet knows ho
 - One API key per Kajenn Press installation, part of the standard configuration.
 - Tokens and cost are shown per chat and in total per site, for information only: no budget, no limit while the tool is used internally.
 
+#### Languages
+
+A site has a main language and may have others. A page exists once; its texts exist once per language.
+
+- Each content has one version per language. The template is shared: its own texts, such as menu and footer, are page data and are translated like contents.
+- URLs carry the language as a prefix, such as `/it/chi-siamo/` and `/en/about/`; the main language also answers without prefix.
+- A missing translation shows the text of the main language, and the editor marks it as missing.
+- When a text of the main language changes, its translations are marked as to update, as copies are today.
+- A language selector in the site bar sets the language of the Visual editor, the SEO tab and the preview. The Contents tree shows what is missing or to update in that language.
+- Title, description and URL are per language; the versions of a page point to each other with `hreflang`; the sitemap lists every language; the site defaults of the root page are per language.
+- Help me can propose translations; the operator confirms them, and proposed translations stay marked to review until then.
+- The published site offers a language selector in the template. The root never redirects by the browser's language.
+
 #### Editing by several people
 
 A site is edited by one person at a time. Whoever opens the editor takes the site; the others see who holds it and can only look. This prevents a second editor's zip from overwriting the first one's work.
@@ -233,6 +246,42 @@ A site is edited by one person at a time. Whoever opens the editor takes the sit
    1. **Rebuild from the example sources**: No migration code; the catalog volume is archived with the backup command of `deploy/docker/HETZNER.md` before the new version is installed.
    2. **Migrate with a converter**
    → Choice: **Rebuild from the example sources** (GP, 2026-10-27) — The site comes from `examples/kajenn_press_site` and its text must be rewritten anyway.
+- **d-lang-unit** `decided` — What is translated?
+   1. **The contents of one page, one version per language; one shared template**
+   2. **One page per language, linked to its translations**
+   → Choice: **The contents of one page, one version per language; one shared template** (GP, 2026-10-29) — One page, one structure: layout changes reach every language.
+- **d-lang-url** `decided` — How do URLs carry the language?
+   1. **A prefix per language; the main language also without prefix**
+   2. **One domain per language**
+   → Choice: **A prefix per language; the main language also without prefix** (GP, 2026-10-29) — One address per site, one binding.
+- **d-lang-template** `decided` — How are the template's own texts translated?
+   1. **The template reads them from page data, translated like contents**
+   2. **One template per language**
+   → Choice: **The template reads them from page data, translated like contents** (GP, 2026-10-29) — One template per site keeps one layout.
+- **d-lang-missing** `decided` — What does a page show when a translation is missing?
+   1. **The text of the main language, marked as missing in the editor**
+   2. **The page does not exist in that language**
+   → Choice: **The text of the main language, marked as missing in the editor** (GP, 2026-10-29) — A visitor never meets a hole.
+- **d-lang-outdated** `decided` — What happens to translations when the main text changes?
+   1. **They are marked as to update, as copies are**
+   2. **Nothing**
+   → Choice: **They are marked as to update, as copies are** (GP, 2026-10-29) — The operator sees what is behind.
+- **d-lang-editor** `decided` — How does the editor show languages?
+   1. **A language selector in the site bar for the Visual editor, SEO and preview**
+   2. **Languages side by side**
+   → Choice: **A language selector in the site bar for the Visual editor, SEO and preview** (GP, 2026-10-29) — One language at a time keeps the tab as it is.
+- **d-lang-seo** `decided` — How does SEO handle languages?
+   1. **Title, description and URL per language, hreflang, every language in the sitemap**
+   2. **SEO in the main language only**
+   → Choice: **Title, description and URL per language, hreflang, every language in the sitemap** (GP, 2026-10-29) — Search engines index each language.
+- **d-lang-help** `decided` — Does Help me translate?
+   1. **It proposes translations, marked to review until the operator confirms**
+   2. **No automatic translation**
+   → Choice: **It proposes translations, marked to review until the operator confirms** (GP, 2026-10-29) — Drafts save time; the operator stays responsible.
+- **d-lang-visitor** `decided` — How does a visitor change language?
+   1. **A selector in the template; no redirect by browser language**
+   2. **Automatic redirect from the root**
+   → Choice: **A selector in the template; no redirect by browser language** (GP, 2026-10-29) — Every URL shows the same page to everyone, robots included.
 
 ### Consequences
 
