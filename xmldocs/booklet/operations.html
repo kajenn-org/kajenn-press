@@ -79,7 +79,7 @@ caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
 th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: var(--panel); }
   </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>The site operations over REST and MCP</h1><div class="doc-meta"><span>booklet/operations</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
-    <p>How a program or an agent works on Kajenn Press sites through the 52 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
+    <p>How a program or an agent works on Kajenn Press sites through the 53 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
   </section><section class="part requires"><h2>Requirements</h2>
     <ul>
       <li>A websites installation with site sources; <code>capabilities</code> says which parts are configured (<code>sites</code>, <code>publishing</code>, <code>rendering</code>) and lists the operations.</li>
@@ -116,6 +116,7 @@ th { background: var(--panel); }
     <div class="table-wrap"><table><caption>Editing (working copy)</caption>
       <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
       <tr><td><code>asset_add</code></td><td>name, kind, data_base64, mime_type</td><td>write</td><td>yes</td><td>yes</td><td>Add a CSS, JavaScript or media asset.</td></tr>
+      <tr><td><code>asset_save</code></td><td>asset_id, data_base64</td><td>write</td><td>yes</td><td>yes</td><td>Replace the bytes of a site asset; page copies change only through <code>copies_update</code>.</td></tr>
       <tr><td><code>content_add</code></td><td>name, format, text</td><td>write</td><td>yes</td><td>yes</td><td>Add an HTML or Markdown content.</td></tr>
       <tr><td><code>content_save</code></td><td>content_id, text</td><td>write</td><td>yes</td><td>yes</td><td>Replace the text of a content; page copies change only through copies_update.</td></tr>
       <tr><td><code>content_translate</code></td><td>content_id, language, text, proposed</td><td>write</td><td>yes</td><td>yes</td><td>Write the translation of a content into one of the site's other languages.</td></tr>
@@ -177,9 +178,9 @@ th { background: var(--panel); }
     <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Save before closing or leaving a site for long.</div><div class="muted why">Other holders' changes are lost when a site is taken.</div></div>
     <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Read <code>publish_plan</code> before <code>publish</code>.</div><div class="muted why">The plan names exactly what changed and what is wrong.</div></div>
   </section><section class="part limits"><h2>Current limits</h2>
-    <div class="box limit"><div>One holder edits a site at a time; there is no merge of concurrent changes.</div><div class="box-foot"><code class="source">src/kajenn_press/site/service.py:107</code></div></div>
+    <div class="box limit"><div>One holder edits a site at a time; there is no merge of concurrent changes.</div><div class="box-foot"><code class="source">src/kajenn_press/site/service.py:108</code></div></div>
   </section><section class="part facts"><h2>Verified facts</h2>
-    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:107</code><span class="muted">2026-10-29</span></div><div>The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 52, each a route of <code>PressApplication</code> (<code>tests/site/test_site_service.py</code>).</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:107</code><span class="muted">2026-10-29</span></div><div>The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 53, each a route of <code>PressApplication</code> (<code>tests/site/test_site_service.py</code>).</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/application.py:18</code><span class="muted">2026-10-29</span></div><div>REST maps <code>unauthenticated</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>unavailable</code> to 401, 403, 404, 409, 503 and other errors to 422.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">tests/api/support.py:49</code><span class="muted">2026-10-29</span></div><div>REST calls are <code>POST /&lt;operation&gt;</code>; MCP calls are JSON-RPC <code>tools/call</code> on <code>/mcp</code>.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/receipts.py:24</code><span class="muted">2026-10-29</span></div><div>Idempotency receipts are kept 24 hours.</div></div>

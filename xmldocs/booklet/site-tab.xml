@@ -13,8 +13,8 @@
   </requires>
 
   <step id="s-open" title="Open or create a site">
-    <p>The navigation tree has two groups. <b>Sites</b> lists every site the account can read, with who is editing it, and <b>+ new site</b>; <b>Library</b> lists the starting sites. One site is shown at a time: choosing another in the tree shows it, and a site already opened keeps its state.</p>
-    <p>The site tab starts with one bar: the site's name and who holds it, the three tabs, the language shown, <b>Help me</b>, <b>Take the site</b> when another person holds it, and <b>Save</b>. Every pane below it takes the full height.</p>
+    <p>The administration is framed as Gramlot's gallery. A column of icons on the left opens and closes the navigation and signs out. The navigation has two groups: <b>Sites</b> lists every site the account can read, with who is editing it, and <b>+ new site</b>; <b>Library</b> lists the starting sites. Each page opened gets a closable tab; a site keeps its state while another tab is shown.</p>
+    <p>A site has three tabs, Visual editor, SEO and Published site. Each is a frame with its own toolbar on top: the Visual editor's holds the language, <b>Show slots</b>, the page shown, <b>Help me</b>, <b>Take the site</b> when another person holds it, and <b>Save</b>; SEO's holds the language and the site's checks; Published site's holds the state, the address and the publication commands. Every pane takes the full height.</p>
     <p>Opening a site takes it: one person edits a site at a time. The others see who holds it and can only look; <b>Take the site</b> takes it from the holder, whose unsaved changes are lost. The lock expires after 30 minutes without changes.</p>
     <p><b>Save</b> writes the site as a new S3 version of its source. Every change before that lives in the holder's working copy.</p>
   </step>
@@ -26,13 +26,14 @@
       <item><b>Contents</b>: every HTML or Markdown content of the site. An unused content is in italics; a content used by several pages shows how many. <b>+ content</b> adds one.</item>
     </list>
     <p>A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing <b>Assign</b>. <b>Show slots</b> outlines the slots in the preview.</p>
-    <p>In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a window over the preview:</p>
+    <p>In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a floating window: a title bar that moves it, collapses it, maximizes it and closes it, asking first when changes are not saved. One block is open at a time. The window has four tabs:</p>
     <list>
-      <item>the window takes the full height; its header moves it sideways and its edge widens it; one block is open at a time;</item>
-      <item>it opens on Jodit, ready to write; <b>&lt;/&gt; HTML</b> shows the source beside it in CodeMirror, and the two stay in step;</item>
-      <item>the footer says whether there are changes not saved; <b>Cancel</b> discards them, <b>Save</b> writes them and shows the page again.</item>
+      <item><b>Preview</b>: the block as in the page, with the page's style sheets and inside the elements that hold its slot; a click on an element opens the CSS tab on that element's rules;</item>
+      <item><b>Jodit</b>, ready to write, with the page's style sheets too; <b>HTML</b>, the source in CodeMirror; the two stay in step;</item>
+      <item><b>CSS</b>: the rules of the page's style sheets that act on the block, by style sheet, each with the number of pages using it; each rule is edited as text and the change shows at once in Preview, in Jodit and in the page.</item>
     </list>
-    <p>A page holds a <em>copy</em> of each content it shows. Editing a content in the block window changes the original; <b>Save</b> then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. <b>Update and render</b> brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.</p>
+    <p>The window's footer says whether there are changes not saved; <b>Cancel</b> discards them, <b>Save</b> writes the content and the style sheets changed.</p>
+    <p>A page holds a <em>copy</em> of each content it shows. Editing a content or a style sheet in the block window changes the original; <b>Save</b> then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. <b>Update and render</b> brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.</p>
   </step>
 
   <step id="s-seo" title="SEO">
@@ -81,6 +82,8 @@
   </rules>
 
   <limits>
+    <limit>A style sheet saved from the CSS tab is the browser's serialization of its rules: comments and the file's own formatting are not kept.</limit>
+    <limit>The CSS tab ignores states and pseudo-elements when it matches rules: a rule for <c>a:hover</c> is shown for the link; a rule only for <c>::selection</c> is not shown.</limit>
     <limit source="src/kajenn_press/site/seo.py:398">SEO checks run in the main language only.</limit>
     <limit>Servers are registered through <c>server_add</c> (REST or MCP); the tab has no form for it.</limit>
     <limit>While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.</limit>
@@ -88,8 +91,9 @@
 
   <facts>
     <fact source="src/kajenn_press/admin/pages/site.js:9" method="run" verified="2026-10-29">In the preview a click selects a block, a link inside a block is followed, and the pen or a double click asks to edit it.</fact>
-    <fact source="src/kajenn_press/admin/pages/site.py:499" method="run" verified="2026-10-29">The block window opens on Jodit at full height; text typed in Jodit appears in CodeMirror and the reverse; Cancel discards; Save and Update and render show the change in the preview.</fact>
-    <fact source="src/kajenn_press/admin/pages/index.py:89" method="read" verified="2026-10-29">The administration shows one site at a time, without a strip of open-site tabs.</fact>
+    <fact source="src/kajenn_press/admin/pages/index.py:45" method="run" verified="2026-10-29">Two pages opened from the navigation show in two closable tabs; closing one keeps the other's state.</fact>
+    <fact source="src/kajenn_press/admin/pages/site.py:483" method="run" verified="2026-10-29">The block window shows the hero in Jodit and Preview with the page's Georgia titles; Save and Update and render show the change in the page.</fact>
+    <fact source="src/kajenn_press/admin/pages/site.js:277" method="run" verified="2026-10-29">For the h1 picked in Preview the CSS tab shows <c>body, h1, …</c>, <c>h1, h2</c> and <c>h1</c>; a colour added to <c>h1</c> shows at once and, after Save and Update and render, in the rendered page.</fact>
     <fact source="src/kajenn_press/admin/pages/index.py:33" method="read" verified="2026-10-29">The navigation lists Sites (with holder and <c>+ new site</c>) and Library (starting sites).</fact>
     <fact source="src/kajenn_press/site/lock.py:15" method="read" verified="2026-10-29">The editing lock expires after 30 minutes without activity.</fact>
     <fact source="src/kajenn_press/site/service.py:344" method="read" verified="2026-10-29"><c>site_save</c> writes the working copy as a new version of the source zip.</fact>

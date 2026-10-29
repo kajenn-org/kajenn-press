@@ -62,7 +62,8 @@ Entry: main `7e19ed9`. Inventory:
   - Details: per GS-D2 and GS-D3: operation `asset_save`; the preview script returns the rules acting on the block, by style sheet; the tab lists them as editable text with "used by N pages", narrows to the element clicked in Preview, applies changes at once to Preview, Jodit and the page preview; Save writes the style sheet and shows the Update plan for its copies.
   - Done: in the browser, changing `.hero h1` changes the title in the window and in the page; Save writes `site.css`; the Update plan lists the pages holding it; tests for `asset_save` and its copies.
 
-- [ ] **Phase 6**: Documentation and close
+- [x] **Phase 6**: Documentation and close
+  > Done: booklet site tab (the gallery frame and tabs, the frames and toolbars, the floating block window and its four tabs, the CSS tab, two limits, facts verified by run); booklet operations (53 operations, `asset_save`); README. Suites: main 232 passed, admin 3 passed, Docker 12 passed.
   - Files: `xmldocs/booklet/site-tab.xml`, `xmldocs/booklet/operations.xml`, their renders, `README.md`.
   - Details: the booklets describe the shell, the frames and toolbars, the block window and the CSS tab; operations gain `asset_save`.
   - Done: full, admin and Docker suites green; booklets valid and rendered; plan archived, roadmap updated.
