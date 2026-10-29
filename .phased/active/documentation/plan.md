@@ -32,7 +32,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `xmldocs/booklet/site-tab.{xml,md,html}`.
   - Done: every step is a path through the tab that exists today, with the facts that back it.
 
-- [ ] **Phase 2**: Booklet "Writing a template"
+- [x] **Phase 2**: Booklet "Writing a template"
+  > Done: `xmldocs/booklet/templates.xml` (build code, slots and iframe slots, Data pointers table, SEO head, resolvers; minimal template and the example's menu and language links; 8 facts), valid, rendered.
   - Files: `xmldocs/booklet/templates.{xml,md,html}`.
   - Done: the example layout and a minimal template both appear and match `examples/kajenn_press_site/layout.py` and the tests.
 

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!-- generated from templates.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Writing a template</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>Writing a template</h1><div class="doc-meta"><span>booklet/templates</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
+    <p>How to write the layout of a Kajenn Press site: Python build code that produces one HTML document with slots for contents, reading site texts, assets and page data.</p>
+  </section><section class="part requires"><h2>Requirements</h2>
+    <ul>
+      <li>A websites installation with its render worker (the <code>render</code> extra).</li>
+      <li>A site open for editing; templates are added through <code>template_add</code> (REST, MCP, or Help me).</li>
+    </ul>
+  </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-build"><h3><span class="step-num">1.</span>Write build code</h3>
+    <p>A template is Python that defines <code>build(source, data)</code>. It runs once in the render worker when the template is added; the result is stored as a plain Source Bag and replayed at every rendering. The engine is <code>gramlot</code> or <code>htmlbuilder</code>.</p>
+    <p>HTML attributes are keyword arguments; <code>class</code> is written <code>class_</code>, <code>for</code> is <code>for_</code>. The document has exactly one <code>html</code> root.</p>
+    <div class="box example"><div class="box-head"><b>A minimal template with two slots</b></div>
+      <figure class="code"><figcaption>python</figcaption><pre><code>def build(source, data):
+    doc = source.html(lang="en")
+    head = doc.head()
+    head.title("^page.title")
+    head.link(rel="stylesheet", href="^assets.site.url")
+    body = doc.body()
+    body.div(node_label="hero", kpress_slot="hero")
+    body.div(node_label="body", kpress_slot="body")</code></pre></figure>
+    </div>
+    <p><code>build</code> reads nothing while building: values that change per page or per language are Data pointers, strings starting with <code>^</code>, resolved at rendering.</p>
+  </section><section class="section step" id="s-slots"><h3><span class="step-num">2.</span>Declare slots</h3>
+    <p>An element with <code>kpress_slot="name"</code> is a slot: the place where a page shows the content assigned to it. <code>kpress_slot=True</code> names the slot by its label path. Slot names are unique in a template, and a slot is an element able to hold content (<code>div</code>, <code>main</code>, <code>section</code>, <code>article</code>, <code>aside</code>, <code>header</code>, <code>footer</code>, <code>nav</code>, <code>td</code>, <code>li</code> and similar).</p>
+    <p>A slot that also has <code>kpress_iframe="URL"</code> is filled by that iframe in the browser; the content assigned to it is the static fallback written in the page, which search engines and readers without JavaScript see.</p>
+    <p>Contents are filtered before they enter a slot: HTML through an allow-list of tags, attributes and URL schemes; Markdown is converted first. Scripts, styles and iframes inside a content are removed.</p>
+  </section><section class="section step" id="s-data"><h3><span class="step-num">3.</span>Read page data</h3>
+    <div class="table-wrap"><table><caption>Data pointers available to every template</caption>
+      <tr><th>Pointer</th><th>Value</th></tr>
+      <tr><td><code>^page.title</code></td><td>The page name.</td></tr>
+      <tr><td><code>^page.language</code></td><td>The language being rendered.</td></tr>
+      <tr><td><code>^page.urls.&lt;language&gt;</code></td><td>This page's path in a language, for a language selector.</td></tr>
+      <tr><td><code>^texts.&lt;name&gt;</code></td><td>A site text in the language being rendered; the main text where its translation is missing.</td></tr>
+      <tr><td><code>^assets.&lt;name&gt;.url</code></td><td>The address of an asset the page holds: a content-addressed path when published, a <code>data:</code> URL in previews.</td></tr>
+    </table></div>
+    <p>Site texts are the template's own words: menu labels, menu links, footer sentences. They are set with <code>site_text_set</code>, translated like contents, and shared by every page.</p>
+    <div class="box example"><div class="box-head"><b>Menu and language links from the example site</b></div>
+      <figure class="code"><figcaption>examples/kajenn_press_site/layout.py · python</figcaption><pre><code>NAV = ("overview", "features", "start")
+LANGUAGES = ("en", "it")
+
+nav = inner.nav(id="site-nav", aria_label="Main navigation")
+for key in NAV:
+    nav.a(f"^texts.nav_{key}", href=f"^texts.href_{key}")
+for code in LANGUAGES:
+    nav.a(code.upper(), href=f"^page.urls.{code}", hreflang=code, class_="nav-language")</code></pre></figure>
+    </div>
+  </section><section class="section step" id="s-head"><h3><span class="step-num">4.</span>Leave the SEO to the page</h3>
+    <p>The page's SEO is written into the <code>head</code> after the template: title, description, canonical, robots, Open Graph and Twitter tags, JSON-LD and <code>hreflang</code> links. Those tags written by the template are removed first, so a template may keep a <code>title</code> for previews without producing a duplicate. The <code>lang</code> of the <code>html</code> root is set to the language being rendered.</p>
+  </section><section class="section step" id="s-resolvers"><h3><span class="step-num">5.</span>Data from connections</h3>
+    <p>A page's Data may hold resolvers that read a named connection at rendering, such as a configuration value. The connection's address and credentials come from the server that renders, never from the page. A value enters the page as text, or as filtered HTML when the resolver says so.</p>
+    <p>A published page with resolvers is rendered again by the site server when its cache time expires (600 seconds by default), and kept in a local cache; a page without resolvers is served as published.</p>
+  </section></section><section class="part rules"><h2>Rules</h2>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Author exactly one <code>html</code> root.</div><div class="muted why">Validation refuses any other document.</div></div>
+    <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Read Data while building; use <code>^</code> pointers.</div><div class="muted why">Values that differ per page or language would be frozen at template time.</div></div>
+    <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Put the template's words and links in site texts.</div><div class="muted why">Every language then gets its own menu and links.</div></div>
+  </section><section class="part limits"><h2>Current limits</h2>
+    <div class="box limit"><div>Template code is trusted code: the render worker is a separate process, not an OS security sandbox.</div><div class="box-foot"><code class="source">src/kajenn_press/rendering/worker.py:1</code></div></div>
+    <div class="box limit"><div>A template is shared by every language of a site; there is no template per language.</div></div>
+  </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/page.py:18</code><span class="muted">2026-10-29</span></div><div><code>plain_template</code> runs <code>build(source, data)</code> once and stores the plain Source.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:465</code><span class="muted">2026-10-29</span></div><div>An unknown engine or a template that does not build is refused as <code>invalid_input</code> or <code>invalid_template</code> with diagnostics.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/slots.py:43</code><span class="muted">2026-10-29</span></div><div>Slots come from <code>kpress_slot</code>; duplicate names and elements that cannot host content are refused.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/preparation.py:97</code><span class="muted">2026-10-29</span></div><div>Contents are filtered with an allow-list (nh3); Markdown is converted with markdown-it first.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/render.py:1</code><span class="muted">2026-10-29</span></div><div>Templates receive <code>page.title</code>, <code>page.language</code>, <code>page.urls</code>, <code>texts</code> and <code>assets</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/rendering/page.py:30</code><span class="muted">2026-10-29</span></div><div>Template title, description, robots, canonical, Open Graph, Twitter and JSON-LD tags are replaced by the page's SEO.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/rendering/resolvers.py:17</code><span class="muted">2026-10-29</span></div><div>Connection resolvers default to a 600-second cache time.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">tests/site/test_page_rendering.py:1</code><span class="muted">2026-10-29</span></div><div>The example layout renders every example page in English and the home page in Italian.</div></div>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../booklet/site-tab.html">booklet/site-tab</a></li>
+  </ul></section></main></body></html>
