@@ -79,3 +79,5 @@
 .help-footer textarea{width:100%;min-height:54px;box-sizing:border-box}
 .help-row{display:flex;gap:8px;align-items:center}
 .help-empty{padding:16px}
+.editor-main{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.editor-actions{display:flex;gap:8px;align-items:center;margin-top:8px}

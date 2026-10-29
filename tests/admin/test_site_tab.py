@@ -184,6 +184,28 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             assert link["value"]["result"]["url"].startswith("https://demo.example/_private/")
 
             assert "Help me" in view
+            await call(
+                server, "site_languages_set", site_id=site, key="langs", languages=["en", "it"]
+            )
+            italian = (await rpc(http, tab, "site_workspace", "source", site=site, language="it"))[
+                "value"
+            ]
+            assert "IT" in italian and "EN · main" in italian
+            assert "hero ← Welcome  ○ missing" in italian
+            reply = await rpc(
+                http,
+                tab,
+                "command",
+                operation="content_translate",
+                arguments={
+                    "site_id": site,
+                    "key": "it-1",
+                    "content_id": content,
+                    "language": "it",
+                    "text": "<p>Ciao</p>",
+                },
+            )
+            assert reply["value"]["ok"] is True
             sent = await rpc(
                 http,
                 tab,
