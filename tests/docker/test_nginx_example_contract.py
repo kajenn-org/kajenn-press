@@ -18,11 +18,10 @@ pytestmark = pytest.mark.skipif(
     os.environ.get("KAJENN_DOCKER") != "1", reason="Set KAJENN_DOCKER=1 to drive Docker"
 )
 NGINX = "nginx@sha256:77e5d4a6ad906c5d3793764085706577fa705b1dc6f244ea0241c4b5e2155385"
-NAMES = ("kpress.genro.com", "preview.kpress.genro.com")
+NAMES = ("kpress.genro.com",)
 SERVER = {
     "KPRESS_SCHEME": "https",
     "KPRESS_MANAGEMENT_HOST": NAMES[0],
-    "KPRESS_PREVIEW_HOST": NAMES[1],
     "KPRESS_TRUSTED_PROXIES": "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
 }
 CONTAINER = "kpress-test-nginx"
@@ -55,7 +54,7 @@ def proxied(tmp_path_factory):
     work = tmp_path_factory.mktemp("nginx")
     subprocess.run(
         ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
-         "-subj", "/CN=" + NAMES[0], "-addext", "subjectAltName=DNS:{},DNS:{}".format(*NAMES),
+         "-subj", "/CN=" + NAMES[0], "-addext", "subjectAltName=DNS:" + NAMES[0],
          "-keyout", str(work / "privkey.pem"), "-out", str(work / "fullchain.pem")],
         capture_output=True, check=True, timeout=60,
     )
@@ -102,9 +101,3 @@ def test_http_redirects_to_https(proxied):
     for name in NAMES:
         status, location, _ = request(18080, name, "/admin/", False)
         assert status == 301 and location == f"https://{name}/admin/"
-
-
-def test_preview_name_does_not_reach_the_administration(proxied):
-    # Private links return with N7; until then the preview name is not the management origin.
-    status, _, _body = request(18443, NAMES[1], "/admin/", True)
-    assert status == 404

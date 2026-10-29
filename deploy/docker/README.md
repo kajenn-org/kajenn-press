@@ -7,12 +7,12 @@ through MCP, and a **site server**, which serves it.
 
 | Service | Role | Address |
 |---|---|---|
-| `secrets` | Generates local credentials once, in three private volumes | — |
+| `secrets` | Generates local credentials once, in three private volumes; the private-link secret goes to websites (signs links) and the site server (checks them) | — |
 | `rustfs` | S3-compatible storage | — |
 | `storage-init` | Creates the buckets `releases` and `sources` with versioning, a read-write user for websites, a user for the site server that reads only `releases` | — |
 | `websites` | Administration, REST and MCP, render worker | http://kpress.localhost:8875/admin/ |
 | `site-publisher` (`demo`) | Publishes `examples/kajenn_press_site` through MCP | — |
-| `site-server` (`demo`) | Serves the published site | http://press.localhost:8877/ |
+| `site-server` (`demo`) | Serves the sites bound in `bindings.json` of the release bucket; a new address needs no restart | http://press.localhost:8877/ |
 
 ## Addresses
 
@@ -35,12 +35,11 @@ The `demo` publisher talks to websites in plain http, so the demo needs `KPRESS_
 
 ## Behind nginx on a server
 
-`nginx-kpress.conf` is the host nginx configuration for `kpress.genro.com` and
-`preview.kpress.genro.com`: port 80 answers the certbot challenge and redirects to
-https; port 443 proxies both names to `127.0.0.1:8875` with `Host`,
-`X-Forwarded-Proto` and `X-Forwarded-For`. The server `.env` then sets
-`KPRESS_SCHEME=https`, the two names, and in `KPRESS_TRUSTED_PROXIES` the address
-nginx reaches websites from. The installation on the Hetzner host, step by step, is in
+`nginx-kpress.conf` is the host nginx configuration for `kpress.genro.com`: port 80
+answers the certbot challenge and redirects to https; port 443 proxies to
+`127.0.0.1:8875` with `Host`, `X-Forwarded-Proto` and `X-Forwarded-For`. The server
+`.env` then sets `KPRESS_SCHEME=https`, the name, and in `KPRESS_TRUSTED_PROXIES` the
+address nginx reaches websites from. The installation on the Hetzner host, step by step, is in
 [HETZNER.md](HETZNER.md).
 
 ## Start, use, stop
@@ -99,7 +98,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
 ```
 
 The tests remove the composition's volumes, start it from nothing and check: the example
-site served page by page, maintenance on and off, a site source saved in four versions, that the site server's credentials cannot write releases nor read sources,
+site served page by page with its SEO, maintenance on and off, a private link opening the site during maintenance, a site source saved in four versions, that the site server's credentials cannot write releases nor read sources,
 that no credential reaches storage or git, and the external-bucket setup. They set their
 own addresses, which take precedence over `deploy/docker/.env`. `test_proxy_origin_contract.py` starts the manager without
 the demo profile on an `https` origin and checks that only a forwarded `https`

@@ -1,11 +1,13 @@
 """A Kajenn server application that serves published sites from their site index (N4).
 
-It binds public origins to site ids, reads each site index from the release bucket at
-most every `cache_seconds`, and answers page URLs with the HTML of the page version the
+It reads `bindings.json` (public origin -> site id and state) and each site index from
+the release bucket at most every `cache_seconds`, so a new address needs no restart, and answers page URLs with the HTML of the page version the
 index pins, assets by content address, redirects with 301, `sitemap.xml`, `robots.txt`
 and the 404 page. Pages whose Data uses resolvers are rendered again by the worker with
 this server's named connections and kept in a local filesystem cache for their refresh
-time (d-rerender-cache). It needs read-only release credentials only.
+time (d-rerender-cache). It needs read-only release credentials only. A private site
+answers 404 and a site in maintenance 503, except to a browser holding the cookie of a
+valid private link (N7-D4); no other response sets a cookie.
 """
 
 import asyncio
@@ -29,7 +31,9 @@ from ..catalog.errors import IntegrityError
 from ..catalog.filesystem import private_directory, sync_directory, sync_file
 from ..domain import DomainError
 from ..publication.routes import origin, request_path
-from .published import read_index, unpack_page
+from .private import COOKIE, PREFIX, cookie_token, valid_token
+from .publish import BINDINGS_PATH
+from .published import read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
@@ -49,6 +53,36 @@ PAGE_HEADERS = {
 ASSET_HEADERS = {**HEADERS, "cache-control": "public, max-age=31536000, immutable"}
 
 
+def read_release(storage, path, version_id=None, attempts=5):
+    full = f"{MOUNT}:{path}"
+    for _ in range(attempts):
+        try:
+            node = storage.node(full, version=version_id) if version_id else storage.node(full)
+            return node.read_bytes()
+        except OSError:
+            # S3-compatible stores abort a read when the object is replaced meanwhile.
+            time.sleep(0.05)
+    raise DomainError("unavailable", "Release storage is unreadable")
+
+
+class Bindings:
+    """`bindings.json`, reread at most every `cache_seconds`; the last valid one is kept."""
+
+    def __init__(self, storage, cache_seconds):
+        self.storage, self.cache_seconds = storage, cache_seconds
+        self.loaded, self.loaded_at = {}, None
+
+    def get(self, public_origin):
+        if self.loaded_at is None or time.monotonic() - self.loaded_at >= self.cache_seconds:
+            try:
+                self.loaded = read_bindings(read_release(self.storage, BINDINGS_PATH))
+            except (DomainError, IntegrityError, StorageError, OSError):
+                # Missing or unreadable bindings keep the last valid ones (none at start).
+                pass
+            self.loaded_at = time.monotonic()
+        return self.loaded.get(public_origin)
+
+
 class SiteReader:
     """The index of one site, reread at most every `cache_seconds`, and its page objects."""
 
@@ -57,20 +91,8 @@ class SiteReader:
         self.loaded, self.loaded_at = None, None
         self.pages = {}
 
-    def read(self, path, version_id=None, attempts=5):
-        full = f"{MOUNT}:{path}"
-        for _ in range(attempts):
-            try:
-                node = (
-                    self.storage.node(full, version=version_id)
-                    if version_id
-                    else self.storage.node(full)
-                )
-                return node.read_bytes()
-            except OSError:
-                # S3-compatible stores abort a read when the object is replaced meanwhile.
-                time.sleep(0.05)
-        raise DomainError("unavailable", "Release storage is unreadable")
+    def read(self, path, version_id=None):
+        return read_release(self.storage, path, version_id)
 
     def index(self):
         if self.loaded is not None and time.monotonic() - self.loaded_at < self.cache_seconds:
@@ -143,22 +165,27 @@ class SiteServerApplication(BaseApplication):
 
     def __init__(
         self,
-        bindings,
         release_storage,
         cache_root,
         cache_seconds=5,
         worker=None,
         connections=None,
+        private_secret=None,
         **kwargs,
     ):
         storage = StorageManager()
         storage.configure([{"name": MOUNT, **release_storage}])
-        self.readers = {
-            origin(public_origin): SiteReader(storage, site_id, cache_seconds)
-            for public_origin, site_id in bindings.items()
-        }
+        self.storage, self.cache_seconds = storage, cache_seconds
+        self.bindings = Bindings(storage, cache_seconds)
+        self.private_secret = private_secret
+        self.readers = {}
         self.renders = RenderCache(cache_root, worker, connections or {}) if worker else None
         super().__init__(**kwargs)
+
+    def reader(self, site_id):
+        if site_id not in self.readers:
+            self.readers[site_id] = SiteReader(self.storage, site_id, self.cache_seconds)
+        return self.readers[site_id]
 
     def binding(self, scope):
         hosts = [v.decode("ascii") for k, v in scope["headers"] if k.lower() == b"host"]
@@ -166,16 +193,54 @@ class SiteServerApplication(BaseApplication):
             raise DomainError("not_found", "Unknown host binding")
         return origin(scope["scheme"] + "://" + hosts[0])
 
-    def respond(self, binding, path, method):
+    def respond(self, binding, path, method, token=None):
         if method not in ("GET", "HEAD"):
             return Response(
                 "Method not allowed", status_code=405, headers={**HEADERS, "allow": "GET, HEAD"}
             )
-        reader = self.readers.get(binding)
-        if reader is None:
+        bound = self.bindings.get(binding)
+        if bound is None:
             raise DomainError("not_found", "Unknown site")
+        if path.startswith(PREFIX):
+            return self.private_entry(binding, bound["site_id"], path.removeprefix(PREFIX))
+        allowed = self.allowed(bound["site_id"], token)
+        if bound["state"] == "private" and not allowed:
+            raise DomainError("not_found", "Unknown site")
+        reader = self.reader(bound["site_id"])
         index = reader.index()
-        if index["maintenance"]:
+        response = self.site_response(binding, reader, index, path, allowed)
+        if allowed and (bound["state"] == "private" or index["maintenance"]):
+            # What only the private link shows never reaches a shared cache.
+            response.set_header("cache-control", "private, no-store")
+        return response
+
+    def allowed(self, site_id, token):
+        return (
+            self.private_secret is not None
+            and token is not None
+            and valid_token(self.private_secret, token, site_id) is not None
+        )
+
+    def private_entry(self, binding, site_id, token):
+        """A valid private link sets the cookie for this host and opens the site root."""
+        expires = valid_token(self.private_secret, token, site_id) if self.private_secret else None
+        if expires is None:
+            raise DomainError("not_found", "Unknown private link")
+        response = Response(
+            status_code=303, headers={**HEADERS, "location": "/", "cache-control": "no-store"}
+        )
+        response.set_cookie(
+            COOKIE,
+            token,
+            max_age=max(0, expires - int(time.time())),
+            secure=binding.startswith("https://"),
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
+    def site_response(self, binding, reader, index, path, allowed):
+        if index["maintenance"] and not allowed:
             return Response(
                 "Site under maintenance",
                 status_code=503,
@@ -231,7 +296,8 @@ class SiteServerApplication(BaseApplication):
         try:
             binding = self.binding(scope)
             path = request_path(scope.get("raw_path", scope["path"].encode()))
-            response = await asyncio.to_thread(self.respond, binding, path, scope["method"])
+            token = cookie_token(scope["headers"])
+            response = await asyncio.to_thread(self.respond, binding, path, scope["method"], token)
         except (DomainError, IntegrityError, UnicodeError, ValueError) as exc:
             response = (
                 Response(
@@ -275,9 +341,15 @@ class SiteServerHealth(RoutedApplication):
 
 
 def create_site_server(
-    *, bindings, release_storage, cache_root, cache_seconds=5, worker=None, connections=None
+    *,
+    release_storage,
+    cache_root,
+    cache_seconds=5,
+    worker=None,
+    connections=None,
+    private_secret=None,
 ):
-    """A Kajenn server whose root application serves `{public origin: site id}`."""
+    """A Kajenn server whose root application serves the sites bound in `bindings.json`."""
     return AsgiServer(
         # Public pages carry no session: no cookie on any response.
         middleware={"session": False},
@@ -287,12 +359,12 @@ def create_site_server(
                 SiteServerApplication,
                 {
                     "code": "site",
-                    "bindings": bindings,
                     "release_storage": release_storage,
                     "cache_root": str(Path(cache_root)),
                     "cache_seconds": cache_seconds,
                     "worker": worker,
                     "connections": connections,
+                    "private_secret": private_secret,
                 },
             ),
         ],

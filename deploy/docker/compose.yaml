@@ -75,10 +75,8 @@ services:
       - --host=${KPRESS_MANAGEMENT_HOST}
       - --token-file=/secrets/token
       - --public-origin=http://press.localhost:8877
-      - --config=/config/sites.json
     volumes:
       - websites-secrets:/secrets:ro
-      - sites-config:/config
     depends_on:
       websites:
         condition: service_started
@@ -96,11 +94,11 @@ services:
       RELEASE_S3_BUCKET: releases
       RELEASE_S3_ACCESS_FILE: /secrets/storage_access
       RELEASE_S3_SECRET_FILE: /secrets/storage_secret
+      PRIVATE_LINK_SECRET_FILE: /secrets/private_link
     ports:
       - "127.0.0.1:8877:8877"
     volumes:
       - child-secrets:/secrets:ro
-      - sites-config:/config:ro
     depends_on:
       site-publisher:
         condition: service_completed_successfully
@@ -111,4 +109,3 @@ volumes:
   websites-secrets:
   websites-data:
   child-secrets:
-  sites-config:

@@ -202,3 +202,40 @@ def read_index(raw):
     ):
         raise IntegrityError("Site index failed its integrity check")
     return index
+
+
+BINDINGS_SCHEMA = 1
+STATES = ("public", "private")
+
+
+def make_bindings(bindings):
+    """Canonical JSON bytes of the bindings: public origin -> {"site_id", "state"} (N7-D2)."""
+    sites = [entry["site_id"] for entry in bindings.values()]
+    if len(sites) != len(set(sites)) or any(
+        set(entry) != {"site_id", "state"} or entry["state"] not in STATES
+        for entry in bindings.values()
+    ):
+        raise IntegrityError("Bindings name one origin per site, public or private")
+    return encode({"schema": BINDINGS_SCHEMA, "bindings": bindings})
+
+
+def read_bindings(raw):
+    """The bindings in bytes, checked; any mismatch fails closed."""
+    try:
+        document = json.loads(raw)
+    except ValueError as exc:
+        raise IntegrityError("Bindings are not JSON") from exc
+    if (
+        not isinstance(document, dict)
+        or set(document) != {"schema", "bindings"}
+        or document["schema"] != BINDINGS_SCHEMA
+        or not isinstance(document["bindings"], dict)
+        or any(
+            not isinstance(entry, dict)
+            or set(entry) != {"site_id", "state"}
+            or entry["state"] not in STATES
+            for entry in document["bindings"].values()
+        )
+    ):
+        raise IntegrityError("Bindings failed their integrity check")
+    return document["bindings"]

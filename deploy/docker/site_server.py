@@ -1,10 +1,10 @@
 """A site server in Docker: published sites from the release bucket, read-only credentials.
 
-Bindings come from /config/sites.json, written by the site publisher. Pages with
-resolvers are not part of the demo, so no render worker is configured here.
+Site addresses come from `bindings.json` in the release bucket, written by Publish, so
+a new address needs no restart. Pages with resolvers are not part of the demo, so no
+render worker is configured here.
 """
 
-import json
 import os
 from pathlib import Path
 
@@ -24,12 +24,11 @@ def release_storage():
 
 
 def main():
-    config = json.loads(Path("/config/sites.json").read_text())
     server = create_site_server(
-        bindings=config["bindings"],
         release_storage=release_storage(),
         cache_root="/cache",
         cache_seconds=float(os.environ.get("SITE_CACHE_SECONDS", "5")),
+        private_secret=Path(os.environ["PRIVATE_LINK_SECRET_FILE"]).read_text().strip().encode(),
     )
     uvicorn.run(server, host="0.0.0.0", port=8877, log_level="warning")
 

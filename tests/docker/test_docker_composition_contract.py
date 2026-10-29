@@ -5,7 +5,6 @@ They remove the composition's volumes first, so they always start from nothing.
 """
 
 import http.client
-import json
 import os
 import subprocess
 import sys
@@ -82,8 +81,11 @@ def test_site_server_cannot_write_release_storage(composition, tmp_path):
     ).stdout.split("\0")
     committed = [(ROOT / path).read_bytes() for path in tracked if path and (ROOT / path).is_file()]
     for service, names in (
-        ("websites", ("storage_access", "storage_secret", "token", "operator_password")),
-        ("site-server", ("storage_access", "storage_secret")),
+        (
+            "websites",
+            ("storage_access", "storage_secret", "token", "operator_password", "private_link"),
+        ),
+        ("site-server", ("storage_access", "storage_secret", "private_link")),
     ):
         for name in names:
             value = secret(service, name).encode()
@@ -127,10 +129,11 @@ def test_site_sources_are_versioned_and_hidden_from_the_site_server(composition,
     assert mc(hosts, "ls", "c/releases/").returncode == 0
 
 
-def press_get(path):
+def press_get(path, cookie=None):
     connection = http.client.HTTPConnection("127.0.0.1", 8877, timeout=10)
+    headers = {"Host": "press.localhost:8877", **({"Cookie": cookie} if cookie else {})}
     try:
-        connection.request("GET", path, headers={"Host": "press.localhost:8877"})
+        connection.request("GET", path, headers=headers)
         response = connection.getresponse()
         return response.status, response.read()
     finally:
@@ -155,12 +158,16 @@ def test_site_server_serves_the_site_published_page_by_page(composition):
     assert b'<link rel="canonical" href="http://press.localhost:8877/">' in home
     assert b'<meta name="description" content="Kajenn Press manages a website' in home
 
-    sites = compose("exec", "-T", "site-server", "cat", "/config/sites.json").stdout
-    (site,) = json.loads(sites)["bindings"].values()
     mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
+    (site,) = [s["site_id"] for s in mcp("site_list") if s["name"] == "Kajenn Press"]
     mcp("maintenance_set", site_id=site, key="docker-maintenance-on", on=True)
     time.sleep(2)
     assert press_get("/")[0] == 503
+    link = mcp("private_link", site_id=site)["url"]
+    assert link.startswith("http://press.localhost:8877/_private/")
+    assert press_get(link.removeprefix("http://press.localhost:8877"))[0] == 303
+    cookie = "kpress_private=" + link.rsplit("/", 1)[1]
+    assert press_get("/", cookie)[0] == 200
     mcp("maintenance_set", site_id=site, key="docker-maintenance-off", on=False)
     time.sleep(2)
     assert press_get("/")[0] == 200

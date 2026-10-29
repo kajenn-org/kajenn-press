@@ -201,6 +201,55 @@ export class Logic {
         } catch (error) { node.SET('site.seo_message', error.message); }
         node.SET('site.busy', false);
     }
+    showPublish(node, _args) { node.SET('site.pub_panel', 'publish'); }
+    showRollback(node, _args) { node.SET('site.pub_panel', 'rollback'); }
+    showPrivate(node, _args) { node.SET('site.pub_panel', 'private'); }
+    closePanel(node, _args) { node.SET('site.pub_panel', ''); }
+    async publishCommand(node, operation, arguments_, done) {
+        node.SET('site.busy', true);
+        try {
+            const result = await this.callCommand(operation, {site_id: this.siteId(node), key: crypto.randomUUID(), ...arguments_});
+            node.SET('site.pub_panel', '');
+            node.SET('site.pub_version', node.GET('site.pub_version') + 1);
+            node.SET('site.pub_message', done(result));
+        } catch (error) { node.SET('site.pub_message', error.message); }
+        node.SET('site.busy', false);
+    }
+    async publishSelected(node, _args) {
+        const pages = JSON.parse(node.GET('site.pub_plan'));
+        const selected = pages.filter((_page, index) => node.GET('site.pub_sel.i' + index));
+        await this.publishCommand(node, 'publish', {selected}, result =>
+            `Published ${result.published.length} page(s)` + (result.failed.length ? `, ${result.failed.length} failed` : ''));
+    }
+    async rollbackChosen(node, _args) {
+        const version = node.GET('site.pub_rollback_version'), target = node.GET('site.pub_target');
+        if (!version) { node.SET('site.pub_message', 'Choose a version first.'); return; }
+        if (target === 'site') await this.publishCommand(node, 'site_rollback', {version_id: version}, () => 'Site rolled back');
+        else await this.publishCommand(node, 'page_rollback', {page_id: target, version_id: version}, () => 'Page rolled back');
+    }
+    async toggleMaintenance(node, _args) {
+        const on = !node.GET('site.pub_maintenance');
+        await this.publishCommand(node, 'maintenance_set', {on}, () => on ? 'Maintenance on' : 'Maintenance off');
+    }
+    async makePublic(node, _args) { await this.publishCommand(node, 'site_visibility_set', {state: 'public'}, () => 'The site is public'); }
+    async makePrivate(node, _args) { await this.publishCommand(node, 'site_visibility_set', {state: 'private'}, () => 'The site is private'); }
+    async createPrivateLink(node, _args) {
+        try {
+            const result = await this.callCommand('private_link', {site_id: this.siteId(node), hours: Number(node.GET('site.pub_hours'))});
+            node.SET('site.pub_link', result.url);
+            return result.url;
+        } catch (error) { node.SET('site.pub_message', error.message); }
+    }
+    async copyPrivateLink(node, _args) {
+        const link = node.GET('site.pub_link');
+        if (!link) { node.SET('site.pub_message', 'Create a link first.'); return; }
+        await navigator.clipboard.writeText(link);
+        node.SET('site.pub_message', 'Private link copied');
+    }
+    async openPrivate(node, _args) {
+        const link = node.GET('site.pub_link') || await this.createPrivateLink(node, {});
+        if (link) window.open(link, '_blank', 'noopener');
+    }
     async createSite(node, _args) {
         const name = node.GET('site.new_name');
         if (!name) { node.SET('site.message', 'Give the site a name.'); return; }

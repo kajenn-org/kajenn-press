@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7 (Published site tab).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N8 (Help me).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -83,9 +83,15 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 
 - Delivers: per-page SEO with root defaults, search and social previews, checks before publishing (titles, descriptions, alt texts, internal links), redirects on URL change, the 404 page as an ordinary page.
 
-### N7: Published site tab
+### N7 (completed 2026-10-29, branch feat/published-site): Published site tab
 
-- Delivers: command top bar with publish, rollback and management commands; iframe on the published site; first Publish (Kajenn server, domain, DNS with or without provider credentials, automatic TLS); optional private publication before going public.
+- Planned: command top bar with publish, rollback and management commands; iframe on the published site; first Publish (Kajenn server, domain, DNS with or without provider credentials, automatic TLS); optional private publication before going public.
+- Result: site addresses in `bindings.json` of the release bucket, read by running site servers; private sites and signed private links; `publication_state`; the Published site tab with Publish, rollback, maintenance and private link (41 site operations). Archived plan: [published-site](done/published-site/plan.md).
+- Not done here (N7-D1): the first publication on another server. While private or in maintenance the tab opens the private link in a new browser tab, not in the iframe (a cross-site cookie with SameSite=Lax does not reach the iframe).
+
+### N7b: First publication on another server
+
+- Delivers: a registry of Kajenn site servers; domain and `www`; DNS with or without provider credentials; TLS, which Kajenn does not provide (no ACME client): a decision between a proxy with certificates (nginx and certbot, Caddy) and an ACME client in Kajenn comes first.
 
 ### N8: Help me
 

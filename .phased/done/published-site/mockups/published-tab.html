@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Published tab mockup</title>
+<style>
+:root{--bg:#1d2633;--panel:#243042;--soft:#1a222e;--line:#3a4658;--fg:#e8ecf2;--muted:#9aa6b6;--accent:#7fb2ec;--ok:#5fae3c;--warn:#d99a2b;--err:#e05a5a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.app{display:grid;grid-template-rows:auto auto auto 1fr;height:100vh;min-height:640px}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line)}.tab{padding:7px 12px;border-bottom:2px solid transparent;color:var(--muted)}.tab.on{border-color:var(--accent);color:var(--fg)}
+.grow{flex:1}.muted{color:var(--muted)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:4px 10px;cursor:pointer}button.primary{border-color:var(--accent);color:var(--accent)}
+.chip{border-radius:10px;padding:1px 9px;font-size:12px;border:1px solid}.chip.public{color:var(--ok);border-color:var(--ok)}.chip.private{color:var(--accent);border-color:var(--accent)}.chip.maint{color:var(--warn);border-color:var(--warn)}
+.addr{font-family:ui-monospace,monospace}
+.stage{position:relative;padding:12px;min-height:0;display:flex;flex-direction:column}
+.frame{flex:1;background:#fff;border-radius:8px;border:1px solid var(--line);color:#222;padding:24px}
+.frame h2{margin:0 0 6px}
+.panel{position:absolute;top:12px;right:12px;width:360px;max-height:calc(100% - 24px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);display:none}
+.panel header{display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line)}
+.panel .body{padding:10px}
+.row{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
+.w{color:var(--warn);font-size:12px;margin-left:22px}
+.v{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+select{font:inherit;background:var(--soft);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar"><b>Kajenn Press</b><span class="muted">· You are editing this site</span><span class="grow"></span><button>Save</button></div>
+  <div class="tabs"><span class="tab">Visual editor</span><span class="tab">SEO</span><span class="tab on">Published site</span></div>
+  <div class="bar">
+    <span class="chip public" id="chip">Public</span>
+    <a class="addr" href="#" style="color:var(--accent)">https://press.kajenn.org/</a>
+    <span class="muted">· published 10:42 · 2 pages changed since</span>
+    <span class="grow"></span>
+    <button class="primary" data-p="publish">Publish…</button>
+    <button data-p="rollback">Rollback…</button>
+    <button id="maint">Maintenance on</button>
+    <button data-p="private">Private link</button>
+  </div>
+  <div class="stage">
+    <div class="frame"><h2>Write it. Review it. Release it.</h2><p>The published site, as visitors see it (or through the private link while in maintenance or private).</p></div>
+    <div class="panel" id="publish"><header><b>Publish</b><span class="grow"></span><span class="x">✕</span></header><div class="body">
+      <div class="row"><input type="checkbox" checked><div>Home <span class="muted">/ · changed</span></div></div>
+      <div class="row"><input type="checkbox" checked><div>Features <span class="muted">/features/ · new</span><div class="w">▲ Missing description</div></div></div>
+      <div class="row"><input type="checkbox"><div class="muted">Get started /get-started/ · unchanged</div></div>
+      <div style="margin-top:8px"><button class="primary">Publish 2 pages</button></div>
+      <div class="note">Warnings never block Publish.</div></div></div>
+    <div class="panel" id="rollback"><header><b>Rollback</b><span class="grow"></span><span class="x">✕</span></header><div class="body">
+      <div class="row"><select><option>Page: Home</option><option>Whole site</option></select></div>
+      <div class="v"><span>10:42 today</span><b style="color:var(--ok)">online</b></div>
+      <div class="v"><span>yesterday 17:05</span><button>Put online</button></div>
+      <div class="v"><span>27 Oct 09:12</span><button>Put online</button></div>
+      <div class="note">Whole site: restores a saved source version and republishes its pages.</div></div></div>
+    <div class="panel" id="private"><header><b>Private link</b><span class="grow"></span><span class="x">✕</span></header><div class="body">
+      <div class="addr" style="overflow-wrap:anywhere">https://press.kajenn.org/_private/eyJzIjoi…</div>
+      <div class="row"><button>Copy</button><select><option>valid 8 hours</option><option>valid 7 days</option></select></div>
+      <div class="note">Shows the real site during maintenance or before the site is public. Anyone with the link can open it until it expires.</div>
+      <hr style="border-color:var(--line)">
+      <div class="row"><span class="chip private">Private</span><span class="muted">Visitors get 404 until</span></div>
+      <button class="primary">Make public</button></div></div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+$$('[data-p]').forEach(b=>b.onclick=()=>{$$('.panel').forEach(p=>p.style.display=p.id===b.dataset.p?'block':'none')});
+$$('.x').forEach(x=>x.onclick=()=>x.closest('.panel').style.display='none');
+$('#maint').onclick=e=>{const on=e.target.textContent==='Maintenance on';e.target.textContent=on?'Maintenance off':'Maintenance on';$('#chip').textContent=on?'Maintenance':'Public';$('#chip').className='chip '+(on?'maint':'public')};
+</script>
+</body>
+</html>

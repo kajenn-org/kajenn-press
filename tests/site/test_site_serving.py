@@ -4,15 +4,17 @@ import asyncio
 import base64
 import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
 from child.support import running
 from publication.storage_support import versioned_bucket
 
-from kajenn_press.domain import AccessPolicy
+from kajenn_press.domain import AccessPolicy, DomainError
 from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.rendering.resolvers import ConfigValueResolver
+from kajenn_press.site.private import sign
 from kajenn_press.site.publish import Publisher
 from kajenn_press.site.published import unpack_page
 from kajenn_press.site.render import published_asset_name
@@ -32,6 +34,7 @@ def build(source, data):
     body.div(node_label="body", kpress_slot="body")
 """
 PNG = b"\x89PNG\r\n\x1a\nlogo"
+SECRET = b"private-link-secret-for-tests-only"
 GRANTS = {"anna": {"*": ["read", "write", "create_site", "build", "publish"]}}
 
 
@@ -44,7 +47,7 @@ def setup(tmp_path):
         SourceStore(versioned_bucket()),
         AccessPolicy(GRANTS),
         worker=worker,
-        publisher=Publisher(releases, worker, {"site": {"headline": "at publish"}}),
+        publisher=Publisher(releases, worker, {"site": {"headline": "at publish"}}, SECRET),
     )
     return service, releases, worker
 
@@ -110,19 +113,28 @@ def publish_site(service, refresh=None):
             ),
         )
     copy.save(edited)
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="address",
+        page_id=pages["Home"],
+        fields={"origin": ORIGIN},
+    )
     run(service, "publish", site_id=site, key="p", selected=list(pages.values()))
     return site, pages
 
 
 def server(setup, site, tmp_path, connections=None, cache_seconds=0.2):
+    """A site server on the release bucket; `site` is bound through its root origin."""
     _service, releases, worker = setup
     return create_site_server(
-        bindings={ORIGIN: site},
         release_storage=releases,
         cache_root=tmp_path / "cache",
         cache_seconds=cache_seconds,
         worker=worker,
         connections=connections or {},
+        private_secret=SECRET,
     )
 
 
@@ -298,3 +310,160 @@ def test_the_example_site_has_no_seo_problem_and_serves_its_seo(setup, tmp_path)
     assert '<meta name="description" content="Kajenn Press manages a website' in home.text
     assert '<meta property="og:site_name" content="Kajenn Press">' in features.text
     assert f"<loc>{ORIGIN}/get-started/</loc>" in sitemap.text
+
+
+def test_an_address_set_later_is_served_without_restart_and_moves(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    app = server(setup, site, tmp_path)
+    other = "http://new.localhost"
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            before = (await http.get("/")).status_code
+            await asyncio.to_thread(
+                run,
+                service,
+                "page_seo_set",
+                site_id=site,
+                key="move",
+                page_id=pages["Home"],
+                fields={"origin": other},
+            )
+            await asyncio.to_thread(run, service, "publish", site_id=site, key="again", selected=[])
+            await asyncio.sleep(0.3)
+            old = (await http.get("/")).status_code
+            new = (await http.get("/", headers={"host": "new.localhost"})).status_code
+        return before, old, new
+
+    assert asyncio.run(scenario()) == (200, 404, 200)
+    assert service.publisher.bindings() == {other: {"site_id": site, "state": "public"}}
+
+
+def test_two_sites_cannot_share_an_address(setup):
+    service, _releases, _worker = setup
+    first, _pages = publish_site(service)
+    second = run(service, "site_new", key="second", name="T")["site_id"]
+    template = run(
+        service,
+        "template_add",
+        site_id=second,
+        key="t2",
+        name="L",
+        engine="gramlot",
+        python_source=LAYOUT,
+    )["template_id"]
+    page = run(service, "page_add", site_id=second, key="p2", name="Home", template_id=template)[
+        "page_id"
+    ]
+    run(
+        service,
+        "page_seo_set",
+        site_id=second,
+        key="a2",
+        page_id=page,
+        fields={"origin": ORIGIN},
+    )
+    with pytest.raises(DomainError, match="address of another site"):
+        run(service, "publish", site_id=second, key="pub2", selected=[page])
+    assert service.publisher.binding(first)[0] == ORIGIN
+    assert service.publisher.binding(second) == (None, None)
+
+
+def test_a_private_site_is_seen_only_through_its_private_link(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    run(service, "site_visibility_set", site_id=site, key="private", state="private")
+    link = run(service, "private_link", site_id=site, hours=8)["url"]
+    assert link.startswith(ORIGIN + "/_private/")
+    token = link.removeprefix(ORIGIN + "/_private/")
+    forged = token[:-2] + ("AA" if not token.endswith("AA") else "BB")
+    app = server(setup, site, tmp_path)
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            hidden = (await http.get("/")).status_code
+            refused = (await http.get("/_private/" + forged)).status_code
+            entry = await http.get(link.removeprefix(ORIGIN))
+            cookie = entry.headers["set-cookie"]
+            seen = await http.get("/about/", headers={"cookie": "kpress_private=" + token})
+            return hidden, refused, entry, cookie, seen
+
+    hidden, refused, entry, cookie, seen = asyncio.run(scenario())
+    assert (hidden, refused) == (404, 404)
+    assert entry.status_code == 303 and entry.headers["location"] == "/"
+    assert cookie.startswith("kpress_private=" + token)
+    assert "HttpOnly" in cookie and "Secure" not in cookie
+    assert seen.status_code == 200 and "<p>About</p>" in seen.text
+    assert "no-store" in seen.headers["cache-control"]
+    assert "set-cookie" not in seen.headers
+
+    run(service, "site_visibility_set", site_id=site, key="public", state="public")
+    (public,) = get(server(setup, site, tmp_path), "/")
+    assert public.status_code == 200 and "set-cookie" not in public.headers
+
+
+def test_the_private_link_opens_a_site_in_maintenance_and_expires(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    run(service, "maintenance_set", site_id=site, key="m", on=True)
+    token = run(service, "private_link", site_id=site)["url"].rsplit("/", 1)[1]
+    other_site = sign(SECRET, "another-site", time.time() + 3600)
+    expired = sign(SECRET, site, time.time() - 1)
+    app = server(setup, site, tmp_path)
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            statuses = []
+            for value in (None, token, other_site, expired):
+                headers = {"cookie": "kpress_private=" + value} if value else {}
+                statuses.append((await http.get("/", headers=headers)).status_code)
+            return statuses
+
+    assert asyncio.run(scenario()) == [503, 200, 503, 503]
+    with pytest.raises(DomainError, match="8 hours or 7 days"):
+        run(service, "private_link", site_id=site, hours=3)
+
+
+def test_publication_state_follows_publish_visibility_and_maintenance(setup):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    state = run(service, "publication_state", site_id=site)
+    assert state["address"] == ORIGIN and state["state"] == "public"
+    assert state["published"] and not state["maintenance"] and state["changed"] == 0
+    assert state["next_address"] is None and state["address_problem"] is None
+
+    run(service, "maintenance_set", site_id=site, key="m", on=True)
+    run(service, "site_visibility_set", site_id=site, key="v", state="private")
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="d",
+        page_id=pages["About"],
+        fields={"description": "About text"},
+    )
+    state = run(service, "publication_state", site_id=site)
+    assert state["maintenance"] and state["state"] == "private" and state["changed"] == 1
+
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="o",
+        page_id=pages["Home"],
+        fields={"origin": "http://moved.localhost"},
+    )
+    assert run(service, "publication_state", site_id=site)["next_address"] == (
+        "http://moved.localhost"
+    )
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="bad",
+        page_id=pages["Home"],
+        fields={"origin": "http://example.org"},
+    )
+    state = run(service, "publication_state", site_id=site)
+    assert state["next_address"] is None and "HTTPS" in state["address_problem"]

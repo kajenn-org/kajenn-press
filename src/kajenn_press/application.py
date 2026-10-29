@@ -56,13 +56,16 @@ class PressApplication(McpOpenApiApplication):
             worker = RenderWorker(render_python) if render_python else None
             connections = config.pop("connections", {})
             releases = config.pop("releases", None)
+            private_secret = config.pop("private_secret", None)
             self.sites = SiteService(
                 config.pop("root", self.root / "sites"),
                 SourceStore(config.pop("sources")),
                 self.policy,
                 worker=worker,
                 connections=connections,
-                publisher=Publisher(releases, worker, connections) if releases else None,
+                publisher=Publisher(releases, worker, connections, private_secret)
+                if releases
+                else None,
             )
             if config:
                 raise ValueError("Unknown site configuration")
@@ -428,6 +431,21 @@ class PressApplication(McpOpenApiApplication):
     def maintenance_set(self, site_id: str, key: str, on: bool, _request=None) -> dict:
         """Put the published site in maintenance (503) or take it out."""
         return self._site(_request, "maintenance_set", site_id=site_id, key=key, on=on)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_visibility_set(self, site_id: str, key: str, state: str, _request=None) -> dict:
+        """Make the site public or private at its address (the root page's public origin)."""
+        return self._site(_request, "site_visibility_set", site_id=site_id, key=key, state=state)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publication_state(self, site_id: str, _request=None) -> dict:
+        """Address, public or private, maintenance, last Publish and pages changed since."""
+        return self._site(_request, "publication_state", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def private_link(self, site_id: str, hours: int = 8, _request=None) -> dict:
+        """A link that shows the real site while private or in maintenance (8 or 168 hours)."""
+        return self._site(_request, "private_link", site_id=site_id, hours=hours)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_check(self, site_id: str, page_id: str, _request=None) -> dict:

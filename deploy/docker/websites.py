@@ -50,6 +50,7 @@ def site_sources():
         # Per-page publication (N4) writes to the release bucket, which needs versioning.
         "releases": release_storage(),
         "render_python": "/opt/render/bin/python",
+        "private_secret": (SECRETS / "private_link").read_text().strip().encode(),
     }
 
 

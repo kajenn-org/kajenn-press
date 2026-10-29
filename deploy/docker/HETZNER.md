@@ -1,8 +1,8 @@
 # kpress on the Hetzner host
 
-Installs the websites manager at `https://kpress.genro.com`, with private previews at
-`https://preview.kpress.genro.com`, behind the nginx already running on the host.
-Only the manager runs: no `demo` profile, no public site served from this host.
+Installs the websites manager at `https://kpress.genro.com`, behind the nginx already
+running on the host. Only the manager runs: no `demo` profile, no public site served
+from this host (step 7 describes what serving them needs).
 
 Host facts (checked 2026-10-26): 46.62.203.133, x86_64, Ubuntu, nginx 1.24.0 on the
 host listening on 80/443, certbot at `/usr/bin/certbot`, Docker with Compose,
@@ -15,15 +15,15 @@ Run every command as root on the host unless stated otherwise. Never run
 
 - The deployment files are on `main` of `kajenn-org/kajenn-press`
   (`deploy/docker/compose.yaml` reading `.env`, `nginx-kpress.conf`).
-- DNS: two A records pointing to `46.62.203.133` in the Route 53 zone `genro.com`
-  (created 2026-10-26, TTL 300): `kpress.genro.com` and `preview.kpress.genro.com`.
-  Check from any machine:
+- DNS: an A record `kpress.genro.com` pointing to `46.62.203.133` in the Route 53 zone
+  `genro.com` (created 2026-10-26, TTL 300). The record `preview.kpress.genro.com`
+  created the same day is no longer used. Check from any machine:
 
 ```bash
-dig +short kpress.genro.com preview.kpress.genro.com
+dig +short kpress.genro.com
 ```
 
-Both lines must print `46.62.203.133` before step 3.
+It must print `46.62.203.133` before step 3.
 
 ## 1. Checkout
 
@@ -37,7 +37,6 @@ git clone https://github.com/kajenn-org/kajenn-press.git /opt/kpress
 cat > /opt/kpress/deploy/docker/.env <<'EOF'
 KPRESS_SCHEME=https
 KPRESS_MANAGEMENT_HOST=kpress.genro.com
-KPRESS_PREVIEW_HOST=preview.kpress.genro.com
 KPRESS_TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 KPRESS_S3_ENDPOINT=https://fsn1.your-objectstorage.com
 KPRESS_S3_BUCKET=kpress-releases
@@ -94,10 +93,9 @@ nginx -t && systemctl reload nginx
 
 ```bash
 certbot certonly --webroot -w /var/www/kpress-acme -d kpress.genro.com
-certbot certonly --webroot -w /var/www/kpress-acme -d preview.kpress.genro.com
 ```
 
-Each certificate lands in `/etc/letsencrypt/live/<name>/`, the paths used by
+The certificate lands in `/etc/letsencrypt/live/kpress.genro.com/`, the path used by
 `nginx-kpress.conf`. Renewal uses the same webroot through the host's certbot timer.
 
 ## 4. Full nginx configuration
@@ -112,10 +110,9 @@ nginx -t && systemctl reload nginx
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://kpress.genro.com/admin/
 curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://kpress.genro.com/admin/
-curl -s https://preview.kpress.genro.com/admin/
 ```
 
-Expected: `200`; `301 https://kpress.genro.com/admin/`; `Preview unavailable`.
+Expected: `200`; `301 https://kpress.genro.com/admin/`.
 
 The operator password:
 
@@ -174,8 +171,13 @@ serving comes later. When it does, a site server (`deploy/docker/site_server.py`
 - read-only keys limited to `kpress-releases`, including `GetObjectVersion` and
   `ListBucketVersions`, since pages are read by pinned version. Hetzner project keys
   read every bucket, so they cannot be used here; bucket-limited keys are not verified;
-- `/config/sites.json` mapping each public origin to its site id;
-- an nginx server block per public domain, as in step 4, proxying to the site server.
+- the private-link secret of websites (`/secrets/private_link` in the websites
+  volume), mounted read-only and named by `PRIVATE_LINK_SECRET_FILE`;
+- an nginx server block per public domain, as in step 4, proxying to the site server
+  on port 8877 with `Host`, and a certificate per domain.
+
+The site server reads `bindings.json` from `kpress-releases`: a site gets its address
+from the public origin of its root page (SEO tab) at its next Publish, with no restart.
 
 ## Update
 
@@ -183,19 +185,21 @@ serving comes later. When it does, a site server (`deploy/docker/site_server.py`
 cd /opt/kpress && git pull --ff-only && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build
 ```
 
-If `nginx-kpress.conf` changed, repeat step 4.
+If `nginx-kpress.conf` changed, repeat step 4. The version of 2026-10-29 drops the
+`preview.kpress.genro.com` server block; its certificate can be removed with
+`certbot delete --cert-name preview.kpress.genro.com`.
 
 ## Restart and stop
 
-`docker compose ... restart` and `down` (without `-v`) keep catalog and credentials.
-`down -v` deletes the catalog and the generated credentials; the next `up` starts an
-empty catalog. Releases already exported stay in the bucket.
+`docker compose ... restart` and `down` (without `-v`) keep working copies and
+credentials. `down -v` deletes the working copies not yet saved and the generated
+credentials. Site sources and published pages stay in their buckets.
 
 ## Manual backup
 
-The catalog and the generated credentials live in the named volumes
-`kajenn-websites_websites-data` and `kajenn-websites_websites-secrets`. Releases are in
-the bucket and can be exported again from the catalog with `release_export`.
+The working copies and the generated credentials live in the named volumes
+`kajenn-websites_websites-data` and `kajenn-websites_websites-secrets`. Site sources and
+published pages are versioned in their buckets.
 
 ```bash
 mkdir -p /opt/kpress-backup && cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml stop websites
