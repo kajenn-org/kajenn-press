@@ -87,7 +87,8 @@ th { background: var(--panel); }
       <li>For Help me, the installation's Claude API key.</li>
     </ul>
   </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-open"><h3><span class="step-num">1.</span>Open or create a site</h3>
-    <p>The navigation tree has two groups. <b>Sites</b> lists every site the account can read, with who is editing it, and <b>+ new site</b>; <b>Library</b> lists the starting sites. A site opens in a tab of its own.</p>
+    <p>The navigation tree has two groups. <b>Sites</b> lists every site the account can read, with who is editing it, and <b>+ new site</b>; <b>Library</b> lists the starting sites. One site is shown at a time: choosing another in the tree shows it, and a site already opened keeps its state.</p>
+    <p>The site tab starts with one bar: the site's name and who holds it, the three tabs, the language shown, <b>Help me</b>, <b>Take the site</b> when another person holds it, and <b>Save</b>. Every pane below it takes the full height.</p>
     <p>Opening a site takes it: one person edits a site at a time. The others see who holds it and can only look; <b>Take the site</b> takes it from the holder, whose unsaved changes are lost. The lock expires after 30 minutes without changes.</p>
     <p><b>Save</b> writes the site as a new S3 version of its source. Every change before that lives in the holder's working copy.</p>
   </section><section class="section step" id="s-pages"><h3><span class="step-num">2.</span>Pages, slots and contents</h3>
@@ -96,8 +97,14 @@ th { background: var(--panel); }
       <li><b>Pages</b>: pages and folders. Folders only organise the editor; they never change URLs. Each page shows its slots and the content assigned to each. <b>+ page</b> adds a page with the site's template, <b>+ folder</b> a folder; pages and folders move by drag and drop.</li>
       <li><b>Contents</b>: every HTML or Markdown content of the site. An unused content is in italics; a content used by several pages shows how many. <b>+ content</b> adds one.</li>
     </ul>
-    <p>A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing <b>Assign</b>. <b>Show slots</b> outlines the slots in the preview; a click on a slot opens it.</p>
-    <p>A page holds a <em>copy</em> of each content it shows. Editing a content in the block editor changes the original; <b>Save</b> then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. <b>Update and render</b> brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.</p>
+    <p>A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing <b>Assign</b>. <b>Show slots</b> outlines the slots in the preview.</p>
+    <p>In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a window over the preview:</p>
+    <ul>
+      <li>the window takes the full height; its header moves it sideways and its edge widens it; one block is open at a time;</li>
+      <li>it opens on Jodit, ready to write; <b>&lt;/&gt; HTML</b> shows the source beside it in CodeMirror, and the two stay in step;</li>
+      <li>the footer says whether there are changes not saved; <b>Cancel</b> discards them, <b>Save</b> writes them and shows the page again.</li>
+    </ul>
+    <p>A page holds a <em>copy</em> of each content it shows. Editing a content in the block window changes the original; <b>Save</b> then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. <b>Update and render</b> brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.</p>
   </section><section class="section step" id="s-seo"><h3><span class="step-num">3.</span>SEO</h3>
     <p>The SEO tab lists the pages with the state of their checks. For the selected page it shows the public URL, title, description, canonical, robots, social share fields, the images with their alt texts and JSON-LD. An empty field shows, beside it, the value it takes: the root page's for description, robots and sharing image, the page name for the title.</p>
     <p>The root page (URL <code>/</code>) also holds the site defaults: languages, site name, public origin, organisation, sharing image and robots. The public origin is the site's address.</p>
@@ -107,7 +114,7 @@ th { background: var(--panel); }
     <ul>
       <li>A content shown in another language has its own translation. In the Pages and Contents trees a translation is marked ○ missing, ↻ to update (its main text changed since) or ◐ to review (proposed by Help me).</li>
       <li>A missing translation shows the main text: the preview outlines those slots in red, the published page shows the main text without marks.</li>
-      <li>The block editor shows the main text above the translation; <b>Save</b> writes the translation, <b>Confirm translation</b> accepts one proposed by Help me.</li>
+      <li>The block window shows the main text above the translation; <b>Save</b> writes the translation, <b>Confirm translation</b> accepts one proposed by Help me.</li>
       <li>In the SEO tab each language has its own URL and fields; the URL of another language is written without its prefix, which Kajenn Press adds (<code>/en/about/</code>). An empty field takes the main language's value.</li>
     </ul>
   </section><section class="section step" id="s-help"><h3><span class="step-num">5.</span>Help me</h3>
@@ -138,6 +145,9 @@ th { background: var(--panel); }
     <div class="box limit"><div>Servers are registered through <code>server_add</code> (REST or MCP); the tab has no form for it.</div></div>
     <div class="box limit"><div>While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.</div></div>
   </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.js:9</code><span class="muted">2026-10-29</span></div><div>In the preview a click selects a block, a link inside a block is followed, and the pen or a double click asks to edit it.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:499</code><span class="muted">2026-10-29</span></div><div>The block window opens on Jodit at full height; text typed in Jodit appears in CodeMirror and the reverse; Cancel discards; Save and Update and render show the change in the preview.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:89</code><span class="muted">2026-10-29</span></div><div>The administration shows one site at a time, without a strip of open-site tabs.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:33</code><span class="muted">2026-10-29</span></div><div>The navigation lists Sites (with holder and <code>+ new site</code>) and Library (starting sites).</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/lock.py:15</code><span class="muted">2026-10-29</span></div><div>The editing lock expires after 30 minutes without activity.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/service.py:344</code><span class="muted">2026-10-29</span></div><div><code>site_save</code> writes the working copy as a new version of the source zip.</div></div>

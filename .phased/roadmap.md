@@ -94,6 +94,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Result: a registry of servers (`servers.json`, grant `servers`); bindings schema 2 with server and alias (`www.` or the bare domain answers 301); site servers serve only their own sites and answer Caddy's `ask`; a server agent with four actions and nginx+certbot, Caddy on-demand and Traefik drivers; DNS records planned and checked through 1.1.1.1 and 8.8.8.8; Go live in the Published site tab; `deploy/agent/install.sh` (52 site operations). Archived plan: [first-publication](done/first-publication/plan.md).
 - Planned: a registry of Kajenn site servers; domain and `www`; DNS with or without provider credentials; TLS, which Kajenn does not provide (no ACME client): a decision between a proxy with certificates (nginx and certbot, Caddy) and an ACME client in Kajenn comes first.
 
+### Block editing (completed 2026-10-29, branch feat/block-editing)
+
+- Result: the administration bar and the site bar 40 pixels each, the site's tabs inline, one site shown at a time, every pane at full height; in the preview a click selects a block (border, label, pen) and links are followed; the pen, a double click or the Pages tree opens the block in a full-height floating window on Jodit with the HTML source beside it on demand (`d-block-editing`). Archived plan: [block-editing](done/block-editing/plan.md).
+
 ### N8 (completed 2026-10-29, branch feat/help-me): Help me
 
 - Result: a Sonnet chat in the site tab with 24 tools (21 site operations, choices, CSS and SVG assets), SVG cleaning, chats per site in the source bucket, tokens and cost per chat and per site, the Help me pane, the key from a file of the owner (`compose.help.yaml`). Live checks passed ($0.06 for a two-page site, $0.05 for one page from the tab). Archived plan: [help-me](done/help-me/plan.md).

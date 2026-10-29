@@ -1,16 +1,59 @@
-// Preview HTML additions, never part of published pages: slot borders and a script that
-// reports clicks on slots and links to the administration with postMessage.
+// Preview HTML additions, never part of published pages: slot borders, the selection with
+// its label and pen, and a script that reports selections, edits and links with postMessage.
 const SLOT_CSS = '<style>[kpress_slot]{outline:1px dashed #1d5fa5;outline-offset:2px;cursor:pointer}[kpress_fallback]{outline:1px dashed #e05a5a;background:#fdecec}</style>';
+const SELECTION_CSS = '<style>[kpress_chrome]{position:absolute;z-index:2147483647;pointer-events:none;border:2px solid #2f6fde;border-radius:6px;box-sizing:border-box}'
+    + '[kpress_chrome] .kp-label{position:absolute;top:-11px;left:10px;background:#2f6fde;color:#fff;font:600 11px/1.6 system-ui,sans-serif;padding:0 7px;border-radius:4px;white-space:nowrap}'
+    + '[kpress_chrome] .kp-pen{position:absolute;top:-15px;right:10px;width:30px;height:30px;border-radius:50%;border:0;background:#2f6fde;color:#fff;cursor:pointer;pointer-events:auto;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}'
+    + '[kpress_chrome] .kp-pen svg{width:15px;height:15px}</style>';
+const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 const PREVIEW_SCRIPT = `
-document.addEventListener('click', function (event) {
-  var slot = event.target.closest('[kpress_slot]');
-  var link = event.target.closest('a[href]');
-  if (slot) { event.preventDefault(); parent.postMessage({kind: 'slot', slot: slot.getAttribute('kpress_slot')}, '*'); }
-  else if (link) { event.preventDefault(); parent.postMessage({kind: 'link', href: link.getAttribute('href')}, '*'); }
-});`;
+(function () {
+  var selected = null, chrome = null;
+  function report(kind, slot) { parent.postMessage({kind: kind, slot: slot.getAttribute('kpress_slot')}, '*'); }
+  function place() {
+    if (!selected) return;
+    var box = selected.getBoundingClientRect();
+    chrome.style.top = (box.top + window.scrollY - 4) + 'px';
+    chrome.style.left = (box.left + window.scrollX - 4) + 'px';
+    chrome.style.width = (box.width + 8) + 'px';
+    chrome.style.height = (box.height + 8) + 'px';
+  }
+  function select(slot) {
+    if (!chrome) {
+      chrome = document.createElement('div');
+      chrome.setAttribute('kpress_chrome', '');
+      chrome.innerHTML = '<span class="kp-label"></span><button type="button" class="kp-pen" title="Edit">PEN_ICON</button>';
+      chrome.querySelector('.kp-pen').addEventListener('click', function (event) {
+        event.preventDefault(); event.stopPropagation();
+        if (selected) report('edit', selected);
+      });
+      document.body.appendChild(chrome);
+    }
+    selected = slot;
+    chrome.querySelector('.kp-label').textContent = LABELS[slot.getAttribute('kpress_slot')] || slot.getAttribute('kpress_slot');
+    place();
+  }
+  window.addEventListener('resize', place);
+  document.addEventListener('click', function (event) {
+    if (event.target.closest('[kpress_chrome]')) return;
+    var link = event.target.closest('a[href]');
+    var slot = event.target.closest('[kpress_slot]');
+    // A link is followed even inside a block, as a visitor would (d-block-editing).
+    if (link) { event.preventDefault(); parent.postMessage({kind: 'link', href: link.getAttribute('href')}, '*'); }
+    else if (slot) { event.preventDefault(); select(slot); report('select', slot); }
+  });
+  document.addEventListener('dblclick', function (event) {
+    var slot = event.target.closest('[kpress_slot]');
+    if (slot && !event.target.closest('a[href]')) { event.preventDefault(); select(slot); report('edit', slot); }
+  });
+})();`;
 
-function previewHtml(html, slots, nonce) {
-    const additions = (slots ? SLOT_CSS : '') + `<script nonce="${nonce}">${PREVIEW_SCRIPT}<\/script>`;
+function previewHtml(html, slots, nonce, labels) {
+    // Labels go into a script: `<` is escaped so no text can close it.
+    // Function replacements: a `$` in a content name stays literal.
+    const script = PREVIEW_SCRIPT.replace('PEN_ICON', () => PEN)
+        .replace('LABELS[', () => '(' + JSON.stringify(labels).replace(/</g, '\\u003c') + ')[');
+    const additions = (slots ? SLOT_CSS : '') + SELECTION_CSS + `<script nonce="${nonce}">${script}<\/script>`;
     return html.includes('</body>') ? html.replace('</body>', additions + '</body>') : html + additions;
 }
 
@@ -21,14 +64,20 @@ export class Logic {
         return reply.result;
     }
     siteId(node) { return node.GET('site.id'); }
+    showTab(node, _event) { node.SET('site.tab', node.getAttr('tab')); }
     refresh(node) { node.SET('site.version', node.GET('site.version') + 1); }
     initialize(node, _args) {
         const listener = event => {
             if (!event.data || typeof event.data !== 'object') return;
-            if (event.data.kind === 'slot') {
-                node.SET('site.assign_page', node.GET('site.page'));
+            if (event.data.kind === 'select' || event.data.kind === 'edit') {
+                const page = node.GET('site.page');
+                const path = this.slotPath(node.GET('site.pages_tree'), page, event.data.slot);
+                this.fromPreview = true;
+                if (path) node.SET('site.selected_path', path);
+                this.fromPreview = false;
+                node.SET('site.assign_page', page);
                 node.SET('site.assign_slot', event.data.slot);
-                void this.openSlot(node, {});
+                if (event.data.kind === 'edit') void this.openSlot(node, {});
             } else if (event.data.kind === 'link') {
                 const pages = JSON.parse(node.GET('site.pages_json'));
                 const target = Object.keys(pages).find(id => pages[id].url === event.data.href);
@@ -59,19 +108,48 @@ export class Logic {
                 return;
             }
             const nonce = document.querySelector('script[nonce]')?.nonce ?? '';
-            node.SET('site.preview', previewHtml(result.html, node.GET('site.show_slots'), nonce));
+            node.SET('site.preview', previewHtml(result.html, node.GET('site.show_slots'), nonce,
+                this.slotLabels(node, page)));
             node.SET('site.status', pages[page].url + ' · ' + pages[page].name);
         } catch (error) { node.SET('site.status', error.message); }
+    }
+    slotPath(bag, page, slot, prefix = '') {
+        // The Pages tree nests pages in folders: find the slot node wherever its page is.
+        for (const item of bag.getNodes()) {
+            const path = prefix ? prefix + '.' + item.label : item.label;
+            if (item.attr.kind === 'slot' && item.attr.page === page && item.attr.slot === slot) return path;
+            if (item.value && typeof item.value.getNodes === 'function') {
+                const found = this.slotPath(item.value, page, slot, path);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+    slotLabels(node, page) {
+        // "slot · content" for each slot of the page, shown on the selection.
+        const contents = JSON.parse(node.GET('site.contents_json')), labels = {};
+        const tree = node.GET('site.pages_tree');
+        const walk = bag => { for (const item of bag.getNodes()) {
+            if (item.attr.kind === 'slot' && item.attr.page === page) {
+                labels[item.attr.slot] = item.attr.slot + (item.attr.content ? ' · ' + contents[item.attr.content].name : ' · empty');
+            }
+            if (item.value && typeof item.value.getNodes === 'function') walk(item.value);
+        } };
+        walk(tree);
+        return labels;
     }
     selectTreeItem(node, {path}) {
         if (!path) return;
         const item = node.GET('site.pages_tree').getNode(path);
         if (!item) return;
-        if (item.attr.page) node.SET('site.page', item.attr.page);
+        // Setting the same page renders it again and would drop the selection in the preview.
+        if (item.attr.page && item.attr.page !== node.GET('site.page')) node.SET('site.page', item.attr.page);
         if (item.attr.kind === 'slot') {
             node.SET('site.assign_page', item.attr.page);
             node.SET('site.assign_slot', item.attr.slot);
             node.SET('site.assign_content', item.attr.content);
+            // A slot chosen in the tree opens like the pen; one chosen in the preview only selects.
+            if (!this.fromPreview && item.attr.content) void this.openSlot(node, {});
         }
     }
     preparePage(source, {dragValues, item}) {
@@ -118,12 +196,27 @@ export class Logic {
         node.SET('site.editor_title', slot + ' · ' + read[content].name + (main ? '' : ' · ' + language.toUpperCase()));
         node.SET('site.editor_main', main ? '' : read[content].text);
         node.SET('site.editor_text', main ? read[content].text : (translation.text ?? ''));
+        node.SET('site.editor_original', node.GET('site.editor_text'));
         node.SET('site.editor_state', main ? '' : translation.state);
         node.SET('site.editor_note', main || translation.state === 'done' ? '' : translation.state.replace('_', ' '));
         node.SET('site.plan_json', '');
         node.SET('site.editor_open', true);
     }
     closeEditor(node, _args) { node.SET('site.editor_open', false); }
+    toggleSource(node, _event) { node.SET('site.editor_source', !node.GET('site.editor_source')); }
+    dragWindow(_node, event) {
+        // Full height always: the window moves sideways only, inside the stage.
+        if (event.target.closest('button')) return;
+        const win = event.currentTarget.closest('.block-window'), stage = win.parentElement;
+        const start = event.clientX - win.offsetLeft;
+        const move = m => {
+            const left = Math.max(0, Math.min(m.clientX - start, stage.clientWidth - win.offsetWidth));
+            win.style.right = 'auto';
+            win.style.left = left + 'px';
+        };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once: true});
+    }
     async confirmTranslation(node, _args) {
         try {
             await this.callCommand('translation_confirm', {site_id: this.siteId(node), key: crypto.randomUUID(),
@@ -150,6 +243,9 @@ export class Logic {
             const plan = await this.callCommand('copies_update_plan', {site_id: site, original_id: content});
             const pages = JSON.parse(node.GET('site.pages_json'));
             node.SET('site.plan_json', JSON.stringify(plan.map(item => ({...item, page_name: pages[item.page_id].name}))));
+            node.SET('site.editor_original', node.GET('site.editor_text'));
+            // Without copies to update, the window closes and the preview shows the change.
+            if (!plan.length) { node.SET('site.editor_open', false); this.refresh(node); }
         } catch (error) { node.SET('site.message', error.message); }
         node.SET('site.busy', false);
     }
