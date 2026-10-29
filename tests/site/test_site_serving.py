@@ -337,7 +337,9 @@ def test_an_address_set_later_is_served_without_restart_and_moves(setup, tmp_pat
         return before, old, new
 
     assert asyncio.run(scenario()) == (200, 404, 200)
-    assert service.publisher.bindings() == {other: {"site_id": site, "state": "public"}}
+    assert service.publisher.bindings() == {
+        other: {"site_id": site, "state": "public", "server": "default", "redirect": None}
+    }
 
 
 def test_two_sites_cannot_share_an_address(setup):
@@ -553,3 +555,56 @@ def test_a_two_language_site_is_published_and_served_in_both(setup, tmp_path):
     preview = setup[2].render_page(request)
     assert preview["status"] == "succeeded", preview["diagnostics"]
     assert "kpress_fallback" in preview["html"]
+
+
+def test_each_server_serves_its_sites_the_alias_redirects_and_a_site_moves(setup, tmp_path):
+    service, releases, worker = setup
+    service.policy = AccessPolicy(
+        {"anna": {"*": ["read", "write", "create_site", "build", "publish", "servers"]}}
+    )
+    service.execute(
+        "anna",
+        "server_add",
+        key="web-2",
+        name="web-2",
+        ipv4=["157.90.1.21"],
+        ipv6=[],
+        agent_url="https://web-2.example",
+    )
+    site, _pages = publish_site(service)
+    run(service, "site_server_set", site_id=site, key="move", server="web-2", alias=True)
+    assert service.publisher.bindings() == {
+        ORIGIN: {"site_id": site, "state": "public", "server": "web-2", "redirect": None},
+        "http://www.site.localhost": {
+            "site_id": site,
+            "state": "public",
+            "server": "web-2",
+            "redirect": ORIGIN,
+        },
+    }
+
+    def serve(server):
+        return create_site_server(
+            release_storage=releases,
+            cache_root=tmp_path / server,
+            cache_seconds=0.2,
+            worker=worker,
+            private_secret=SECRET,
+            server=server,
+        )
+
+    (default_home,) = get(serve("default"), "/")
+    (moved_home,) = get(serve("web-2"), "/about/")
+    assert default_home.status_code == 404 and moved_home.status_code == 200
+
+    async def alias():
+        async with running(serve("web-2"), "http://www.site.localhost") as http:
+            return await http.get("/about/")
+
+    redirected = asyncio.run(alias())
+    assert redirected.status_code == 301
+    assert redirected.headers["location"] == ORIGIN + "/about/"
+    with pytest.raises(DomainError, match="serves 1 sites"):
+        service.execute("anna", "server_remove", key="rm", name="web-2")
+    with pytest.raises(DomainError, match="No server"):
+        run(service, "site_server_set", site_id=site, key="bad", server="web-9")

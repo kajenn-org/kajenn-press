@@ -33,7 +33,7 @@ from ..domain import DomainError
 from ..publication.routes import origin, request_path
 from .private import COOKIE, PREFIX, cookie_token, valid_token
 from .publish import BINDINGS_PATH
-from .published import read_bindings, read_index, unpack_page
+from .published import DEFAULT_SERVER, read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
@@ -68,8 +68,8 @@ def read_release(storage, path, version_id=None, attempts=5):
 class Bindings:
     """`bindings.json`, reread at most every `cache_seconds`; the last valid one is kept."""
 
-    def __init__(self, storage, cache_seconds):
-        self.storage, self.cache_seconds = storage, cache_seconds
+    def __init__(self, storage, cache_seconds, server):
+        self.storage, self.cache_seconds, self.server = storage, cache_seconds, server
         self.loaded, self.loaded_at = {}, None
 
     def get(self, public_origin):
@@ -80,7 +80,9 @@ class Bindings:
                 # Missing or unreadable bindings keep the last valid ones (none at start).
                 pass
             self.loaded_at = time.monotonic()
-        return self.loaded.get(public_origin)
+        entry = self.loaded.get(public_origin)
+        # A site server serves only the sites bound to it (d-server-registry).
+        return entry if entry is not None and entry["server"] == self.server else None
 
 
 class SiteReader:
@@ -171,12 +173,13 @@ class SiteServerApplication(BaseApplication):
         worker=None,
         connections=None,
         private_secret=None,
+        server=DEFAULT_SERVER,
         **kwargs,
     ):
         storage = StorageManager()
         storage.configure([{"name": MOUNT, **release_storage}])
         self.storage, self.cache_seconds = storage, cache_seconds
-        self.bindings = Bindings(storage, cache_seconds)
+        self.bindings = Bindings(storage, cache_seconds, server)
         self.private_secret = private_secret
         self.readers = {}
         self.renders = RenderCache(cache_root, worker, connections or {}) if worker else None
@@ -201,6 +204,10 @@ class SiteServerApplication(BaseApplication):
         bound = self.bindings.get(binding)
         if bound is None:
             raise DomainError("not_found", "Unknown site")
+        if bound["redirect"] is not None:
+            # The alias of an address answers 301 to it, keeping the path (d-www).
+            location = bound["redirect"] + quote(path, safe="/")
+            return Response(status_code=301, headers={**HEADERS, "location": location})
         if path.startswith(PREFIX):
             return self.private_entry(binding, bound["site_id"], path.removeprefix(PREFIX))
         allowed = self.allowed(bound["site_id"], token)
@@ -368,6 +375,7 @@ def create_site_server(
     worker=None,
     connections=None,
     private_secret=None,
+    server=DEFAULT_SERVER,
 ):
     """A Kajenn server whose root application serves the sites bound in `bindings.json`."""
     return AsgiServer(
@@ -385,6 +393,7 @@ def create_site_server(
                     "worker": worker,
                     "connections": connections,
                     "private_secret": private_secret,
+                    "server": server,
                 },
             ),
         ],

@@ -29,6 +29,8 @@ def main():
         cache_root="/cache",
         cache_seconds=float(os.environ.get("SITE_CACHE_SECONDS", "5")),
         private_secret=Path(os.environ["PRIVATE_LINK_SECRET_FILE"]).read_text().strip().encode(),
+        # The registered name of this server; the demo's site server is the default one.
+        server=os.environ.get("SITE_SERVER_NAME", "default"),
     )
     uvicorn.run(server, host="0.0.0.0", port=8877, log_level="warning")
 

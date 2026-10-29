@@ -30,7 +30,7 @@ from .languages import (
 )
 from .lock import EditingLock
 from .model import ENGINES, Site, new_id
-from .published import page_fingerprint
+from .published import DEFAULT_SERVER, page_fingerprint
 from .receipts import Receipts
 from .render import page_request
 from .seo import (
@@ -89,6 +89,7 @@ PUBLISHING = {
     "site_visibility_set",
     "private_link",
     "publication_state",
+    "site_server_set",
 }
 PUBLISHING_READS = {"publish_plan", "page_versions", "private_link", "publication_state"}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING | SERVERS
@@ -319,6 +320,25 @@ class SiteService:
     def _publication_state(self, identity, site_id):
         return self.publisher.state(self.site(identity, site_id))
 
+    def _site_server_set(self, identity, site_id, key, server, alias=True):
+        """Choose the server and whether the other name redirects; a bound site moves."""
+
+        def run():
+            if server != DEFAULT_SERVER:
+                self.servers.get(server)
+            copy = self.working_copy(site_id)
+            site = copy.load()
+            info = site.bag.get_node("info").attr
+            info["server"] = server
+            info["alias"] = bool(alias)
+            site.record(identity, "site_server_set", now(), server=server)
+            copy.save(site)
+            self.publisher.set_server(site)
+            return {"server": server, "alias": bool(alias)}
+
+        arguments = {"site_id": site_id, "server": server, "alias": bool(alias)}
+        return self.receipts.run(identity, key, "site_server_set", arguments, run)
+
     def _private_link(self, identity, site_id, hours=8):
         return self.publisher.private_link(site_id, hours)
 
@@ -345,9 +365,9 @@ class SiteService:
     def _server_remove(self, identity, key, name):
         bound = []
         if self.publisher is not None:
-            bound = [
-                e["site_id"] for e in self.publisher.bindings().values() if e["server"] == name
-            ]
+            # One site has its address and possibly an alias: count sites, not origins.
+            entries = self.publisher.bindings().values()
+            bound = sorted({e["site_id"] for e in entries if e["server"] == name})
         self.servers.remove(name, bound)
         return {"name": name}
 

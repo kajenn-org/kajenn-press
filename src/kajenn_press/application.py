@@ -572,6 +572,16 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "site_visibility_set", site_id=site_id, key=key, state=state)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_server_set(
+        self, site_id: str, key: str, server: str, alias: bool = True, _request=None
+    ) -> dict:
+        """Choose the server of the site and whether the other name (with or without www.)
+        redirects to its address; a site already online moves to that server."""
+        return self._site(
+            _request, "site_server_set", site_id=site_id, key=key, server=server, alias=alias
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_state(self, site_id: str, _request=None) -> dict:
         """Address, public or private, maintenance, last Publish and pages changed since."""
         return self._site(_request, "publication_state", site_id=site_id)
