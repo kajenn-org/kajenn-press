@@ -9,7 +9,7 @@ from publication.storage_support import versioned_bucket
 
 from kajenn_press.application import PressApplication
 from kajenn_press.domain import AccessPolicy
-from kajenn_press.help.tools import ALLOWED, FILLED, HelpTools, tool_definitions
+from kajenn_press.help.tools import ALLOWED, EXTRA, FILLED, HelpTools, tool_definitions
 from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.site.service import OPERATIONS, PUBLISHING, SiteService
 from kajenn_press.site.store import SourceStore
@@ -33,7 +33,8 @@ def service(tmp_path):
 
 def test_tools_match_the_routes_and_leave_publishing_out():
     tools = {tool["name"]: tool for tool in tool_definitions()}
-    assert list(tools) == list(ALLOWED)
+    assert list(tools) == [*ALLOWED, *EXTRA]
+    tools = {name: tools[name] for name in ALLOWED}
     assert set(ALLOWED) <= OPERATIONS
     # publish_plan only reads which pages changed; every other publishing operation stays out.
     refused = (PUBLISHING - {"publish_plan"}) | {"site_new", "site_import", "site_restore"}
