@@ -608,3 +608,14 @@ def test_each_server_serves_its_sites_the_alias_redirects_and_a_site_moves(setup
         service.execute("anna", "server_remove", key="rm", name="web-2")
     with pytest.raises(DomainError, match="No server"):
         run(service, "site_server_set", site_id=site, key="bad", server="web-9")
+
+
+def test_caddy_may_ask_which_names_are_bound(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    bound, unknown = get(
+        server(setup, site, tmp_path),
+        "/_kpress/ask?domain=site.localhost",
+        "/_kpress/ask?domain=other.example",
+    )
+    assert (bound.status_code, unknown.status_code) == (200, 404)

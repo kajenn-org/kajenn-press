@@ -17,7 +17,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote
 from uuid import uuid4
 from xml.sax.saxutils import escape
 
@@ -37,6 +37,8 @@ from .published import DEFAULT_SERVER, read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
+# Asked by Caddy before it obtains a certificate for a name; only bound names pass.
+ASK_PATH = "/_kpress/ask"
 HEADERS = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
@@ -83,6 +85,15 @@ class Bindings:
         entry = self.loaded.get(public_origin)
         # A site server serves only the sites bound to it (d-server-registry).
         return entry if entry is not None and entry["server"] == self.server else None
+
+    def hosts(self):
+        """The host names bound to this server, address and alias."""
+        self.get("")
+        return {
+            origin.partition("://")[2].split(":")[0]
+            for origin, entry in self.loaded.items()
+            if entry["server"] == self.server
+        }
 
 
 class SiteReader:
@@ -308,6 +319,14 @@ class SiteServerApplication(BaseApplication):
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             await send({"type": "websocket.close", "code": 1008})
+            return
+        if scope["path"] == ASK_PATH:
+            # Caddy's on-demand TLS asks before obtaining a certificate (d-tls-proxy).
+            query = parse_qs(scope.get("query_string", b"").decode("latin-1"))
+            domain = (query.get("domain") or [""])[0].lower()
+            bound = await asyncio.to_thread(self.bindings.hosts)
+            status = 200 if domain in bound else 404
+            await Response("", status_code=status, headers=HEADERS)(scope, receive, send)
             return
         try:
             binding = self.binding(scope)
