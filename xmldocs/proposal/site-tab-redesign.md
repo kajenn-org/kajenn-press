@@ -114,13 +114,24 @@ The badge in Contents counts the copies that carry the same original id.
 
 #### First publication
 
-1. Choose the Kajenn server among the ones registered in Kajenn Press.
-2. Enter the domain and whether `www` is served too.
-3. DNS: with the provider's credentials Kajenn Press creates the records; without them it shows the exact records to create and checks when they become visible.
-4. The TLS certificate is automatic, because the server is a Kajenn server.
-5. All pages are published, the address is checked and the site appears in the Published site iframe.
+The Published site tab of a site never published guides the operator:
+
+1. Choose the server among the ones registered in Kajenn Press.
+2. Enter the domain and choose which of the domain and `www.` is the address; the other answers 301 to it.
+3. DNS: Kajenn Press shows the exact records to create (A and AAAA for both names, towards the server's addresses) and checks when they become visible. Creating them through a provider's API comes later, Route 53 first.
+4. Publish: the pages are published, the server's agent configures the proxy for the domain and obtains the certificate, and the tab shows the outcome.
+5. The address is checked and the site appears in the Published site iframe.
+
+A site can move to another server: the binding moves and the tab shows the new DNS records to create.
 
 Whether a Python process is needed to re-render follows from the presence of resolvers in the templates; the operator is not asked.
+
+#### Servers
+
+- A server is a host that runs the Kajenn site server image. Kajenn Press keeps a registry of servers: name, public IPv4 and IPv6 addresses, the address of its agent. Every server reads the same release bucket; each site's binding names the server that serves it.
+- TLS comes from the proxy already installed on the server: nginx with certbot, Caddy or Traefik. Kajenn Press provides the site server image, which speaks plain HTTP, and one driver per proxy.
+- Each server runs an agent: a small Kajenn application that Kajenn Press calls to add or remove a domain, read the state of its certificate and reload the proxy. The agent has a fixed set of actions and no generic shell, answers only the manager with its own token on a limited network, and runs as a user without root, allowed by sudo only to reload the proxy and run certbot.
+- The manager host on Hetzner stays a manager: public sites are served by separate servers.
 
 #### Help me
 
@@ -282,6 +293,31 @@ A site is edited by one person at a time. Whoever opens the editor takes the sit
    1. **A selector in the template; no redirect by browser language**
    2. **Automatic redirect from the root**
    → Choice: **A selector in the template; no redirect by browser language** (GP, 2026-10-29) — Every URL shows the same page to everyone, robots included.
+- **d-tls-proxy** `decided` — Where does TLS come from?
+   1. **The proxy installed on the server (nginx, Caddy, Traefik), through a driver per proxy**
+   2. **Caddy always, in front of every site server**
+   3. **An ACME client inside Kajenn**
+   → Choice: **The proxy installed on the server (nginx, Caddy, Traefik), through a driver per proxy** (GP, 2026-10-29) — Kajenn Press provides the image; the host keeps its own proxy.
+- **d-server-agent** `decided` — How does Kajenn Press act on a server?
+   1. **An agent application with fixed actions, called by the manager**
+   2. **A script on the server, run by a timer, reading the bindings**
+   → Choice: **An agent application with fixed actions, called by the manager** (GP, 2026-10-29) — The tab shows the outcome at once; no generic shell, own token, limited network, no root.
+- **d-server-registry** `decided` — What is a server and where is it registered?
+   1. **Registered in the source bucket; every server reads one release bucket; bindings name the server**
+   2. **One release bucket per server, in the installation's configuration**
+   → Choice: **Registered in the source bucket; every server reads one release bucket; bindings name the server** (GP, 2026-10-29) — Adding a server needs no restart; moving a site moves one binding.
+- **d-dns** `decided` — How is DNS set up?
+   1. **Show the records and check them; provider APIs later, Route 53 first**
+   2. **Route 53 credentials from the start**
+   → Choice: **Show the records and check them; provider APIs later, Route 53 first** (GP, 2026-10-29) — Works with any provider today.
+- **d-www** `decided` — How are the domain and www served?
+   1. **One is the address; the other answers 301 to it**
+   2. **Only the name entered**
+   → Choice: **One is the address; the other answers 301 to it** (GP, 2026-10-29) — Visitors reach the site with or without www, on one canonical address.
+- **d-manager-host** `decided` — Does the Hetzner manager host serve public sites?
+   1. **No: public sites go to separate servers**
+   2. **Yes, behind its nginx**
+   → Choice: **No: public sites go to separate servers** (GP, 2026-10-29) — The manager keeps the source keys away from public traffic.
 
 ### Consequences
 
