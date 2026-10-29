@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N9 (languages).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N10 (documentation).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -98,7 +98,9 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Result: a Sonnet chat in the site tab with 24 tools (21 site operations, choices, CSS and SVG assets), SVG cleaning, chats per site in the source bucket, tokens and cost per chat and per site, the Help me pane, the key from a file of the owner (`compose.help.yaml`). Live checks passed ($0.06 for a two-page site, $0.05 for one page from the tab). Archived plan: [help-me](done/help-me/plan.md).
 - Planned: a Sonnet chat in the site tab that interviews the user, offers fonts, colours and SVG drawings as clickable previews, and creates pages, templates and contents through the MCP operations; the conversation kept with the site; tokens and cost shown per chat and per site, for information only; one API key per installation; publishing stays an operator command.
 
-### N9: Languages
+### N9 (completed 2026-10-29, branch feat/languages): Languages
+
+- Result: a main language and others per site; translations of contents and site texts with states missing, to update, to review; URLs with the language prefix (main without), redirects and SEO per language; one published object per page and language (schema 3), `hreflang`, sitemap of every language; the editor in one language at a time; Help me proposes translations to review; the example site in English and Italian (49 site operations). Archived plan: [languages](done/languages/plan.md).
 
 - Delivers: languages back into the model, the editor, the SEO and the publication. Out of scope until the owner reopens it.
 

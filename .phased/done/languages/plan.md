@@ -54,8 +54,8 @@ Entry: main `1029f6d`. Inventory: no part of the code knows a language today. A 
   - Details: per the approved mockup: language selector in the site bar; Visual editor, SEO tab and preview in the selected language; marks missing, to update and to review in the Pages and Contents trees; block editor with the main text beside the translation and Confirm translation; site languages in the SEO tab's site defaults.
   - Done: matches the mockup in the browser; a translation written in the tab shows in the preview of that language.
 
-- [ ] **Phase 5**: Help me translates
-  > Done except the live check: tools `content_translate` and `site_text_set` for Help me, with `proposed` filled in by the server (always true, never shown to the model), so Help me's translations stay to review; the system prompt explains languages, states and per-language URLs and SEO. Test: a tool call with `proposed: false` still gives `to_review`. `tests/help/test_live.py::test_one_request_translates_a_page` written, skipped without `KAJENN_HELP_LIVE=1`. Pending: the live run, with the owner's go-ahead.
+- [x] **Phase 5**: Help me translates
+  > Done: tools `content_translate` and `site_text_set` for Help me, with `proposed` filled in by the server (always true, never shown to the model), so Help me's translations stay to review; the system prompt explains languages, states and per-language URLs and SEO. Test: a tool call with `proposed: false` still gives `to_review`. `tests/help/test_live.py::test_one_request_translates_a_page` written, skipped without `KAJENN_HELP_LIVE=1`. Live run (key read from 1Password at run time, never printed): both contents translated into English and left to review; stop `end_turn`; 355 output tokens, $0.018.
   - Files: `src/kajenn_press/help/tools.py`, `prompt.py`, `tests/help/`.
   - Details: per d-lang-help: tools to propose a translation of a content or of page texts, always marked to review; the prompt explains languages; one live check with the owner's go-ahead.
   - Done: a scripted chat proposes translations that stay to review until confirmed; the live check translates one page.
