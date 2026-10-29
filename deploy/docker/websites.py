@@ -51,7 +51,16 @@ def site_sources():
         "releases": release_storage(),
         "render_python": "/opt/render/bin/python",
         "private_secret": (SECRETS / "private_link").read_text().strip().encode(),
+        **help_me(),
     }
+
+
+def help_me():
+    """Help me with the owner's Claude API key, from ANTHROPIC_API_KEY_FILE (N8-D7)."""
+    key_file = os.environ.get("ANTHROPIC_API_KEY_FILE")
+    if not key_file:
+        return {}
+    return {"help": {"api_key": Path(key_file).read_text().strip()}}
 
 
 class OperatorUsers(UserStore):

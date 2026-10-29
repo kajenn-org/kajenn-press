@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help me mockup</title>
+<style>
+:root{--bg:#1d2633;--panel:#243042;--soft:#1a222e;--line:#3a4658;--fg:#e8ecf2;--muted:#9aa6b6;--accent:#7fb2ec;--ok:#5fae3c;--warn:#d99a2b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh;min-height:640px}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line)}.tab{padding:7px 12px;border-bottom:2px solid transparent;color:var(--muted)}.tab.on{border-color:var(--accent);color:var(--fg)}
+.grow{flex:1}.muted{color:var(--muted)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:4px 10px;cursor:pointer}button.primary{border-color:var(--accent);color:var(--accent)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
+.stage{padding:12px;display:flex;flex-direction:column;gap:8px}
+.frame{flex:1;background:#fff;border-radius:8px;color:#222;padding:24px}
+.chat{border-left:1px solid var(--line);display:grid;grid-template-rows:auto 1fr auto;min-height:0;background:var(--soft)}
+.chat header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.log{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:92%;padding:8px 10px;border-radius:10px}
+.me{align-self:flex-end;background:#2f4a6b}
+.ai{align-self:flex-start;background:var(--panel)}
+.act{font-size:12px;color:var(--muted);border-left:2px solid var(--ok);padding-left:8px}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.choice{border:1px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;background:var(--soft)}
+.choice:hover{border-color:var(--accent)}
+.sw{display:flex;height:22px;border-radius:4px;overflow:hidden}.sw span{flex:1}
+.font{font-size:18px;color:var(--fg)}
+.logo{height:46px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:4px}
+footer{border-top:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+textarea{width:100%;min-height:54px;font:inherit;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px}
+.cost{font-size:12px;color:var(--muted);display:flex;gap:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar"><b>Bottega Rossi</b><span class="muted">· You are editing this site</span><span class="grow"></span><button class="primary">Help me</button><button>Save</button></div>
+  <div class="tabs"><span class="tab on">Visual editor</span><span class="tab">SEO</span><span class="tab">Published site</span></div>
+  <div class="main">
+    <div class="stage">
+      <div class="muted">/ · Home</div>
+      <div class="frame"><h2 style="margin:0">Bottega Rossi</h2><p>Hand-made furniture in Bologna since 1962.</p><p style="color:#888">The page updates while Help me works.</p></div>
+    </div>
+    <aside class="chat">
+      <header><b>Help me</b><span class="muted">· chat 2 of 2</span><span class="grow"></span><button>New chat</button><button>Close</button></header>
+      <div class="log">
+        <div class="msg me">A site for my furniture workshop in Bologna. Warm, simple. Three pages: home, works, contacts.</div>
+        <div class="msg ai">Which palette feels right?
+          <div class="choices">
+            <div class="choice"><div class="sw"><span style="background:#7a3e1d"></span><span style="background:#e9d8c4"></span><span style="background:#2f2a26"></span></div><div class="muted">Walnut</div></div>
+            <div class="choice"><div class="sw"><span style="background:#3d5a40"></span><span style="background:#f1ede4"></span><span style="background:#a0522d"></span></div><div class="muted">Olive</div></div>
+            <div class="choice"><div class="sw"><span style="background:#1f3a5f"></span><span style="background:#f5f2ea"></span><span style="background:#c08a2b"></span></div><div class="muted">Indigo</div></div>
+          </div>
+        </div>
+        <div class="msg me">Walnut</div>
+        <div class="msg ai">And the type?
+          <div class="choices">
+            <div class="choice"><div class="font" style="font-family:Georgia,serif">Aa Serif</div><div class="muted">Georgia + system sans</div></div>
+            <div class="choice"><div class="font" style="font-family:system-ui">Aa Sans</div><div class="muted">System sans</div></div>
+            <div class="choice"><div class="font" style="font-family:'Courier New',monospace">Aa Mono</div><div class="muted">Mono titles</div></div>
+          </div>
+        </div>
+        <div class="msg me">Serif</div>
+        <div class="msg ai">Three logo sketches:
+          <div class="choices">
+            <div class="choice"><div class="logo"><svg width="40" height="40" viewBox="0 0 40 40"><rect x="6" y="6" width="28" height="28" rx="4" fill="#7a3e1d"/><text x="20" y="26" font-size="14" text-anchor="middle" fill="#fff" font-family="Georgia">BR</text></svg></div></div>
+            <div class="choice"><div class="logo"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="#7a3e1d" stroke-width="3"/><path d="M12 24h16" stroke="#7a3e1d" stroke-width="3"/></svg></div></div>
+            <div class="choice"><div class="logo"><svg width="40" height="40" viewBox="0 0 40 40"><path d="M8 30L20 8L32 30Z" fill="#2f2a26"/></svg></div></div>
+          </div>
+        </div>
+        <div class="msg me">The first one</div>
+        <div class="act">✓ template "Layout" added · ✓ asset "logo" (SVG) · ✓ pages Home, Works, Contacts · ✓ 6 contents assigned · ✓ saved</div>
+        <div class="msg ai">The site is ready to review. Publishing stays with you: Published site tab → Publish.</div>
+      </div>
+      <footer>
+        <textarea placeholder="Tell Help me what to do…"></textarea>
+        <div style="display:flex;gap:8px;align-items:center"><button class="primary">Send</button><span class="cost">this chat 41.2k in · 6.8k out · $0.15 · site total $0.31</span></div>
+      </footer>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

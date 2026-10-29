@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -22,6 +23,25 @@ def build(source, data):
 """
 
 
+class AnsweringClient:
+    """Stands for the Anthropic client: every turn ends with one text."""
+
+    def __init__(self):
+        self.beta = SimpleNamespace(messages=self)
+
+    def create(self, **request):
+        usage = SimpleNamespace(
+            input_tokens=100,
+            output_tokens=10,
+            cache_creation_input_tokens=0,
+            cache_read_input_tokens=0,
+        )
+        content = [{"type": "text", "text": "Tell me what the site is for."}]
+        return SimpleNamespace(
+            content=content, stop_reason="end_turn", usage=usage, model="claude-sonnet-5-5"
+        )
+
+
 def sites_config(tmp_path):
     return {
         "root": str(tmp_path / "sites"),
@@ -29,6 +49,7 @@ def sites_config(tmp_path):
         "releases": versioned_bucket(),
         "render_python": os.environ["KAJENN_RENDER_PYTHON"],
         "private_secret": b"admin-test-private-link-secret",
+        "help": {"client": AnsweringClient()},
     }
 
 
@@ -162,6 +183,23 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             )
             assert link["value"]["result"]["url"].startswith("https://demo.example/_private/")
 
+            assert "Help me" in view
+            sent = await rpc(
+                http,
+                tab,
+                "help_call",
+                call="send",
+                arguments={"site_id": site, "text": "A site for my workshop"},
+            )
+            chat = sent["value"]["result"]
+            assert [i["kind"] for i in chat["items"]] == ["user", "assistant"]
+            assert chat["cost"] == (100 * 2 + 10 * 10) / 1_000_000
+            panel = (
+                await rpc(http, tab, "help_panel", "source", site=site, chat_id=chat["chat_id"])
+            )["value"]
+            for text in ("A site for my workshop", "Tell me what the site is for.", "site total"):
+                assert text in panel, text
+
     asyncio.run(scenario())
 
 
@@ -171,5 +209,18 @@ def test_without_site_sources_the_administration_says_so(tmp_path):
             shell_page = await login(http)
             shell = (await rpc(http, shell_page, "main", "source"))["value"]
             assert "Site sources are not configured" in shell
+
+    asyncio.run(scenario())
+
+
+def test_without_a_key_help_me_says_it_is_not_configured(tmp_path):
+    async def scenario():
+        config = {k: v for k, v in sites_config(tmp_path).items() if k != "help"}
+        async with admin_client(tmp_path / "c", grants=GRANTS, sites=config) as (http, server):
+            site = (await call(server, "site_new", key="n", name="Demo site"))["site_id"]
+            await login(http)
+            tab = await open_page(http, "/admin/site?site=" + site)
+            panel = (await rpc(http, tab, "help_panel", "source", site=site))["value"]
+            assert "Help me is not configured on this installation." in panel
 
     asyncio.run(scenario())

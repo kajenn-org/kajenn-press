@@ -20,6 +20,18 @@ LOGO_URL = "/assets/branding/kajenn-press-256.png"
 LOGO_SRC = LOGO_URL.removeprefix("/")
 
 
+async def execute_help(method, arguments):
+    """Run a Help me method as the signed-in editor; a turn runs off the event loop."""
+    request = CURRENT_REQUEST.get()
+    avatar = request.avatar()
+    if avatar is None or "editor" not in avatar.tags:
+        raise DomainError("unauthenticated", "Sign in to continue")
+    help_me = request.server.applications["press"].help
+    if help_me is None:
+        raise DomainError("unavailable", "Help me is not configured on this installation.")
+    return await asyncio.to_thread(getattr(help_me, method), avatar.identity, **arguments)
+
+
 async def execute_service(operation, arguments):
     request = CURRENT_REQUEST.get()
     avatar = request.avatar()

@@ -179,6 +179,22 @@ serving comes later. When it does, a site server (`deploy/docker/site_server.py`
 The site server reads `bindings.json` from `kpress-releases`: a site gets its address
 from the public origin of its root page (SEO tab) at its next Publish, with no restart.
 
+## 8. Help me
+
+Help me (the Sonnet chat of the site tab) needs a Claude API key of the installation.
+The key is not generated: put it in a private file readable by websites (uid 10002) and
+add the override file to every `docker compose` command:
+
+```bash
+(umask 077; printf '%s\n' '<the API key>' > /opt/kpress-secrets/anthropic_api_key)
+chown 10002:10002 /opt/kpress-secrets/anthropic_api_key
+printf 'KPRESS_HELP_KEY_FILE=/opt/kpress-secrets/anthropic_api_key\n' >> /opt/kpress/deploy/docker/.env
+cd /opt/kpress && docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml -f deploy/docker/compose.help.yaml up -d --build
+```
+
+Without the override the Help me pane says Help me is not configured. Tokens and cost
+show per chat and per site, for information only: there is no budget.
+
 ## Update
 
 ```bash

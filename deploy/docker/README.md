@@ -42,6 +42,12 @@ answers the certbot challenge and redirects to https; port 443 proxies to
 address nginx reaches websites from. The installation on the Hetzner host, step by step, is in
 [HETZNER.md](HETZNER.md).
 
+## Help me
+
+`compose.help.yaml` gives websites the owner's Claude API key for Help me, from the host
+file named by `KPRESS_HELP_KEY_FILE`; without it Help me is not configured. The tests
+never call the API; `tests/help/test_live.py` does, only with `KAJENN_HELP_LIVE=1`.
+
 ## Start, use, stop
 
 ```bash

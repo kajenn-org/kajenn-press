@@ -12,13 +12,14 @@ its fields, with the value an empty field takes beside it, its images with their
 its search and social previews and its checks. The root page also holds the site defaults.
 """
 
+import base64
 import json
 import re
 
 from genro_bag import Bag
 from gramlot import endpoint, source
 
-from kajenn_press.admin.host import CURRENT_REQUEST, execute_service
+from kajenn_press.admin.host import CURRENT_REQUEST, execute_help, execute_service
 from kajenn_press.admin.views import AdminPage, literal_text
 from kajenn_press.domain import DomainError
 
@@ -124,6 +125,20 @@ def contents_bag(read):
     return bag
 
 
+def cost_line(chat, site_cost):
+    """Tokens and cost of the chat and of the site, for information only (d-help-budget)."""
+    site = f"site total ${site_cost:.2f}"
+    if chat is None:
+        return site
+    usage = chat["usage"]
+    tokens = (
+        f"{(usage['input'] + usage['cache_write'] + usage['cache_read']) / 1000:.1f}k in"
+        f" · {usage['output'] / 1000:.1f}k out"
+    )
+    cost = "cost unknown" if chat["cost"] is None else f"${chat['cost']:.2f}"
+    return f"this chat {tokens} · {cost} · {site}"
+
+
 def publication_label(state):
     """Text and kind of the state chip of the Published site tab."""
     if not state["published"] and state["state"] is None:
@@ -195,7 +210,17 @@ class Page(AdminPage):
         if avatar is None or "editor" not in avatar.tags:
             self.login_view(root)
             return
-        for name, value in {"id": "", "version": 0}.items():
+        # Help me state lives here, so a refresh of the workspace keeps the chat open.
+        for name, value in {
+            "id": "",
+            "version": 0,
+            "help_open": False,
+            "help_chat": "",
+            "help_version": 0,
+            "help_text": "",
+            "help_busy": False,
+            "help_message": "",
+        }.items():
             root.dataSetter(f"site.{name}", value)
         root.dataController(
             "var q=new URLSearchParams(window.location.search);"
@@ -275,8 +300,18 @@ class Page(AdminPage):
         actions.button(
             "Take the site", class_="button--secondary", hidden="^site.editing"
         ).dataController(func="takeSite")
+        actions.button("Help me", class_="button--secondary").dataController(func="toggleHelp")
         actions.button("Save", disabled="^site.busy").dataController(func="save")
         top.span("^site.message", role="status", class_="site-message")
+        pane.dataFormula("site.help_hidden", "!open", open="^site.help_open", _init=True)
+        chat = layout.contentPane(
+            region="right",
+            width="380px",
+            splitter=True,
+            class_="help-pane",
+            hidden="^site.help_hidden",
+        )
+        self.help_pane(chat, site)
         tabs = layout.contentPane(region="center").tabContainer(height="100%")
         visual = tabs.contentPane(title="Visual editor", pageName="visual")
         self.visual_editor(visual, read["contents"])
@@ -581,6 +616,87 @@ class Page(AdminPage):
         body.div("^site.seo_shown.social_title", class_="seo-card-title")
         body.div("^site.seo_shown.social_description", class_="seo-card-text")
 
+    def help_pane(self, pane, site):
+        layout = pane.borderContainer(height="100%")
+        layout.contentPane(region="center", overflow="auto").remote(
+            "help_panel", site=site, chat_id="^site.help_chat", version="^site.help_version"
+        )
+        footer = layout.contentPane(region="bottom", class_="help-footer")
+        footer.textarea(
+            value="^site.help_text",
+            placeholder="Tell Help me what to do…",
+            aria_label="Message to Help me",
+        )
+        row = footer.div(class_="help-row")
+        row.button("Send", disabled="^site.help_busy").dataController(func="helpSend")
+        row.span("^site.help_message", role="status", class_="muted help-status")
+
+    @source(auth="editor")
+    async def help_panel(self, pane, site="", chat_id="", version=0):
+        try:
+            listing = await execute_help("chats", {"site_id": site})
+            chat = (
+                await execute_help("chat", {"site_id": site, "chat_id": chat_id})
+                if chat_id
+                else None
+            )
+        except DomainError as error:
+            literal_text(pane, "p", str(error), class_="muted help-empty")
+            return
+        head = pane.div(class_="help-head")
+        head.strong("Help me")
+        menu = head.select(value="^site.help_chat", aria_label="Chat")
+        menu.option("New chat", value="")
+        for item in reversed(listing["chats"]):
+            menu.option(item["title"], value=item["chat_id"])
+        head.button("Close", class_="button--quiet").dataController(func="toggleHelp")
+        log = pane.div(class_="help-log")
+        if chat is None:
+            log.p(
+                "Say what the site is for, or what to change. Help me builds it with you;"
+                " publishing stays with you.",
+                class_="muted",
+            )
+        else:
+            self.help_items(log, chat["items"])
+        literal_text(pane, "div", cost_line(chat, listing["site_cost"]), class_="help-cost")
+
+    def help_items(self, log, items):
+        actions = []
+        for item in [*items, {"kind": "end"}]:
+            if item["kind"] == "action":
+                actions.append(("✓ " if item["ok"] else "✗ ") + item["name"])
+                continue
+            if actions:
+                literal_text(log, "div", " · ".join(actions), class_="help-actions")
+                actions = []
+            if item["kind"] in ("user", "assistant"):
+                literal_text(log, "div", item["text"], class_="help-msg help-" + item["kind"])
+            elif item["kind"] == "choices":
+                box = log.div(class_="help-msg help-assistant")
+                literal_text(box, "div", item["question"])
+                cards = box.div(class_="help-choices")
+                for choice in item["choices"]:
+                    self.choice_card(cards, item["kind_of_choice"], choice)
+
+    def choice_card(self, cards, kind, choice):
+        # A native button holds the drawing (gramlot-button shows its text only); the click
+        # sends the label, read from `title`, as the next message.
+        card = cards.html_button(
+            class_="help-choice", title=choice["label"], type="button", connect_onclick="helpPick"
+        )
+        if kind == "palette":
+            strip = card.span(class_="help-swatches")
+            for color in choice["colors"]:
+                strip.span(style=f"background:{color}")
+        elif kind == "fonts":
+            literal_text(card, "span", "Aa Title", style=f"font-family:{choice['heading']}")
+            literal_text(card, "span", "Body text", style=f"font-family:{choice['body']}")
+        else:
+            encoded = base64.b64encode(choice["svg"].encode("utf-8")).decode("ascii")
+            card.img(src="data:image/svg+xml;base64," + encoded, alt=choice["label"])
+        literal_text(card, "span", choice["label"], class_="muted")
+
     @source(auth="editor")
     async def published_panel(self, pane, site="", version=0):
         try:
@@ -751,6 +867,17 @@ class Page(AdminPage):
         form.input(id="new-site-name", value="^site.new_name")
         form.button("Create site").dataController(func="createSite")
         form.p("^site.message", role="status")
+
+    @endpoint(auth="editor")
+    async def help_call(self, call, arguments):
+        if call not in ("chats", "chat", "send"):
+            raise DomainError("invalid_operation", "Unknown Help me call")
+        if not isinstance(arguments, dict):
+            raise DomainError("invalid_input", "Help me arguments must be an object")
+        try:
+            return {"ok": True, "result": await execute_help(call, arguments)}
+        except DomainError as error:
+            return {"ok": False, "error": error.as_dict()}
 
     @endpoint(auth="editor")
     async def command(self, operation, arguments):

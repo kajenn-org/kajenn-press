@@ -17,8 +17,9 @@ from genro_bag import Bag, BagException
 
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
+from ..rendering.contract import RenderProblem
 from .lock import EditingLock
-from .model import Site, new_id
+from .model import ENGINES, Site, new_id
 from .published import page_fingerprint
 from .receipts import Receipts
 from .render import page_request
@@ -104,7 +105,8 @@ class SiteService:
     def working_copy(self, site_id):
         return WorkingCopy(self.root / "working" / site_id)
 
-    def execute(self, identity, operation, **arguments):
+    def execute(self, identity, operation, *, via=None, **arguments):
+        """Run one operation; `via="help_me"` marks changes made through Help me (d-audit)."""
         if not identity:
             raise DomainError("unauthenticated", "An authenticated principal is required")
         if operation not in OPERATIONS:
@@ -126,7 +128,7 @@ class SiteService:
         except TypeError as exc:
             raise DomainError("invalid_input", str(exc)) from exc
         bound.apply_defaults()
-        params = {k: v for k, v in bound.arguments.items() if k != "identity"}
+        params = {k: v for k, v in bound.arguments.items() if k not in ("identity", "via")}
         with self._mutex:
             if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
@@ -158,19 +160,25 @@ class SiteService:
             if operation == "site_open":
                 return handler(identity, **params)
             self.lock.require(site_id, identity)
-            if operation in ("site_close", "site_save", "site_restore"):
+            if operation == "site_save":
+                return handler(identity, via=via, **params)
+            if operation in ("site_close", "site_restore"):
                 return handler(identity, **params)
             key = params.pop("key")
             return self.receipts.run(
-                identity, key, operation, params, lambda: self._change(identity, operation, params)
+                identity,
+                key,
+                operation,
+                params,
+                lambda: self._change(identity, operation, params, via),
             )
 
-    def _change(self, identity, operation, params):
+    def _change(self, identity, operation, params, via=None):
         copy = self.working_copy(params["site_id"])
         site = copy.load()
         arguments = {k: v for k, v in params.items() if k != "site_id"}
         result = getattr(self, "_" + operation)(identity, site, **arguments)
-        site.record(identity, operation, now())
+        site.record(identity, operation, now(), via=via)
         copy.save(site)
         return result
 
@@ -319,10 +327,10 @@ class SiteService:
         self.lock.release(site_id, identity)
         return {"holder": None}
 
-    def _site_save(self, identity, site_id):
+    def _site_save(self, identity, site_id, via=None):
         copy = self.working_copy(site_id)
         site = copy.load()
-        site.record(identity, "site_save", now())
+        site.record(identity, "site_save", now(), via=via)
         copy.save(site)
         return {"version_id": self.store.save_from(copy)}
 
@@ -416,10 +424,17 @@ class SiteService:
     def _template_add(self, identity, site, name, engine, source=None, python_source=None):
         if (source is None) == (python_source is None):
             raise DomainError("invalid_input", "Give either source or python_source")
+        if engine not in ENGINES:
+            raise DomainError("invalid_input", "Template engine is gramlot or htmlbuilder")
         if python_source is not None:
             if self.worker is None:
                 raise DomainError("unavailable", "Configure the render worker first")
-            plain = self.worker.plain_template(engine, python_source)
+            try:
+                plain = self.worker.plain_template(engine, python_source)
+            except RenderProblem as problem:
+                raise DomainError(
+                    "invalid_template", str(problem), details=problem.diagnostic
+                ) from problem
         else:
             try:
                 plain = Bag.from_tytx(source)

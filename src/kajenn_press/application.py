@@ -24,6 +24,20 @@ ERROR_STATUS = {
 }
 
 
+def open_help(sites, config):
+    """Help me with the installation's API key (N8-D7); the SDK comes with the help extra."""
+    import anthropic
+
+    from .help.chat import HelpService, HelpStore
+
+    unknown = set(config) - {"api_key", "client"}
+    if unknown:
+        raise ValueError("Unknown Help me configuration")
+    # `client` stands for the Anthropic client in tests; installations give `api_key`.
+    client = config.get("client") or anthropic.Anthropic(api_key=config["api_key"])
+    return HelpService(sites, HelpStore(sites.store), client)
+
+
 class PressApplication(McpOpenApiApplication):
     openapi_info: ClassVar[dict] = {
         "title": "kajenn-press",
@@ -37,6 +51,7 @@ class PressApplication(McpOpenApiApplication):
         self.policy = AccessPolicy(grants)
         self.sites_config = sites_config
         self.sites = None
+        self.help = None
         super().__init__(**kwargs)
 
     async def on_startup(self):
@@ -57,6 +72,7 @@ class PressApplication(McpOpenApiApplication):
             connections = config.pop("connections", {})
             releases = config.pop("releases", None)
             private_secret = config.pop("private_secret", None)
+            help_config = config.pop("help", None)
             self.sites = SiteService(
                 config.pop("root", self.root / "sites"),
                 SourceStore(config.pop("sources")),
@@ -69,6 +85,8 @@ class PressApplication(McpOpenApiApplication):
             )
             if config:
                 raise ValueError("Unknown site configuration")
+            if help_config is not None:
+                self.help = open_help(self.sites, help_config)
         except Exception as exc:
             self.sites = None
             # Ordinary hook exceptions are only logged by Kajenn; a misconfigured store must
@@ -184,7 +202,8 @@ class PressApplication(McpOpenApiApplication):
         python_source: str | None = None,
         _request=None,
     ) -> dict:
-        """Add a template: a plain Source in TYTX JSON, or Python build code."""
+        """Add a template (engine gramlot or htmlbuilder): a plain Source in TYTX JSON, or
+        Python build code defining build(source, data)."""
         return self._site(
             _request,
             "template_add",

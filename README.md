@@ -15,7 +15,9 @@ titles, images without alt and broken internal links. A site's address is its ro
 page's public origin: Publish binds it in the release bucket, where running site servers
 read it. A site can be private, or in maintenance, and still be seen through a signed
 private link. The same operations are offered on REST, MCP and in the Gramlot
-administration, whose site tab has the Visual editor, SEO and Published site tabs.
+administration, whose site tab has the Visual editor, SEO and Published site tabs, and
+Help me: a Sonnet chat that builds pages, templates and contents through the same
+operations, with tokens and cost shown per chat and per site.
 
 The design is in `xmldocs/proposal/site-tab-redesign` and the plan in `.phased/roadmap.md`.
 The documents `docs/01`–`docs/14` describe the previous catalog and release model and are
@@ -28,6 +30,7 @@ rewritten with the documentation macro (N10).
 | `src/kajenn_press/site/` | Site and page model, slots, copies and Update, linked templates, SEO and its checks, source store on S3, editing lock, receipts, Publish, rollback, addresses and private links, the site server |
 | `src/kajenn_press/rendering/` | Render worker: Gramlot/HtmlBuilder engines, content preparation (nh3), page rendering, connection resolvers |
 | `src/kajenn_press/application.py` | Kajenn REST/MCP application of the site operations, `create_server` |
+| `src/kajenn_press/help/` | Help me: tools from the site operations, SVG cleaning, the chat loop and its store |
 | `src/kajenn_press/admin/` | Gramlot administration: navigation Sites/Library, the site tab with the Visual editor, SEO and Published site tabs |
 | `deploy/docker/` | Docker composition (manager, RustFS, demo publisher and site server), nginx example, Hetzner runbook |
 | `examples/kajenn_press_site/` | The Kajenn Press site: layout, contents, assets and `publish.py` |

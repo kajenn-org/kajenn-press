@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N8 (Help me).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N9 (languages).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -93,9 +93,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 
 - Delivers: a registry of Kajenn site servers; domain and `www`; DNS with or without provider credentials; TLS, which Kajenn does not provide (no ACME client): a decision between a proxy with certificates (nginx and certbot, Caddy) and an ACME client in Kajenn comes first.
 
-### N8: Help me
+### N8 (completed 2026-10-29, branch feat/help-me): Help me
 
-- Delivers: a Sonnet chat in the site tab that interviews the user, offers fonts, colours and SVG drawings as clickable previews, and creates pages, templates and contents through the MCP operations; the conversation kept with the site; tokens and cost shown per chat and per site, for information only; one API key per installation; publishing stays an operator command.
+- Result: a Sonnet chat in the site tab with 24 tools (21 site operations, choices, CSS and SVG assets), SVG cleaning, chats per site in the source bucket, tokens and cost per chat and per site, the Help me pane, the key from a file of the owner (`compose.help.yaml`). Live checks passed ($0.06 for a two-page site, $0.05 for one page from the tab). Archived plan: [help-me](done/help-me/plan.md).
+- Planned: a Sonnet chat in the site tab that interviews the user, offers fonts, colours and SVG drawings as clickable previews, and creates pages, templates and contents through the MCP operations; the conversation kept with the site; tokens and cost shown per chat and per site, for information only; one API key per installation; publishing stays an operator command.
 
 ### N9: Languages
 
