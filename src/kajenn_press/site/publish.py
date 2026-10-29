@@ -145,14 +145,8 @@ class Publisher:
         """The site's address: the public origin of its root page (N7-D3), or None."""
         root = root_page_id(site)
         value = effective_seo(site, root)["origin"] if root is not None else ""
-        if not value:
-            return None
-        try:
-            return origin(value)
-        except ValueError as exc:
-            raise DomainError(
-                "invalid_input", "A public address is https, or http on a loopback host"
-            ) from exc
+        # `origin` refuses http outside loopback hosts with a DomainError of its own.
+        return origin(value) if value else None
 
     def check_address(self, site_id, public_origin):
         if public_origin is None:
@@ -175,6 +169,28 @@ class Publisher:
         except IntegrityError as exc:
             raise DomainError("conflict", str(exc)) from exc
         self.node(BINDINGS_PATH).write_bytes(raw)
+
+    def state(self, site):
+        """What the Published site tab shows: address, state, last Publish, pending changes."""
+        address, entry = self.binding(site.site_id)
+        try:
+            wanted, problem = self.site_address(site), None
+        except DomainError as exc:
+            wanted, problem = None, str(exc)
+        index = self.index(site.site_id)
+        node = self.node(self.index_path(site.site_id))
+        last = node.versions[-1] if index is not None else None
+        return {
+            "address": address,
+            "next_address": wanted if wanted != address else None,
+            "address_problem": problem,
+            "state": entry["state"] if entry is not None else None,
+            "maintenance": bool(index and index["maintenance"]),
+            "published": index is not None,
+            "last_publish": str(last["last_modified"]) if last else None,
+            "index_version": last["version_id"] if last else None,
+            "changed": sum(1 for item in self.plan(site) if item["state"] != "unchanged"),
+        }
 
     def set_visibility(self, site, state):
         """Make a site public or private at its address; possible before the first Publish."""

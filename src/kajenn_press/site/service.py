@@ -71,8 +71,9 @@ PUBLISHING = {
     "maintenance_set",
     "site_visibility_set",
     "private_link",
+    "publication_state",
 }
-PUBLISHING_READS = {"publish_plan", "page_versions", "private_link"}
+PUBLISHING_READS = {"publish_plan", "page_versions", "private_link", "publication_state"}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
@@ -282,6 +283,9 @@ class SiteService:
         return self.receipts.run(
             identity, key, "site_visibility_set", {"site_id": site_id, "state": state}, run
         )
+
+    def _publication_state(self, identity, site_id):
+        return self.publisher.state(self.site(identity, site_id))
 
     def _private_link(self, identity, site_id, hours=8):
         return self.publisher.private_link(site_id, hours)

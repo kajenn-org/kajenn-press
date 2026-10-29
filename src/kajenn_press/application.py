@@ -438,6 +438,11 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "site_visibility_set", site_id=site_id, key=key, state=state)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def publication_state(self, site_id: str, _request=None) -> dict:
+        """Address, public or private, maintenance, last Publish and pages changed since."""
+        return self._site(_request, "publication_state", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def private_link(self, site_id: str, hours: int = 8, _request=None) -> dict:
         """A link that shows the real site while private or in maintenance (8 or 168 hours)."""
         return self._site(_request, "private_link", site_id=site_id, hours=hours)

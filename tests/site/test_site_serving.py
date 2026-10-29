@@ -423,3 +423,47 @@ def test_the_private_link_opens_a_site_in_maintenance_and_expires(setup, tmp_pat
     assert asyncio.run(scenario()) == [503, 200, 503, 503]
     with pytest.raises(DomainError, match="8 hours or 7 days"):
         run(service, "private_link", site_id=site, hours=3)
+
+
+def test_publication_state_follows_publish_visibility_and_maintenance(setup):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    state = run(service, "publication_state", site_id=site)
+    assert state["address"] == ORIGIN and state["state"] == "public"
+    assert state["published"] and not state["maintenance"] and state["changed"] == 0
+    assert state["next_address"] is None and state["address_problem"] is None
+
+    run(service, "maintenance_set", site_id=site, key="m", on=True)
+    run(service, "site_visibility_set", site_id=site, key="v", state="private")
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="d",
+        page_id=pages["About"],
+        fields={"description": "About text"},
+    )
+    state = run(service, "publication_state", site_id=site)
+    assert state["maintenance"] and state["state"] == "private" and state["changed"] == 1
+
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="o",
+        page_id=pages["Home"],
+        fields={"origin": "http://moved.localhost"},
+    )
+    assert run(service, "publication_state", site_id=site)["next_address"] == (
+        "http://moved.localhost"
+    )
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="bad",
+        page_id=pages["Home"],
+        fields={"origin": "http://example.org"},
+    )
+    state = run(service, "publication_state", site_id=site)
+    assert state["next_address"] is None and "HTTPS" in state["address_problem"]
