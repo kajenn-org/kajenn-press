@@ -582,6 +582,16 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def dns_plan(self, site_id: str, _request=None) -> dict:
+        """The DNS records the site's address (and alias) need towards its server."""
+        return self._site(_request, "dns_plan", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def dns_check(self, site_id: str, _request=None) -> dict:
+        """What public resolvers answer for each record of the site, and whether all are right."""
+        return self._site(_request, "dns_check", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_state(self, site_id: str, _request=None) -> dict:
         """Address, public or private, maintenance, last Publish and pages changed since."""
         return self._site(_request, "publication_state", site_id=site_id)

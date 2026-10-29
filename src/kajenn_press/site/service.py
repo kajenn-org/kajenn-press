@@ -18,6 +18,7 @@ from genro_bag import Bag, BagException
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
+from .dns import dns_check, dns_plan, public_lookup
 from .languages import (
     confirm_translation,
     language_url,
@@ -90,8 +91,17 @@ PUBLISHING = {
     "private_link",
     "publication_state",
     "site_server_set",
+    "dns_plan",
+    "dns_check",
 }
-PUBLISHING_READS = {"publish_plan", "page_versions", "private_link", "publication_state"}
+PUBLISHING_READS = {
+    "publish_plan",
+    "page_versions",
+    "private_link",
+    "publication_state",
+    "dns_plan",
+    "dns_check",
+}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING | SERVERS
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
@@ -117,6 +127,8 @@ class SiteService:
         self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
         self.servers = ServerRegistry(store)
+        # Public resolvers; tests replace the lookup (N7b-D3).
+        self.dns_lookup = public_lookup
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
 
@@ -338,6 +350,24 @@ class SiteService:
 
         arguments = {"site_id": site_id, "server": server, "alias": bool(alias)}
         return self.receipts.run(identity, key, "site_server_set", arguments, run)
+
+    def site_dns_plan(self, identity, site_id):
+        """The records the site's address and alias need on its server (d-dns)."""
+        site = self.site(identity, site_id)
+        address = self.publisher.site_address(site)
+        if address is None:
+            raise DomainError("invalid_input", "Give the root page a public origin first")
+        server = site.bag.get_node("info").attr.get("server")
+        if not server or server == DEFAULT_SERVER:
+            raise DomainError("invalid_input", "Choose a registered server for the site first")
+        origins = self.publisher.site_origins(site, address)
+        return dns_plan(origins, self.servers.get(server))
+
+    def _dns_plan(self, identity, site_id):
+        return self.site_dns_plan(identity, site_id)
+
+    def _dns_check(self, identity, site_id):
+        return dns_check(self.site_dns_plan(identity, site_id), self.dns_lookup)
 
     def _private_link(self, identity, site_id, hours=8):
         return self.publisher.private_link(site_id, hours)

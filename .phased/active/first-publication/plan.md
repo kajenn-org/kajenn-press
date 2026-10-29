@@ -46,7 +46,8 @@ Entry: main `f66db9b`. Inventory: `bindings.json` (schema 1) maps origin → sit
   - Details: per N7b-D1 and N7b-D4: actions `domain_add`, `domain_remove`, `domain_status`, `proxy_reload`; nginx driver writes a server block per domain and runs certbot (webroot), Caddy driver relies on on-demand TLS with an `ask` endpoint of the site server that answers 200 only for bound origins, Traefik driver writes one dynamic file per domain; every command runs from a fixed list with sudo where needed.
   - Done: unit tests of each driver; Docker test: Caddy with its internal CA serves a new domain over https after `domain_add`, without restart; `nginx -t` and Traefik validation pass on the generated files.
 
-- [ ] **Phase 4**: DNS records and checks
+- [x] **Phase 4**: DNS records and checks
+  > Done: `src/kajenn_press/site/dns.py`: `dns_plan` (A and AAAA of the address and its alias towards the server's addresses), `dns_check` through 1.1.1.1 and 8.8.8.8 with dnspython (states ok, missing, wrong, unknown when a resolver times out); operations `dns_plan` and `dns_check` (publish grant; need a public origin and a registered server); `SiteService.dns_lookup` is the seam tests replace. Extra `publish = ["dnspython>=2.8,<3"]`, locked for websites (only `dnspython` 2.9.0 added). Tests: `tests/site/test_dns.py` (3). Main suite: 230 passed, 15 skipped.
   - Files: `src/kajenn_press/site/dns.py`, `service.py`, `application.py`, `tests/site/`.
   - Details: per d-dns and N7b-D3: operation `dns_plan` (records to create for the domain and its alias, towards the server's addresses) and `dns_check` (what public resolvers answer, per record).
   - Done: the plan lists A and AAAA for both names; the check reports missing, wrong and correct records (resolvers replaced by a fake in tests).
