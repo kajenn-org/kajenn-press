@@ -59,7 +59,8 @@ Known facts that change the proposal's "First publication":
   - Details: per the approved mockup: top bar with state, address, Publish panel (plan, selection, warnings), Rollback panel (page or whole site, versions with the one online), maintenance toggle, private link panel with copy and Make public; iframe per N7-D5.
   - Done: matches the mockup in the browser; Publish, a page rollback, maintenance and the private link work from the tab against the local demo.
 
-- [ ] **Phase 5**: Documentation and Docker
+- [x] **Phase 5**: Documentation and Docker
+  > Done: `HETZNER.md` without the preview host (DNS, `.env`, certbot, checks), with the private-link secret and `bindings.json` in step 7, working copies instead of the catalog, and the note that removes the old preview server block and certificate; `nginx-kpress.conf` serves `kpress.genro.com` only; the nginx Docker test drops the preview-name test; both READMEs describe addresses, private sites and the Published site tab. The address set at run time is covered by `test_an_address_set_later_is_served_without_restart_and_moves`; the Docker test covers the private link during maintenance. Suites: main 170 passed, 11 skipped; admin 2 passed; Docker 9 passed (external S3 included).
   - Files: `README.md`, `deploy/docker/README.md`, `deploy/docker/HETZNER.md`, `tests/docker/`.
   - Details: HETZNER.md without the preview host, with the source bucket and the site server behind nginx; the Docker test covers an address set at run time, the private link and maintenance bypass.
   - Done: full, admin and Docker suites green.
