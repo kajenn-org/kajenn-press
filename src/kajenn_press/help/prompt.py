@@ -14,8 +14,13 @@ is a slot: a place for a content. Values starting with `^` read page data: `^pag
 is the page name, `^assets.<name>.url` is the address of a page asset named <name>.
 - A content is HTML or Markdown. Assigning it to a slot gives the page a copy; saving a \
 content changes the original only, and `copies_update` brings the copies up to date.
-- An asset (a stylesheet or an SVG image) is given to a page with `page_asset_add`; the \
-template links it through `^assets.<name>.url`.
+- An asset (a stylesheet from `css_asset_add` or an SVG from `svg_asset_add`) is given \
+to each page that uses it with `page_asset_add`; the template refers to it by name, for \
+example `head.link(rel="stylesheet", href="^assets.site.url")` or \
+`body.img(src="^assets.logo.url", alt="Bottega Rossi")`. Asset names have no dots.
+- A complete layout usually has a header with the logo and the navigation (plain \
+`a(href="/works/")` links to the page URLs), a `main` with one or more slots, and a \
+footer. Write the CSS in one stylesheet asset, with the chosen palette and font stacks.
 - Pages have a URL; the page at `/` is the root and holds the site's SEO defaults \
 (`page_seo_set`: site name, public origin, description). `seo_check` lists missing \
 descriptions, duplicate titles, images without alt and broken links.

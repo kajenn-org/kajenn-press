@@ -54,6 +54,7 @@ Known API facts (Claude API reference, cached 2026-10-06): model `claude-sonnet-
   - Done: a scripted conversation creates a page with two contents, keeps an append-only history, reports tokens and cost, and resumes from the store.
 
 - [ ] **Phase 4**: System prompt and live check
+  > Partly done: the system prompt in `help/prompt.py` (site model, Gramlot template example, assets through `^assets.<name>.url`, layout shape, SEO, how to work, what Help me cannot do), fixed text before the cache breakpoint; `tests/help/test_live.py` written and skipped without `KAJENN_HELP_LIVE=1`. Pending: the live run, after the owner's go-ahead for its cost.
   - Files: `src/kajenn_press/help/prompt.py`, `tests/help/`.
   - Details: a stable system prompt (what Kajenn Press is, slots and copies, SEO, what Help me may not do, ask before large changes, offer choices as cards) placed before the cache breakpoint; one live test with `KAJENN_HELP_LIVE=1`.
   - Done: the live test builds a two-page site from one request, with the owner's go-ahead for its cost.
