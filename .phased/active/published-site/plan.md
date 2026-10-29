@@ -35,7 +35,8 @@ Known facts that change the proposal's "First publication":
 
 ## Work Plan
 
-- [ ] **Phase 1**: Bindings in the release bucket
+- [x] **Phase 1**: Bindings in the release bucket
+  > Done: `bindings.json` (schema 1, origin -> {site_id, state}) in the release bucket; Publish checks the address before writing pages and binds the site's root public origin after the index (normalised by `publication.routes.origin`: https, or http on loopback); an address of another site is refused with `conflict`; an empty origin unbinds. The site server reads the bindings with its cache interval (the last valid ones are kept) and creates a reader per bound site on demand. `sites.json`, `--config` and the `sites-config` volume are gone; the Docker test finds the site through `site_list`. Tests: an address set later is served by a running server and the old one answers 404; two sites cannot share an address. Suites: main 167 passed, 11 skipped; Docker 10 passed.
   - Files: `src/kajenn_press/site/publish.py`, `published.py`, `serving.py`, `deploy/docker/site_server.py`, `deploy/docker/compose.yaml`, `examples/kajenn_press_site/publish.py`, `tests/site/`, `tests/docker/`.
   - Details: per N7-D2 and N7-D3: `bindings.json` (canonical JSON, schema, origin → {site_id, state}) written by Publish from the root origin; state `public` or `private`; an origin already bound to another site is refused; the site server reads it with its cache interval and serves only bound origins; `sites.json` and the `sites-config` volume go away.
   - Done: an address set after the site server started is served within the cache interval; changing the origin moves the binding; two sites cannot share an origin.

@@ -1,8 +1,9 @@
 """Publish the Kajenn Press example site page by page through MCP (N4).
 
 Run against a websites installation with site sources and a versioned release bucket.
-Writes `{"bindings": {public origin: site id}}` for a site server. Rerunning with the same
-keys returns the first results (idempotency receipts are kept 24 hours).
+The public origin becomes the site's address: Publish binds it in the release bucket,
+where site servers read it. Rerunning with the same keys returns the first results
+(idempotency receipts are kept 24 hours).
 """
 
 import argparse
@@ -118,12 +119,10 @@ def main():
     parser.add_argument("--host", required=True)
     parser.add_argument("--token-file", required=True)
     parser.add_argument("--public-origin", required=True)
-    parser.add_argument("--config", required=True)
     arguments = parser.parse_args()
     mcp = Mcp(arguments.endpoint, arguments.host, Path(arguments.token_file).read_text().strip())
     wait_until_ready(mcp)
     site = publish(mcp, arguments.public_origin)
-    Path(arguments.config).write_text(json.dumps({"bindings": {arguments.public_origin: site}}))
     print("published site", site, "for", arguments.public_origin, flush=True)
 
 

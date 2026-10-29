@@ -10,7 +10,7 @@ import pytest
 from child.support import running
 from publication.storage_support import versioned_bucket
 
-from kajenn_press.domain import AccessPolicy
+from kajenn_press.domain import AccessPolicy, DomainError
 from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.rendering.resolvers import ConfigValueResolver
 from kajenn_press.site.publish import Publisher
@@ -110,14 +110,22 @@ def publish_site(service, refresh=None):
             ),
         )
     copy.save(edited)
+    run(
+        service,
+        "page_seo_set",
+        site_id=site,
+        key="address",
+        page_id=pages["Home"],
+        fields={"origin": ORIGIN},
+    )
     run(service, "publish", site_id=site, key="p", selected=list(pages.values()))
     return site, pages
 
 
 def server(setup, site, tmp_path, connections=None, cache_seconds=0.2):
+    """A site server on the release bucket; `site` is bound through its root origin."""
     _service, releases, worker = setup
     return create_site_server(
-        bindings={ORIGIN: site},
         release_storage=releases,
         cache_root=tmp_path / "cache",
         cache_seconds=cache_seconds,
@@ -298,3 +306,61 @@ def test_the_example_site_has_no_seo_problem_and_serves_its_seo(setup, tmp_path)
     assert '<meta name="description" content="Kajenn Press manages a website' in home.text
     assert '<meta property="og:site_name" content="Kajenn Press">' in features.text
     assert f"<loc>{ORIGIN}/get-started/</loc>" in sitemap.text
+
+
+def test_an_address_set_later_is_served_without_restart_and_moves(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    app = server(setup, site, tmp_path)
+    other = "http://new.localhost"
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            before = (await http.get("/")).status_code
+            await asyncio.to_thread(
+                run,
+                service,
+                "page_seo_set",
+                site_id=site,
+                key="move",
+                page_id=pages["Home"],
+                fields={"origin": other},
+            )
+            await asyncio.to_thread(run, service, "publish", site_id=site, key="again", selected=[])
+            await asyncio.sleep(0.3)
+            old = (await http.get("/")).status_code
+            new = (await http.get("/", headers={"host": "new.localhost"})).status_code
+        return before, old, new
+
+    assert asyncio.run(scenario()) == (200, 404, 200)
+    assert service.publisher.bindings() == {other: {"site_id": site, "state": "public"}}
+
+
+def test_two_sites_cannot_share_an_address(setup):
+    service, _releases, _worker = setup
+    first, _pages = publish_site(service)
+    second = run(service, "site_new", key="second", name="T")["site_id"]
+    template = run(
+        service,
+        "template_add",
+        site_id=second,
+        key="t2",
+        name="L",
+        engine="gramlot",
+        python_source=LAYOUT,
+    )["template_id"]
+    page = run(service, "page_add", site_id=second, key="p2", name="Home", template_id=template)[
+        "page_id"
+    ]
+    run(
+        service,
+        "page_seo_set",
+        site_id=second,
+        key="a2",
+        page_id=page,
+        fields={"origin": ORIGIN},
+    )
+    with pytest.raises(DomainError, match="address of another site"):
+        run(service, "publish", site_id=second, key="pub2", selected=[page])
+    assert service.publisher.binding(first)[0] == ORIGIN
+    assert service.publisher.binding(second) == (None, None)

@@ -5,7 +5,6 @@ They remove the composition's volumes first, so they always start from nothing.
 """
 
 import http.client
-import json
 import os
 import subprocess
 import sys
@@ -155,9 +154,8 @@ def test_site_server_serves_the_site_published_page_by_page(composition):
     assert b'<link rel="canonical" href="http://press.localhost:8877/">' in home
     assert b'<meta name="description" content="Kajenn Press manages a website' in home
 
-    sites = compose("exec", "-T", "site-server", "cat", "/config/sites.json").stdout
-    (site,) = json.loads(sites)["bindings"].values()
     mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
+    (site,) = [s["site_id"] for s in mcp("site_list") if s["name"] == "Kajenn Press"]
     mcp("maintenance_set", site_id=site, key="docker-maintenance-on", on=True)
     time.sleep(2)
     assert press_get("/")[0] == 503

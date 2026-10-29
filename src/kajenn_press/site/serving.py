@@ -1,7 +1,7 @@
 """A Kajenn server application that serves published sites from their site index (N4).
 
-It binds public origins to site ids, reads each site index from the release bucket at
-most every `cache_seconds`, and answers page URLs with the HTML of the page version the
+It reads `bindings.json` (public origin -> site id and state) and each site index from
+the release bucket at most every `cache_seconds`, so a new address needs no restart, and answers page URLs with the HTML of the page version the
 index pins, assets by content address, redirects with 301, `sitemap.xml`, `robots.txt`
 and the 404 page. Pages whose Data uses resolvers are rendered again by the worker with
 this server's named connections and kept in a local filesystem cache for their refresh
@@ -29,7 +29,8 @@ from ..catalog.errors import IntegrityError
 from ..catalog.filesystem import private_directory, sync_directory, sync_file
 from ..domain import DomainError
 from ..publication.routes import origin, request_path
-from .published import read_index, unpack_page
+from .publish import BINDINGS_PATH
+from .published import read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
@@ -49,6 +50,36 @@ PAGE_HEADERS = {
 ASSET_HEADERS = {**HEADERS, "cache-control": "public, max-age=31536000, immutable"}
 
 
+def read_release(storage, path, version_id=None, attempts=5):
+    full = f"{MOUNT}:{path}"
+    for _ in range(attempts):
+        try:
+            node = storage.node(full, version=version_id) if version_id else storage.node(full)
+            return node.read_bytes()
+        except OSError:
+            # S3-compatible stores abort a read when the object is replaced meanwhile.
+            time.sleep(0.05)
+    raise DomainError("unavailable", "Release storage is unreadable")
+
+
+class Bindings:
+    """`bindings.json`, reread at most every `cache_seconds`; the last valid one is kept."""
+
+    def __init__(self, storage, cache_seconds):
+        self.storage, self.cache_seconds = storage, cache_seconds
+        self.loaded, self.loaded_at = {}, None
+
+    def get(self, public_origin):
+        if self.loaded_at is None or time.monotonic() - self.loaded_at >= self.cache_seconds:
+            try:
+                self.loaded = read_bindings(read_release(self.storage, BINDINGS_PATH))
+            except (DomainError, IntegrityError, StorageError, OSError):
+                # Missing or unreadable bindings keep the last valid ones (none at start).
+                pass
+            self.loaded_at = time.monotonic()
+        return self.loaded.get(public_origin)
+
+
 class SiteReader:
     """The index of one site, reread at most every `cache_seconds`, and its page objects."""
 
@@ -57,20 +88,8 @@ class SiteReader:
         self.loaded, self.loaded_at = None, None
         self.pages = {}
 
-    def read(self, path, version_id=None, attempts=5):
-        full = f"{MOUNT}:{path}"
-        for _ in range(attempts):
-            try:
-                node = (
-                    self.storage.node(full, version=version_id)
-                    if version_id
-                    else self.storage.node(full)
-                )
-                return node.read_bytes()
-            except OSError:
-                # S3-compatible stores abort a read when the object is replaced meanwhile.
-                time.sleep(0.05)
-        raise DomainError("unavailable", "Release storage is unreadable")
+    def read(self, path, version_id=None):
+        return read_release(self.storage, path, version_id)
 
     def index(self):
         if self.loaded is not None and time.monotonic() - self.loaded_at < self.cache_seconds:
@@ -143,7 +162,6 @@ class SiteServerApplication(BaseApplication):
 
     def __init__(
         self,
-        bindings,
         release_storage,
         cache_root,
         cache_seconds=5,
@@ -153,12 +171,16 @@ class SiteServerApplication(BaseApplication):
     ):
         storage = StorageManager()
         storage.configure([{"name": MOUNT, **release_storage}])
-        self.readers = {
-            origin(public_origin): SiteReader(storage, site_id, cache_seconds)
-            for public_origin, site_id in bindings.items()
-        }
+        self.storage, self.cache_seconds = storage, cache_seconds
+        self.bindings = Bindings(storage, cache_seconds)
+        self.readers = {}
         self.renders = RenderCache(cache_root, worker, connections or {}) if worker else None
         super().__init__(**kwargs)
+
+    def reader(self, site_id):
+        if site_id not in self.readers:
+            self.readers[site_id] = SiteReader(self.storage, site_id, self.cache_seconds)
+        return self.readers[site_id]
 
     def binding(self, scope):
         hosts = [v.decode("ascii") for k, v in scope["headers"] if k.lower() == b"host"]
@@ -171,9 +193,10 @@ class SiteServerApplication(BaseApplication):
             return Response(
                 "Method not allowed", status_code=405, headers={**HEADERS, "allow": "GET, HEAD"}
             )
-        reader = self.readers.get(binding)
-        if reader is None:
+        bound = self.bindings.get(binding)
+        if bound is None:
             raise DomainError("not_found", "Unknown site")
+        reader = self.reader(bound["site_id"])
         index = reader.index()
         if index["maintenance"]:
             return Response(
@@ -275,9 +298,9 @@ class SiteServerHealth(RoutedApplication):
 
 
 def create_site_server(
-    *, bindings, release_storage, cache_root, cache_seconds=5, worker=None, connections=None
+    *, release_storage, cache_root, cache_seconds=5, worker=None, connections=None
 ):
-    """A Kajenn server whose root application serves `{public origin: site id}`."""
+    """A Kajenn server whose root application serves the sites bound in `bindings.json`."""
     return AsgiServer(
         # Public pages carry no session: no cookie on any response.
         middleware={"session": False},
@@ -287,7 +310,6 @@ def create_site_server(
                 SiteServerApplication,
                 {
                     "code": "site",
-                    "bindings": bindings,
                     "release_storage": release_storage,
                     "cache_root": str(Path(cache_root)),
                     "cache_seconds": cache_seconds,

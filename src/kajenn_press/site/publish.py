@@ -3,6 +3,8 @@
 Page objects are written first, each as a new S3 version; the site index is written last
 and pins the version of every page that is online, so readers never see half a
 publication. A page that fails to render is reported and keeps its previous version.
+`bindings.json` gives each site its address, the public origin of its root page, and
+its state, public or private; site servers read it like an index (N7-D2, N7-D3).
 """
 
 import json
@@ -11,21 +13,25 @@ from genro_storage import StorageManager
 
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
+from ..publication.routes import origin
 from .published import (
     SCHEMA,
     PublishedPage,
     index_schema,
+    make_bindings,
     make_index,
     pack_page,
     page_fingerprint,
+    read_bindings,
     read_index,
     unpack_page,
 )
 from .render import page_assets, page_request, social_image_file
-from .seo import effective_seo, indexable, seo_check
+from .seo import effective_seo, indexable, root_page_id, seo_check
 from .store import require_versioning
 
 MOUNT = "releases"
+BINDINGS_PATH = "bindings.json"
 DEFAULT_REFRESH = 600
 
 
@@ -120,8 +126,57 @@ class Publisher:
                 )
         return plan
 
+    def bindings(self):
+        """Public origin -> {"site_id", "state"} of every bound site (N7-D2)."""
+        node = self.node(BINDINGS_PATH)
+        return read_bindings(node.read_bytes()) if node.exists() else {}
+
+    def binding(self, site_id):
+        """(origin, entry) of a site, or (None, None) when it has no address."""
+        for public_origin, entry in self.bindings().items():
+            if entry["site_id"] == site_id:
+                return public_origin, entry
+        return None, None
+
+    def site_address(self, site):
+        """The site's address: the public origin of its root page (N7-D3), or None."""
+        root = root_page_id(site)
+        value = effective_seo(site, root)["origin"] if root is not None else ""
+        if not value:
+            return None
+        try:
+            return origin(value)
+        except ValueError as exc:
+            raise DomainError(
+                "invalid_input", "A public address is https, or http on a loopback host"
+            ) from exc
+
+    def check_address(self, site_id, public_origin):
+        if public_origin is None:
+            return
+        entry = self.bindings().get(public_origin)
+        if entry is not None and entry["site_id"] != site_id:
+            raise DomainError("conflict", f"{public_origin} is the address of another site")
+
+    def bind(self, site_id, public_origin, state=None):
+        """Give a site its address (or none); the state is kept unless given."""
+        self.check_address(site_id, public_origin)
+        bindings = self.bindings()
+        _previous, entry = self.binding(site_id)
+        bindings = {o: e for o, e in bindings.items() if e["site_id"] != site_id}
+        if public_origin is not None:
+            kept = entry["state"] if entry is not None else "public"
+            bindings[public_origin] = {"site_id": site_id, "state": state or kept}
+        try:
+            raw = make_bindings(bindings)
+        except IntegrityError as exc:
+            raise DomainError("conflict", str(exc)) from exc
+        self.node(BINDINGS_PATH).write_bytes(raw)
+
     def publish(self, site, source_version, selected):
-        """Write the selected pages, then the index; returns what happened to each page."""
+        """Write the selected pages, then the index and the address; returns what happened."""
+        address = self.site_address(site)
+        self.check_address(site.site_id, address)
         index = self.index(site.site_id) or {"pages": {}, "maintenance": False}
         pages = dict(index["pages"])
         published, failed = [], []
@@ -178,6 +233,7 @@ class Publisher:
             raise DomainError("conflict", str(exc)) from exc
         node = self.node(self.index_path(site.site_id))
         node.write_bytes(raw_index)
+        self.bind(site.site_id, address)
         return {
             "published": published,
             "failed": failed,
