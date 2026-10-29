@@ -44,9 +44,14 @@ def root_page_id(site):
     return site.page_urls().get(ROOT_URL)
 
 
-def stored_seo(site, page_id):
-    """The fields stored on a page, as strings."""
-    return {node.label: node.value for node in site.page(page_id).seo.nodes}
+def stored_seo(site, page_id, language=None):
+    """The fields stored on a page, as strings; another language has its own (N9)."""
+    from .languages import main_language, page_language
+
+    if language is None or language == main_language(site):
+        return {node.label: node.value for node in site.page(page_id).seo.nodes}
+    own = page_language(site, page_id, language)
+    return {n.label: n.value for n in own.nodes if n.label != "url"} if own is not None else {}
 
 
 def http_origin(value):
@@ -97,13 +102,20 @@ def checked_value(site, field, value):
     return value
 
 
-def set_page_seo(site, page_id, fields):
-    """Store the given fields of a page; an empty value clears the field."""
+def set_page_seo(site, page_id, fields, language=None):
+    """Store the given fields of a page; an empty value clears the field.
+
+    Another language stores its own fields; the public origin is one per site.
+    """
+    from .languages import main_language, page_language
+
     if not isinstance(fields, dict):
         raise DomainError("invalid_input", "SEO fields are an object")
     page = site.page(page_id)
     url = site.node("pages", page_id).attr["url"]
-    allowed = PAGE_FIELDS + (ROOT_FIELDS if url == ROOT_URL else ())
+    main = language is None or language == main_language(site)
+    root_fields = ROOT_FIELDS if main else tuple(f for f in ROOT_FIELDS if f != "origin")
+    allowed = PAGE_FIELDS + (root_fields if url == ROOT_URL else ())
     unknown = set(fields) - set(allowed)
     if unknown:
         raise DomainError(
@@ -111,7 +123,7 @@ def set_page_seo(site, page_id, fields):
         )
     if url == NOT_FOUND_URL and fields.get("robots"):
         raise DomainError("invalid_input", "The 404 page is always noindex")
-    seo = page.seo
+    seo = page.seo if main else page_language(site, page_id, language, create=True)
     for field, value in fields.items():
         if value is not None and not isinstance(value, str):
             raise DomainError("invalid_input", f"SEO field {field} is a string")
@@ -122,11 +134,18 @@ def set_page_seo(site, page_id, fields):
             seo.pop(field)
 
 
-def effective_seo(site, page_id, stored=None):
+def effective_seo(site, page_id, stored=None, language=None):
     """The SEO a page is published with: stored, else root, else derived.
 
     `stored` replaces the page's own fields: `{}` gives what every empty field would show.
+    In another language a field missing there takes the value of the main language
+    (d-lang-missing), and the URL carries the language prefix.
     """
+    from .languages import language_url, main_language
+
+    main = main_language(site)
+    if language is not None and language != main:
+        return language_seo(site, page_id, language, stored)
     stored = stored_seo(site, page_id) if stored is None else stored
     root_id = root_page_id(site)
     if page_id == root_id:
@@ -160,6 +179,46 @@ def effective_seo(site, page_id, stored=None):
         "social_description": stored.get("social_description") or description,
         "social_image": stored.get("social_image") or root.get("social_image", ""),
         "json_ld": json_ld,
+        "language": main,
+        "path": language_url(site, page_id, main),
+    }
+
+
+def language_seo(site, page_id, language, stored=None):
+    """Effective SEO in another language over the main language's (d-lang-seo)."""
+    from .languages import language_url
+
+    base = effective_seo(site, page_id)
+    stored = stored_seo(site, page_id, language) if stored is None else stored
+    root_id = root_page_id(site)
+    if page_id == root_id:
+        root = stored
+    else:
+        root = stored_seo(site, root_id, language) if root_id is not None else {}
+    path = language_url(site, page_id, language)
+    title = stored.get("title") or base["title"]
+    description = stored.get("description") or root.get("description") or base["description"]
+    origin = base["origin"]
+    robots = base["robots"]
+    if site.node("pages", page_id).attr["url"] != NOT_FOUND_URL:
+        robots = stored.get("robots") or root.get("robots") or base["robots"]
+    return {
+        **base,
+        "site_name": root.get("site_name") or base["site_name"],
+        "organisation": root.get("organisation") or base["organisation"],
+        "url": path,
+        "title": title,
+        "description": description,
+        "canonical": stored.get("canonical") or (origin + path if origin else ""),
+        "robots": robots,
+        "social_title": stored.get("social_title") or title,
+        "social_description": stored.get("social_description") or description,
+        "social_image": stored.get("social_image")
+        or root.get("social_image")
+        or base["social_image"],
+        "json_ld": stored.get("json_ld") or base["json_ld"],
+        "language": language,
+        "path": path,
     }
 
 

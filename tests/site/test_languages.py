@@ -8,13 +8,17 @@ from site_support import template_source
 from kajenn_press.domain import DomainError
 from kajenn_press.site.languages import (
     confirm_translation,
+    language_url,
     set_languages,
+    set_page_url,
     set_site_text,
     set_translation,
     site_languages,
+    site_urls,
     translation_states,
 )
 from kajenn_press.site.model import Site
+from kajenn_press.site.seo import effective_seo, set_page_seo
 from kajenn_press.site.storage import site_envelope, site_from_envelope
 
 
@@ -120,3 +124,48 @@ def test_sources_saved_before_n9_get_the_new_sections():
     loaded = site_from_envelope(json.loads(json.dumps(site_envelope(site))))
     assert len(loaded.section("translations")) == 0
     assert len(loaded.page(home).bag.get_item("translations")) == 0
+
+
+def test_urls_carry_the_language_prefix_and_redirect_in_their_language():
+    site, home, _content = two_language_site()
+    template = site.section("templates").nodes[0].label
+    about = site.add_page("Chi siamo", template)
+    assert language_url(site, home, "it") == "/" and language_url(site, home, "en") == "/en/"
+    assert language_url(site, about, "en") == "/en/chi-siamo/"
+
+    assert set_page_url(site, about, "/about/", "en") == "/en/about/"
+    assert site.redirects() == {"/en/chi-siamo/": "/en/about/"}
+    set_page_url(site, about, "/who-we-are/", "en")
+    assert site.redirects() == {
+        "/en/chi-siamo/": "/en/who-we-are/",
+        "/en/about/": "/en/who-we-are/",
+    }
+    assert language_url(site, about, "it") == "/chi-siamo/"
+    assert set(site_urls(site)) == {"/", "/en/", "/chi-siamo/", "/en/who-we-are/"}
+
+    with pytest.raises(DomainError, match="belongs to another page"):
+        set_page_url(site, home, "/who-we-are/", "en")
+    with pytest.raises(DomainError, match="prefix of a language"):
+        set_page_url(site, about, "/en/chi-siamo/")
+    set_page_url(site, about, "/de/")
+    with pytest.raises(DomainError, match="already uses the prefix"):
+        set_languages(site, ["it", "en", "de"])
+
+
+def test_seo_per_language_falls_back_to_the_main_language():
+    site, home, _content = two_language_site()
+    set_page_seo(
+        site,
+        home,
+        {"origin": "https://bottega.example", "title": "Bottega", "description": "Mobili"},
+    )
+    english = effective_seo(site, home, language="en")
+    assert (english["title"], english["description"]) == ("Bottega", "Mobili")
+    assert english["canonical"] == "https://bottega.example/en/" and english["language"] == "en"
+
+    set_page_seo(site, home, {"title": "Workshop", "description": "Furniture"}, language="en")
+    english = effective_seo(site, home, language="en")
+    assert (english["title"], english["social_description"]) == ("Workshop", "Furniture")
+    assert effective_seo(site, home)["title"] == "Bottega"
+    with pytest.raises(DomainError, match="root-only"):
+        set_page_seo(site, home, {"origin": "https://other.example"}, language="en")

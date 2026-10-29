@@ -13,7 +13,7 @@ import re
 from genro_bag import Bag
 
 from ..domain import DomainError
-from .model import value_digest
+from .model import valid_url, value_digest
 from .seo import ROOT_URL
 
 CODE = re.compile(r"[a-z]{2,3}(-[a-z0-9]{2,8})?")
@@ -57,6 +57,10 @@ def set_languages(site, languages):
     translations = site.section("translations")
     if languages[0] != main_language(site) and any(len(node.value) for node in translations.nodes):
         raise DomainError("conflict", "The main language changes only before any translation")
+    for path in site.page_urls():
+        first = path.strip("/").split("/")[0]
+        if first in languages[1:]:
+            raise DomainError("conflict", f"The page at {path} already uses the prefix /{first}/")
     kept = set(languages[1:])
     for node in translations.nodes:
         for language in [n.label for n in node.value.nodes if n.label not in kept]:
@@ -141,3 +145,55 @@ def set_site_text(site, name, text, language=None, proposed=False):
         site.section("texts").set_item(name, text)
         return
     set_translation(site, "text_" + name, language, text, proposed)
+
+
+def page_language(site, page_id, language, create=False):
+    """The page's Bag for another language: its URL and SEO fields (N9 Phase 2)."""
+    other_language(site, language)
+    languages = site.page(page_id).bag.get_item("languages")
+    if languages.get_node(language) is None:
+        if not create:
+            return None
+        languages.set_item(language, Bag())
+    return languages.get_item(language)
+
+
+def language_url(site, page_id, language=None):
+    """The public URL path of a page in a language: the main one has no prefix (N9-D2)."""
+    path = site.node("pages", page_id).attr["url"]
+    if language is None or language == main_language(site):
+        return path
+    own = page_language(site, page_id, language)
+    if own is not None and own.get_node("url") is not None:
+        path = own.get_item("url")
+    return f"/{language}{path}"
+
+
+def site_urls(site):
+    """Every public URL path of every page and language: path -> (page id, language)."""
+    found = {}
+    for page_id in [node.label for node in site.section("pages").nodes]:
+        for language in site_languages(site):
+            found[language_url(site, page_id, language)] = (page_id, language)
+    return found
+
+
+def set_page_url(site, page_id, url, language=None):
+    """Move a page to a new URL in one language; the old URL redirects in that language."""
+    url = valid_url(url)
+    if language is None or language == main_language(site):
+        first = url.strip("/").split("/")[0]
+        if first in site_languages(site)[1:]:
+            raise DomainError("invalid_input", f"/{first}/ is the prefix of a language")
+        site.set_page_url(page_id, url)
+        return url
+    old = language_url(site, page_id, language)
+    full = f"/{language}{url}"
+    owner = site_urls(site).get(full)
+    if owner is not None and owner != (page_id, language):
+        raise DomainError("conflict", f"URL {full} belongs to another page", resource_id=owner[0])
+    if old == full:
+        return full
+    page_language(site, page_id, language, create=True).set_item("url", url)
+    site.redirect(old, full)
+    return full

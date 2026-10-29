@@ -35,7 +35,16 @@ SECTIONS = (
     "texts",
     "translations",
 )
-PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data", "seo", "translations")
+PAGE_SECTIONS = (
+    "template",
+    "slots",
+    "unplaced",
+    "assets",
+    "data",
+    "seo",
+    "translations",
+    "languages",
+)
 
 
 def new_id():
@@ -365,6 +374,10 @@ class Site:
         if old == url:
             return
         node.attr["url"] = url
+        self.redirect(old, url)
+
+    def redirect(self, old, url):
+        """The old URL path redirects to the new one; chains collapse."""
         redirects = self.section("redirects")
         for redirect in list(redirects.nodes):
             if redirect.attr["source"] == url:

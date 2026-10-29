@@ -20,7 +20,9 @@ from ..domain import DomainError
 from ..rendering.contract import RenderProblem
 from .languages import (
     confirm_translation,
+    language_url,
     set_languages,
+    set_page_url,
     set_site_text,
     set_translation,
     site_languages,
@@ -386,6 +388,18 @@ class SiteService:
                     "seo": stored_seo(site, node.label),
                     "seo_effective": effective_seo(site, node.label),
                     "seo_inherited": effective_seo(site, node.label, {}),
+                    "urls": {
+                        language: language_url(site, node.label, language)
+                        for language in site_languages(site)
+                    },
+                    "seo_languages": {
+                        language: {
+                            "seo": stored_seo(site, node.label, language),
+                            "seo_effective": effective_seo(site, node.label, None, language),
+                            "seo_inherited": effective_seo(site, node.label, {}, language),
+                        }
+                        for language in site_languages(site)[1:]
+                    },
                     "images": page_images(site, node.label),
                 }
             )
@@ -488,13 +502,12 @@ class SiteService:
         site.move(item_id, parent, position)
         return {"item_id": item_id, "parent": parent}
 
-    def _page_url_set(self, identity, site, page_id, url):
-        site.set_page_url(page_id, url)
-        return {"page_id": page_id, "url": url}
+    def _page_url_set(self, identity, site, page_id, url, language=None):
+        return {"page_id": page_id, "url": set_page_url(site, page_id, url, language)}
 
-    def _page_seo_set(self, identity, site, page_id, fields):
-        set_page_seo(site, page_id, fields)
-        return {"page_id": page_id, "seo": stored_seo(site, page_id)}
+    def _page_seo_set(self, identity, site, page_id, fields, language=None):
+        set_page_seo(site, page_id, fields, language)
+        return {"page_id": page_id, "seo": stored_seo(site, page_id, language)}
 
     def _page_alt_set(self, identity, site, page_id, image, alt):
         set_image_alt(site, page_id, image, alt)

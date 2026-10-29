@@ -53,7 +53,7 @@ def add_missing_sections(bag):
             bag.set_item(section, Bag())
     pages = bag.get_item("pages")
     for page in pages.values() if isinstance(pages, Bag) else ():
-        for section in ("seo", "translations"):
+        for section in ("seo", "translations", "languages"):
             if isinstance(page, Bag) and page.get_node(section) is None:
                 page.set_item(section, Bag())
 
