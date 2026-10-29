@@ -27,13 +27,44 @@ def plain_template(engine, python_source):
     return plain_source(builder.source)
 
 
-def render_page(engine, template, slots, data, page_data, connections, resource_id):
+def is_seo_tag(node):
+    """A head tag that the SEO of the page replaces (N6-D1)."""
+    attr = node.attr
+    name, prop = str(attr.get("name", "")), str(attr.get("property", ""))
+    return (
+        node.node_tag == "title"
+        or (node.node_tag == "meta" and name in ("description", "robots"))
+        or (node.node_tag == "meta" and (prop.startswith("og:") or name.startswith("twitter:")))
+        or (node.node_tag == "link" and attr.get("rel") == "canonical")
+        or (node.node_tag == "script" and attr.get("type") == "application/ld+json")
+    )
+
+
+def without_seo_tags(template):
+    """A copy of the template without the head tags the page SEO replaces."""
+    template = template.deepcopy()
+    paths = [path for path, node in template.query("#p,#n", deep=True) if is_seo_tag(node)]
+    for path in reversed(paths):
+        template.pop(path)
+    return template
+
+
+def with_head(html, head):
+    index = html.lower().find("</head>")
+    if index < 0:
+        raise RenderProblem("invalid_template", "The page template has no head")
+    return html[:index] + head + html[index:]
+
+
+def render_page(engine, template, slots, data, page_data, connections, resource_id, head):
     """HTML of a page and the preparation diagnostics.
 
     `slots` maps slot names to {"format", "source"}; `data` is plain JSON Data such as
     `page.title` and asset URLs; `page_data` is the page's Data Bag, possibly with
-    connection resolvers.
+    connection resolvers; `head` holds the SEO tags written before `</head>`, replacing
+    the template's own.
     """
+    template = without_seo_tags(template)
     declared = template_slots(template)
     prepared, diagnostics = prepare_blocks(
         slots,
@@ -64,7 +95,7 @@ def render_page(engine, template, slots, data, page_data, connections, resource_
     result = builder.render(mode="html", target=False, doctype=True)
     if not result.lower().startswith("<!doctype html>"):
         result = "<!doctype html>" + result
-    return result, diagnostics
+    return with_head(result, head), diagnostics
 
 
 def page_data_bag(raw):

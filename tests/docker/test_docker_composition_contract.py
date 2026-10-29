@@ -138,7 +138,7 @@ def press_get(path):
 
 
 def test_site_server_serves_the_site_published_page_by_page(composition):
-    """N4: the example site is published page by page and served by the site server."""
+    """N4, N6: the example site is published page by page, with its SEO, and served."""
     deadline = time.monotonic() + 300
     while time.monotonic() < deadline:
         try:
@@ -152,6 +152,8 @@ def test_site_server_serves_the_site_published_page_by_page(composition):
     assert status == 200 and b"Write it. Review it." in home
     assert press_get("/features/")[0] == 200 and press_get("/get-started/")[0] == 200
     assert b"http://press.localhost:8877/features/" in press_get("/sitemap.xml")[1]
+    assert b'<link rel="canonical" href="http://press.localhost:8877/">' in home
+    assert b'<meta name="description" content="Kajenn Press manages a website' in home
 
     sites = compose("exec", "-T", "site-server", "cat", "/config/sites.json").stdout
     (site,) = json.loads(sites)["bindings"].values()

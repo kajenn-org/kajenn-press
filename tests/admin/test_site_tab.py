@@ -1,4 +1,4 @@
-"""The site tab of the administration (N5): navigation, Visual editor and drawer."""
+"""The site tab of the administration (N5, N6): navigation, Visual editor, drawer and SEO."""
 
 import asyncio
 import os
@@ -110,6 +110,32 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             assert "<p>Hi</p>" in reply["value"]["result"]["html"]
             refused = await rpc(http, tab, "command", operation="site_delete", arguments={})
             assert "error" in str(refused) or refused.get("value") is None
+
+            reply = await rpc(
+                http,
+                tab,
+                "command",
+                operation="page_seo_set",
+                arguments={
+                    "site_id": site,
+                    "key": "seo",
+                    "page_id": page,
+                    "fields": {"origin": "https://demo.example", "description": "Demo text"},
+                },
+            )
+            assert reply["value"]["ok"] is True
+            seo = (await rpc(http, tab, "seo_panel", "source", site=site, page_id=page))["value"]
+            for text in (
+                "Site defaults · root page only",
+                "Search result",
+                "Social share",
+                "Checks for this page",
+                "Images and structured data",
+                "https://demo.example",
+                "Demo text",
+                "No image on this page.",
+            ):
+                assert text in seo, text
 
     asyncio.run(scenario())
 

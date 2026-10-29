@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N6 (SEO tab).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7 (Published site tab).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -76,7 +76,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Objective: Sites and Library in the navigation tree; one tab per site; the Visual editor.
 - Delivers: rendered site opening on the root page and navigable through its links; slot borders on command; detachable blocks in a floating window with CodeMirror, Jodit and Preview; the drawer with the Pages tree (logical, drag and drop, slots under each page) and the Contents tree (use count states and badge); drag of a content into a slot from the preview or the tree; marks for pages changed since publication and for outdated copies.
 
-### N6: SEO tab
+### N6 (completed 2026-10-29, branch feat/seo-tab): SEO tab
+
+- Result: per-page SEO with root defaults and inheritance, SEO tags in the page head, sitemap and robots from the SEO, SEO checks in the tab and in the publish plan, the SEO tab with search and social previews and alt texts (38 site operations). Archived plan: [seo-tab](done/seo-tab/plan.md).
+
 
 - Delivers: per-page SEO with root defaults, search and social previews, checks before publishing (titles, descriptions, alt texts, internal links), redirects on URL change, the 404 page as an ordinary page.
 

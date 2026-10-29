@@ -8,8 +8,11 @@ holds copies, not references, each carrying the id of its original, so an update
 pages only when the operator asks for it. Publishing writes one object per page to a
 versioned release bucket and a site index that pins the version online; a Kajenn server
 application serves the pages, renders pages with resolvers again into a local cache, and
-answers redirects, `sitemap.xml`, `robots.txt` and maintenance. The same operations are
-offered on REST, MCP and in the Gramlot administration.
+answers redirects, `sitemap.xml`, `robots.txt` and maintenance. Every page has its SEO
+(title, description, canonical, robots, social share, JSON-LD, alt texts); the root page
+holds the site defaults, and checks before Publish report missing descriptions, duplicate
+titles, images without alt and broken internal links. The same operations are offered on
+REST, MCP and in the Gramlot administration.
 
 The design is in `xmldocs/proposal/site-tab-redesign` and the plan in `.phased/roadmap.md`.
 The documents `docs/01`–`docs/14` describe the previous catalog and release model and are
@@ -19,10 +22,10 @@ rewritten with the documentation macro (N10).
 
 | Path | Content |
 |---|---|
-| `src/kajenn_press/site/` | Site and page model, slots, copies and Update, linked templates, source store on S3, editing lock, receipts, Publish, rollback, the site server |
+| `src/kajenn_press/site/` | Site and page model, slots, copies and Update, linked templates, SEO and its checks, source store on S3, editing lock, receipts, Publish, rollback, the site server |
 | `src/kajenn_press/rendering/` | Render worker: Gramlot/HtmlBuilder engines, content preparation (nh3), page rendering, connection resolvers |
 | `src/kajenn_press/application.py` | Kajenn REST/MCP application of the site operations, `create_server` |
-| `src/kajenn_press/admin/` | Gramlot administration: navigation Sites/Library, the site tab with the Visual editor |
+| `src/kajenn_press/admin/` | Gramlot administration: navigation Sites/Library, the site tab with the Visual editor and the SEO tab |
 | `deploy/docker/` | Docker composition (manager, RustFS, demo publisher and site server), nginx example, Hetzner runbook |
 | `examples/kajenn_press_site/` | The Kajenn Press site: layout, contents, assets and `publish.py` |
 

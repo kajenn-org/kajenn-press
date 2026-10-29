@@ -19,6 +19,11 @@ PAGES = (
     ("features", "Features · Kajenn Press", "/features/"),
     ("start", "Get started · Kajenn Press", "/get-started/"),
 )
+DESCRIPTIONS = {
+    "home": "Kajenn Press manages a website as editorial content with exact history.",
+    "features": "What Kajenn Press does today.",
+    "start": "Run Kajenn Press locally and call it through REST and MCP.",
+}
 
 
 class Mcp:
@@ -64,7 +69,7 @@ def wait_until_ready(mcp, seconds=300):
         time.sleep(2)
 
 
-def publish(mcp):
+def publish(mcp, origin):
     site = mcp("site_new", key="press-site", name="Kajenn Press")["site_id"]
     template = mcp(
         "template_add", site_id=site, key="press-layout", name="Layout", engine="gramlot",
@@ -85,6 +90,10 @@ def publish(mcp):
             "page_add", site_id=site, key=f"press-page-{key}", name=title, template_id=template
         )["page_id"]
         mcp("page_url_set", site_id=site, key=f"press-url-{key}", page_id=page, url=url)
+        fields = {"description": DESCRIPTIONS[key]}
+        if url == "/":
+            fields.update(site_name="Kajenn Press", origin=origin)
+        mcp("page_seo_set", site_id=site, key=f"press-seo-{key}", page_id=page, fields=fields)
         for index, asset in enumerate(assets):
             mcp("page_asset_add", site_id=site, key=f"press-asset-{key}-{index}", page_id=page,
                 asset_id=asset)
@@ -113,7 +122,7 @@ def main():
     arguments = parser.parse_args()
     mcp = Mcp(arguments.endpoint, arguments.host, Path(arguments.token_file).read_text().strip())
     wait_until_ready(mcp)
-    site = publish(mcp)
+    site = publish(mcp, arguments.public_origin)
     Path(arguments.config).write_text(json.dumps({"bindings": {arguments.public_origin: site}}))
     print("published site", site, "for", arguments.public_origin, flush=True)
 

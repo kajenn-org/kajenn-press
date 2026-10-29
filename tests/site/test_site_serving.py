@@ -3,6 +3,8 @@
 import asyncio
 import base64
 import os
+import sys
+from pathlib import Path
 
 import pytest
 from child.support import running
@@ -19,6 +21,7 @@ from kajenn_press.site.serving import create_site_server
 from kajenn_press.site.store import SourceStore
 
 ORIGIN = "http://site.localhost"
+EXAMPLE = Path(__file__).parents[2] / "examples" / "kajenn_press_site"
 LAYOUT = """
 def build(source, data):
     doc = source.html(lang="en")
@@ -239,3 +242,59 @@ def test_maintenance_answers_503_and_clears(setup, tmp_path):
     (up,) = get(server(setup, site, tmp_path), "/")
     assert (down.status_code, down.headers["retry-after"]) == (503, "300")
     assert up.status_code == 200
+
+
+def test_noindex_pages_leave_the_sitemap_and_a_noindex_root_closes_the_site(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+
+    def seo(key, page, robots):
+        run(
+            service,
+            "page_seo_set",
+            site_id=site,
+            key=key,
+            page_id=pages[page],
+            fields={"robots": robots},
+        )
+        run(service, "publish", site_id=site, key="p" + key, selected=list(pages.values()))
+        return get(server(setup, site, tmp_path), "/about/", "/sitemap.xml", "/robots.txt")
+
+    about, sitemap, robots = seo("seo1", "About", "noindex, follow")
+    assert about.status_code == 200
+    assert '<meta name="robots" content="noindex, follow">' in about.text
+    assert f"<loc>{ORIGIN}/</loc>" in sitemap.text and "/about/" not in sitemap.text
+    assert robots.text.startswith("User-agent: *\nAllow: /")
+
+    _about, sitemap, robots = seo("seo2", "Home", "noindex, nofollow")
+    assert "<url>" not in sitemap.text
+    assert robots.text == "User-agent: *\nDisallow: /\n"
+
+
+def test_publish_replaces_an_index_written_before_n6(setup):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    node = service.publisher.node(service.publisher.index_path(site))
+    node.write_bytes(node.read_bytes().replace(b'"schema":2', b'"schema":1'))
+
+    plan = run(service, "publish_plan", site_id=site)
+    assert {item["state"] for item in plan} == {"new"}
+    run(service, "publish", site_id=site, key="again", selected=list(pages.values()))
+    assert set(service.publisher.index(site)["pages"]) == set(pages.values())
+
+
+def test_the_example_site_has_no_seo_problem_and_serves_its_seo(setup, tmp_path):
+    service, _releases, _worker = setup
+    sys.path.insert(0, str(EXAMPLE))
+    try:
+        from publish import publish
+    finally:
+        sys.path.remove(str(EXAMPLE))
+    site = publish(lambda operation, **arguments: run(service, operation, **arguments), ORIGIN)
+
+    assert run(service, "seo_check", site_id=site) == []
+    home, features, sitemap = get(server(setup, site, tmp_path), "/", "/features/", "/sitemap.xml")
+    assert '<link rel="canonical" href="http://site.localhost/">' in home.text
+    assert '<meta name="description" content="Kajenn Press manages a website' in home.text
+    assert '<meta property="og:site_name" content="Kajenn Press">' in features.text
+    assert f"<loc>{ORIGIN}/get-started/</loc>" in sitemap.text

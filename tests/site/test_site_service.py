@@ -246,3 +246,35 @@ def test_site_list_shows_readable_sites_and_their_holder(service):
         {"site_id": site_id, "name": "Kajenn Press", "holder": "anna"}
     ]
     assert other.execute("dan", "site_list") == []
+
+
+def test_page_seo_and_alt_texts_through_the_service(service):
+    site_id, _template, (home, about), _footer = build_site(service)
+    run(
+        service,
+        "anna",
+        "page_seo_set",
+        site_id=site_id,
+        key="seo1",
+        page_id=home,
+        fields={"origin": "https://kajenn.org", "description": "Root text"},
+    )
+    with pytest.raises(DomainError):
+        run(
+            service,
+            "carla",
+            "page_seo_set",
+            site_id=site_id,
+            key="seo2",
+            page_id=about,
+            fields={"title": "About"},
+        )
+
+    read = {
+        page["id"]: page for page in run(service, "anna", "site_read", site_id=site_id)["pages"]
+    }
+    assert read[home]["seo"] == {"origin": "https://kajenn.org", "description": "Root text"}
+    assert read[about]["seo"] == {}
+    assert read[about]["seo_effective"]["description"] == "Root text"
+    assert read[about]["seo_effective"]["canonical"] == "https://kajenn.org" + read[about]["url"]
+    assert read[about]["images"] == []

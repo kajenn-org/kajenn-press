@@ -38,8 +38,17 @@ def site_from_envelope(envelope):
         bag = Bag.from_tytx(envelope["site"])
     except (BagException, TypeError, ValueError) as exc:
         raise IntegrityError("Site source is not a readable Bag") from exc
+    add_seo_sections(bag)
     check_structure(bag)
     return Site(bag)
+
+
+def add_seo_sections(bag):
+    """Sources saved before N6 have pages without the `seo` section: add it empty."""
+    pages = bag.get_item("pages")
+    for page in pages.values() if isinstance(pages, Bag) else ():
+        if isinstance(page, Bag) and page.get_node("seo") is None:
+            page.set_item("seo", Bag())
 
 
 def check_structure(bag):

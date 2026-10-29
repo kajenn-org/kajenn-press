@@ -12,14 +12,17 @@ from genro_storage import StorageManager
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
 from .published import (
+    SCHEMA,
     PublishedPage,
+    index_schema,
     make_index,
     pack_page,
     page_fingerprint,
     read_index,
     unpack_page,
 )
-from .render import page_assets, page_request
+from .render import page_assets, page_request, social_image_file
+from .seo import effective_seo, indexable, seo_check
 from .store import require_versioning
 
 MOUNT = "releases"
@@ -60,16 +63,24 @@ class Publisher:
         return f"sites/{site_id}/pages/{page_id}.zip"
 
     def index(self, site_id, version_id=None):
-        """The site index online, or None before the first Publish."""
+        """The site index online, or None before the first Publish.
+
+        The current index written before N6 (schema 1, without `indexable`) also reads as
+        None: the next Publish writes every selected page and a new index.
+        """
         node = self.node(self.index_path(site_id), version_id)
         if not node.exists():
             return None
-        return read_index(node.read_bytes())
+        raw = node.read_bytes()
+        if version_id is None and index_schema(raw) == SCHEMA - 1:
+            return None
+        return read_index(raw)
 
     def plan(self, site):
         """Each page with its state against the index online; changes are selected."""
         index = self.index(site.site_id) or {"pages": {}}
         online = index["pages"]
+        problems = seo_check(site)
         plan = []
         for node in site.section("pages").nodes:
             page_id = node.label
@@ -84,6 +95,7 @@ class Publisher:
             check = site.page_check(page_id)
             warnings = [f"empty slot {name}" for name in check["empty_slots"]]
             warnings += [f"unplaced content {key}" for key in check["unplaced"]]
+            warnings += [p["message"] for p in problems if p["page_id"] == page_id]
             plan.append(
                 {
                     "page_id": page_id,
@@ -126,6 +138,9 @@ class Publisher:
                 failed.append({"page_id": page_id, "diagnostics": result["diagnostics"]})
                 continue
             assets = {name: data for _url, name, data in page_assets(site, page_id, True).values()}
+            image = social_image_file(site, page_id)
+            if image is not None:
+                assets[image[0]] = image[1]
             url = site.node("pages", page_id).attr["url"]
             fingerprint = page_fingerprint(site, page_id)
             refresh = refresh_seconds(site, page_id)
@@ -138,6 +153,7 @@ class Publisher:
                     site.node("pages", page_id).value.to_tytx(transport="json"),
                     result["html"],
                     assets,
+                    indexable(effective_seo(site, page_id)),
                     json.dumps(stored, sort_keys=True) if refresh else None,
                     refresh,
                 )
@@ -151,6 +167,7 @@ class Publisher:
                 "fingerprint": fingerprint,
                 "assets": sorted(assets),
                 "refresh": refresh,
+                "indexable": indexable(effective_seo(site, page_id)),
             }
             published.append({"page_id": page_id, "state": "published"})
         try:
@@ -204,6 +221,7 @@ class Publisher:
                 "fingerprint": earlier.fingerprint,
                 "assets": sorted(earlier.assets),
                 "refresh": earlier.refresh,
+                "indexable": earlier.indexable,
             },
         }
         try:
