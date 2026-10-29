@@ -128,9 +128,9 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 assert text in view, text
             assert "block-editor" not in view
             assert "hero ← Welcome" in view and "body · empty" in view
-            # The site and its tabs in one row; the tabs switch a stack, not a tab strip.
-            assert "site-bar-row" in view and view.count("site-tab-link") >= 3
-            assert "stackContainer" in view
+            # Each tab is a frame with its own toolbar, a Gramlot menu bar (d-gramlot-shell).
+            assert "tabContainer" in view and "framePane" in view and "tab-toolbar" in view
+            assert "site-bar-row" not in view
             assert 'sandbox="allow-scripts"' in view or "allow-scripts" in view
 
             reply = await rpc(

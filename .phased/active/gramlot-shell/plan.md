@@ -44,7 +44,8 @@ Entry: main `7e19ed9`. Inventory:
   - Details: per `d-gramlot-shell`: a `framePane` with a vertical icon `menu` on the left (Sites, Library, Settings, Sign out), the navigation of sites and starting sites beside it, Gramlot's index tabs (closable, one iframe per opened site) in the center; the `stackContainer` of BE-D1 is removed.
   - Done: matches the mockup: two sites open in two tabs, each keeps its state, closing a tab closes the site page.
 
-- [ ] **Phase 3**: Each site tab a frame with its toolbar
+- [x] **Phase 3**: Each site tab a frame with its toolbar
+  > Done: the site page is a `tabContainer` (Visual editor, SEO, Published site; selected page kept in `site.tab`); each tab is a `framePane` whose top is a Gramlot `menu` bar (`toolbar()`): Visual editor (language, Show slots, page path and messages; Help me, Take the site when another holds it, Save), SEO (language and the site checks), Published site (state, address, last Publish, messages; Publish…, Rollback…, Maintenance, Private link, Go live…). SEO and Published site build their frame inside their remote panel. The 40-pixel site bar and its CSS are removed. Checked in the browser: the three tabs switch, Publish… opens its panel, Save writes a version ("Saved as version …"), SEO shows its toolbar. The SEO toolbar has no Save: each SEO form keeps its own Save SEO button. Admin test follows; admin suite 3 passed.
   - Files: `site.py`, `site.js`, `site.css`, `tests/admin/`.
   - Details: a `tabContainer` with Visual editor, SEO, Published site; each a `framePane` whose top is a `menu` bar: Visual editor (language, Show slots, page path, Help me, Save or Take the site), SEO (language, checks, Save), Published site (state, address, Publish…, Rollback…, Maintenance, Private link, Go live…). The 40-pixel site bar goes away.
   - Done: matches the mockup's three toolbars; every command works as before.
