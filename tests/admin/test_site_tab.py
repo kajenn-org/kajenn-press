@@ -104,8 +104,10 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             shell_page = await login(http)
             shell = (await rpc(http, shell_page, "main", "source"))["value"]
             assert "Sites" in shell and "Library" in shell and "Demo site" in shell
-            # One site at a time and no status bar (BE-D1).
-            assert "stackContainer" in shell and "admin-footer" not in shell
+            # The gallery shell (d-gramlot-shell): icon column, open-site tabs, no status bar.
+            for text in ("framePane", "pressToggleNavigation", "pressSignOut", "press-pages"):
+                assert text in shell, text
+            assert "admin-footer" not in shell
 
             tab = await open_page(http, "/admin/site?site=" + site)
             view = (await rpc(http, tab, "site_workspace", "source", site=site))["value"]

@@ -38,7 +38,8 @@ Entry: main `7e19ed9`. Inventory:
   - Details: per GS-D1: gramlot 0.3.20 and gramlot-py-server 0.3.20 in the `admin` extra; collections as `GramlotCollection` packages chosen per page; the host serves them as gramlot-py-server 0.3.20 expects; pages adapted to relative index paths and consumed `dataSetter`s; locks regenerated for websites.
   - Done: full, admin and Docker suites green; the demo opens, edits and publishes as before.
 
-- [ ] **Phase 2**: The gallery shell
+- [x] **Phase 2**: The gallery shell
+  > Done: `index.py` builds the gallery's frame: a `framePane` whose left is a vertical icon `menu` (Navigation, which opens and closes the navigation drawer like the gallery's, and Sign out with the identity in its tooltip), whose center is Gramlot's index: the navigation of sites and starting sites under the logo, and Gramlot's closable tabs, one iframe per opened page. The top bar, the status bar and BE-D1's `stackContainer` are removed, with their CSS. A page Logic cannot extend another class in Gramlot 0.3.20, so `index.js` delegates `indexMount` to `IndexLogic`. Checked in the browser: the demo site and New site open in two tabs, the site keeps its state when the other closes, Navigation closes the drawer. Admin test follows the shell; admin suite 3 passed.
   - Files: `index.py`, `index.css`, `index.js`, `tests/admin/`.
   - Details: per `d-gramlot-shell`: a `framePane` with a vertical icon `menu` on the left (Sites, Library, Settings, Sign out), the navigation of sites and starting sites beside it, Gramlot's index tabs (closable, one iframe per opened site) in the center; the `stackContainer` of BE-D1 is removed.
   - Done: matches the mockup: two sites open in two tabs, each keeps its state, closing a tab closes the site page.
