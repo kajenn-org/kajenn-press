@@ -57,6 +57,7 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `examples/kajenn_press_site/pages/*.html`, `publish.py` (descriptions), `tests/site/`, `tests/docker/`.
   - Done: no page names channels, candidates, builds or releases of the old model; full and Docker suites green.
 
-- [ ] **Phase 7**: `docs/` removed, README pointing to the booklets
+- [x] **Phase 7**: `docs/` removed, README pointing to the booklets
+  > Done: `docs/` removed (18 files: the 14 documents, `admin-artifacts.json`, `admin-qualified-freeze.txt`, two `fonti-locali` files); README lists the five booklets and points to the proposal and the roadmap. Outside `.phased/`, `git grep` finds no link to `docs/`.
   - Files: `docs/` (removed per N10-D3), `README.md`.
   - Done: `git grep` finds no link to `docs/` outside `.phased/done/`; README lists the five booklets.

@@ -1,6 +1,6 @@
 # kajenn-press implementation roadmap
 
-Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server) or N10 (documentation).
+Status: rewritten 2026-10-27 after the owner's redesign of the administration and of the publication model, recorded in `xmldocs/proposal/site-tab-redesign.xml`. Macros 1, 2 and 3b are finalized on main. Macro 3 is retired: the redesign supersedes it. No plan is active; the next one is N7b (first publication on another server).
 
 The product scope is `xmldocs/proposal/site-tab-redesign.xml`. `docs/01-visione.md` through `docs/14-release-storage.md` describe the previous model (catalog revisions, channels, releases) and are rewritten in Macro N10.
 
@@ -104,9 +104,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 
 - Planned: languages back into the model, the editor, the SEO and the publication; reopened by the owner on 2026-10-29.
 
-### N10: Documentation
+### N10 (completed 2026-10-29, branch feat/documentation): Documentation
 
-- Delivers: `README.md` and `docs/` rewritten on the new model; `docs/01`–`docs/14` replaced or removed.
+- Result: five xmldocs booklets with verified facts (site tab, templates, operations, publication, installation); the example site rewritten on the current product; `docs/01`–`docs/14` and their support files removed; README pointing to the booklets. Archived plan: [documentation](done/documentation/plan.md).
+- Planned: `README.md` and `docs/` rewritten on the new model; `docs/01`–`docs/14` replaced or removed.
 
 ## Future work outside these macros
 
