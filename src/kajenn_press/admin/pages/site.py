@@ -33,6 +33,7 @@ COMMANDS = frozenset(
         "slot_assign",
         "content_add",
         "content_save",
+        "asset_save",
         "page_add",
         "folder_add",
         "tree_move",
@@ -341,6 +342,16 @@ class Page(AdminPage):
             "editor_text": "",
             "editor_original": "",
             "editor_tab": "rich",
+            "css_assets_json": json.dumps(
+                {
+                    a["id"]: {"name": a["name"], "text": a["text"], "uses": a["uses"]}
+                    for a in read["assets"]
+                    if a["kind"] == "css"
+                }
+            ),
+            "css_rules_json": "",
+            "css_dirty": False,
+            "css_filter": "",
             "block_preview": "",
             "plan_json": "",
             "assign_slot": "",
@@ -352,9 +363,10 @@ class Page(AdminPage):
         pane.dataFormula("site.assign_hidden", "!slot", slot="^site.assign_slot", _init=True)
         pane.dataFormula(
             "site.editor_change",
-            "text === original ? 'No changes' : 'Changed, not saved'",
+            "text === original && !css ? 'No changes' : 'Changed, not saved'",
             text="^site.editor_text",
             original="^site.editor_original",
+            css="^site.css_dirty",
             _init=True,
         )
         pane.dataSetter("site.pages_tree", pages_bag(read, language))
@@ -506,9 +518,13 @@ class Page(AdminPage):
         tabs.contentPane(
             title="HTML", pageName="html", overflow="hidden", class_="block-editor-pane"
         ).codeMirror(value="^site.editor_text", language="html", height="100%")
-        tabs.contentPane(title="CSS", pageName="css", class_="block-css").p(
-            "The rules acting on this block come here.", class_="muted"
+        css = tabs.contentPane(title="CSS", pageName="css", class_="block-css", overflow="auto")
+        head = css.div(class_="css-head")
+        head.span("^site.css_filter", class_="muted")
+        head.html_button(
+            "Show all", type="button", class_="bw-toggle", connect_onclick="cssShowAll"
         )
+        css.div(class_="css-rules").remote("css_rules_view", rules="^site.css_rules_json")
         frame.bottom.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
         bar = frame.bottom.menu(presentation="bar", class_="tab-toolbar block-footer")
         group = bar.menuline(group=True, overflowable=False)
@@ -529,6 +545,7 @@ class Page(AdminPage):
             caption="Save", action="saveContent", disabled="^site.busy", overflowable=False
         )
         pane.dataController(func="styleBlockEditor", tab="^site.editor_tab")
+        pane.dataController(func="cssEdited", edits="^site.css_edit")
 
     @source(auth="editor")
     async def seo_panel(self, pane, site="", page_id="", version=0, language=""):
@@ -1051,6 +1068,24 @@ class Page(AdminPage):
             panel.button("Make private", class_="button--secondary").dataController(
                 func="makePrivate"
             )
+
+    @source(auth="editor")
+    async def css_rules_view(self, pane, rules=""):
+        """The style rules acting on the block, by style sheet, each edited as text (d-css-rules)."""
+        if not rules:
+            return
+        sheet = None
+        for item in json.loads(rules):
+            if item["asset_name"] != sheet:
+                sheet = item["asset_name"]
+                literal_text(pane, "h4", sheet + ".css", class_="css-sheet")
+            box = pane.div(class_="css-rule" + (" css-dim" if item["dim"] else ""))
+            head = box.div(class_="css-rule-head")
+            literal_text(head, "code", item["selector"] + " { }")
+            literal_text(head, "small", f"used by {item['uses']} pages")
+            path = f"site.css_edit.{item['key']}"
+            pane.dataSetter(path, item["style"])
+            box.textarea(value="^" + path, class_="css-text", spellcheck="false")
 
     @source(auth="editor")
     async def plan_view(self, pane, plan=""):

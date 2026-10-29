@@ -62,6 +62,7 @@ CHANGES = {
     "content_add",
     "content_save",
     "asset_add",
+    "asset_save",
     "page_add",
     "page_url_set",
     "page_seo_set",
@@ -531,7 +532,13 @@ class SiteService:
                 }
                 for item in items("contents")
             ],
-            "assets": items("assets"),
+            "assets": [
+                # A style sheet's text, for the CSS tab of the block window (d-css-rules).
+                {**item, "text": site.node("assets", item["id"]).value.decode("utf-8", "replace")}
+                if item["kind"] == "css"
+                else item
+                for item in items("assets")
+            ],
             "pages": pages,
             "tree": site.tree(),
             "redirects": site.redirects(),
@@ -601,6 +608,11 @@ class SiteService:
 
     def _asset_add(self, identity, site, name, kind, data_base64, mime_type):
         return {"asset_id": site.add_asset(name, kind, decode_base64(data_base64), mime_type)}
+
+    def _asset_save(self, identity, site, asset_id, data_base64):
+        # The site's original changes; page copies change only through copies_update (GS-D2).
+        site.node("assets", asset_id).value = decode_base64(data_base64)
+        return {"asset_id": asset_id}
 
     def _page_add(self, identity, site, name, template_id):
         return {"page_id": site.add_page(name, template_id)}

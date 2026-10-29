@@ -125,6 +125,9 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 "codeMirror",
                 "blockBeforeClose",
                 "Cancel",
+                # The CSS tab (d-css-rules).
+                "css_rules_view",
+                "cssShowAll",
             ):
                 assert text in view, text
             assert "block-window" not in view

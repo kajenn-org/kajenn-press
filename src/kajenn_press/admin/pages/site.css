@@ -16,6 +16,14 @@
 /* The block in Gramlot's floating window: preview frame, footer bar, Update plan. */
 .block-preview{display:block;width:100%;height:100%;border:0;background:#fff}
 .block-css{padding:12px}
+.css-head{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.css-rules{display:flex;flex-direction:column;gap:8px}
+.css-sheet{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gramlot-text-secondary, #6b6963)}
+.css-rule{border:1px solid var(--gramlot-border, #ddd);border-radius:8px;overflow:hidden}
+.css-rule.css-dim{opacity:.4}
+.css-rule-head{display:flex;justify-content:space-between;gap:8px;padding:4px 10px;background:var(--gramlot-surface-subtle, transparent);font-size:12px}
+.css-rule-head small{color:var(--gramlot-text-secondary, #6b6963)}
+.css-text{display:block;width:100%;box-sizing:border-box;min-height:64px;border:0;padding:6px 10px;font:12px/1.5 ui-monospace,monospace;resize:vertical}
 /* An editor field sits in a label box: the box takes the tab's full height too. */
 .block-editor-pane>.gramlot-labelbox,.block-editor-pane .control-box{height:100%}
 .update-plan:not(:empty){padding:8px 12px;border-top:1px solid var(--gramlot-border, #ddd)}
