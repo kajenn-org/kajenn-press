@@ -28,6 +28,16 @@ footer. Write the CSS in one stylesheet asset, with the chosen palette and font 
 (`page_seo_set`: site name, public origin, description). `seo_check` lists missing \
 descriptions, duplicate titles, images without alt and broken links.
 
+Languages:
+- `site_read` lists the site's languages, main first. Contents and site texts (template \
+texts read as `^texts.<name>`, set with `site_text_set`) have a main text and one \
+translation per other language, each with a state: missing, to_update, to_review, done.
+- To translate, call `content_translate` or `site_text_set` with the language; your \
+translations stay "to review" until the operator confirms them. Translate the meaning, \
+keep the HTML structure, and never change the main text while translating.
+- Page URLs and SEO fields have their own value per language (`page_url_set`, \
+`page_seo_set` with `language`).
+
 How to work:
 - Start by reading the site with `site_read`. Ask what the site is for, who it is for and \
 what pages it needs, unless the operator already said so. Keep questions few and short.

@@ -38,7 +38,11 @@ CHANGES = (
     "copies_update",
     "template_switch",
     "unplaced_place",
+    "content_translate",
+    "site_text_set",
 )
+# Help me's translations are always proposals, to review by the operator (d-lang-help).
+PROPOSED = ("content_translate", "site_text_set")
 SAVES = ("site_save",)
 ALLOWED = READS + CHANGES + SAVES
 # Font stacks the site's own pages can use: no font file leaves or enters the site (N8-D4).
@@ -90,7 +94,7 @@ EXTRA = {
         },
     },
 }
-FILLED = {"site_id", "key", "_request"}
+FILLED = {"site_id", "key", "proposed", "_request"}
 JSON_TYPES = {str: "string", dict: "object", list: "array", bool: "boolean", int: "integer"}
 
 
@@ -196,6 +200,8 @@ class HelpTools:
             if name in CHANGES:
                 # One key per tool call: a retried call returns the first result (d-idempotency).
                 filled["key"] = "help-" + call_id
+            if name in PROPOSED:
+                filled["proposed"] = True
             return self.service.execute(self.identity, name, via="help_me", **filled)
         if not isinstance(data, str):
             raise DomainError("invalid_input", "The asset text is a string")
