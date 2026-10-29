@@ -72,7 +72,9 @@ export class Logic {
             if (event.data.kind === 'select' || event.data.kind === 'edit') {
                 const page = node.GET('site.page');
                 const path = this.slotPath(node.GET('site.pages_tree'), page, event.data.slot);
+                this.fromPreview = true;
                 if (path) node.SET('site.selected_path', path);
+                this.fromPreview = false;
                 node.SET('site.assign_page', page);
                 node.SET('site.assign_slot', event.data.slot);
                 if (event.data.kind === 'edit') void this.openSlot(node, {});
@@ -146,6 +148,8 @@ export class Logic {
             node.SET('site.assign_page', item.attr.page);
             node.SET('site.assign_slot', item.attr.slot);
             node.SET('site.assign_content', item.attr.content);
+            // A slot chosen in the tree opens like the pen; one chosen in the preview only selects.
+            if (!this.fromPreview && item.attr.content) void this.openSlot(node, {});
         }
     }
     preparePage(source, {dragValues, item}) {
@@ -192,12 +196,27 @@ export class Logic {
         node.SET('site.editor_title', slot + ' · ' + read[content].name + (main ? '' : ' · ' + language.toUpperCase()));
         node.SET('site.editor_main', main ? '' : read[content].text);
         node.SET('site.editor_text', main ? read[content].text : (translation.text ?? ''));
+        node.SET('site.editor_original', node.GET('site.editor_text'));
         node.SET('site.editor_state', main ? '' : translation.state);
         node.SET('site.editor_note', main || translation.state === 'done' ? '' : translation.state.replace('_', ' '));
         node.SET('site.plan_json', '');
         node.SET('site.editor_open', true);
     }
     closeEditor(node, _args) { node.SET('site.editor_open', false); }
+    toggleSource(node, _event) { node.SET('site.editor_source', !node.GET('site.editor_source')); }
+    dragWindow(_node, event) {
+        // Full height always: the window moves sideways only, inside the stage.
+        if (event.target.closest('button')) return;
+        const win = event.currentTarget.closest('.block-window'), stage = win.parentElement;
+        const start = event.clientX - win.offsetLeft;
+        const move = m => {
+            const left = Math.max(0, Math.min(m.clientX - start, stage.clientWidth - win.offsetWidth));
+            win.style.right = 'auto';
+            win.style.left = left + 'px';
+        };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once: true});
+    }
     async confirmTranslation(node, _args) {
         try {
             await this.callCommand('translation_confirm', {site_id: this.siteId(node), key: crypto.randomUUID(),
@@ -224,6 +243,9 @@ export class Logic {
             const plan = await this.callCommand('copies_update_plan', {site_id: site, original_id: content});
             const pages = JSON.parse(node.GET('site.pages_json'));
             node.SET('site.plan_json', JSON.stringify(plan.map(item => ({...item, page_name: pages[item.page_id].name}))));
+            node.SET('site.editor_original', node.GET('site.editor_text'));
+            // Without copies to update, the window closes and the preview shows the change.
+            if (!plan.length) { node.SET('site.editor_open', false); this.refresh(node); }
         } catch (error) { node.SET('site.message', error.message); }
         node.SET('site.busy', false);
     }

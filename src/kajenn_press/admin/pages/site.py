@@ -326,6 +326,8 @@ class Page(AdminPage):
             "editor_content": "",
             "editor_title": "",
             "editor_text": "",
+            "editor_original": "",
+            "editor_source": False,
             "plan_json": "",
             "assign_slot": "",
             "assign_page": "",
@@ -335,6 +337,22 @@ class Page(AdminPage):
             pane.dataSetter("site." + name, value)
         pane.dataFormula("site.assign_hidden", "!slot", slot="^site.assign_slot", _init=True)
         pane.dataFormula("site.editor_hidden", "!open", open="^site.editor_open", _init=True)
+        pane.dataFormula(
+            "site.editor_change",
+            "text === original ? 'No changes' : 'Changed, not saved'",
+            text="^site.editor_text",
+            original="^site.editor_original",
+            _init=True,
+        )
+        pane.dataFormula(
+            "site.editor_source_hidden", "!shown", shown="^site.editor_source", _init=True
+        )
+        pane.dataFormula(
+            "site.editor_source_class",
+            "shown ? 'bw-toggle on' : 'bw-toggle'",
+            shown="^site.editor_source",
+            _init=True,
+        )
         pane.dataSetter("site.pages_tree", pages_bag(read, language))
         pane.dataSetter("site.contents_tree", contents_bag(read, language))
         pane.dataController(func="initialize", _onBuilt=True)
@@ -449,7 +467,6 @@ class Page(AdminPage):
         for content in contents:
             menu.option(content["name"], value=content["id"])
         assign.button("Assign").dataController(func="assignChosen")
-        assign.button("Edit", class_="button--secondary").dataController(func="openSlot")
         contents = trees.contentPane(title="Contents", pageName="contents", padding="8px")
         contents.tree(
             storepath="site.contents_tree",
@@ -465,7 +482,8 @@ class Page(AdminPage):
         add = contents.div(class_="drawer-actions")
         add.input(value="^site.new_content_name", placeholder="New content name")
         add.button("+ content", class_="button--quiet").dataController(func="addContent")
-        stage = layout.contentPane(region="center", class_="site-stage").div(class_="stage-box")
+        center = layout.contentPane(region="center", class_="site-stage")
+        stage = center.div(class_="stage-box")
         bar = stage.div(class_="stage-bar")
         bar.span("^site.status", class_="muted")
         bar.html_label("Show slots", for_="show-slots")
@@ -476,41 +494,44 @@ class Page(AdminPage):
             title="Page preview",
             class_="site-preview",
         )
-        editor = layout.contentPane(
-            region="right",
-            width="400px",
-            splitter=True,
-            overflow="auto",
-            class_="block-editor",
-            hidden="^site.editor_hidden",
-        )
-        head = editor.div(class_="editor-head")
+        self.block_window(pane, center)
+
+    def block_window(self, pane, center):
+        """The block in a floating window over the preview (d-block-editing): full height,
+        moved sideways by its header, Jodit first and the HTML source beside it on demand."""
+        window = center.div(class_="block-window", hidden="^site.editor_hidden")
+        head = window.div(class_="bw-head", connect_onmousedown="dragWindow")
         head.strong("^site.editor_title")
-        head.button("Close", class_="button--quiet").dataController(func="closeEditor")
+        head.html_button(
+            "</> HTML",
+            type="button",
+            class_="^site.editor_source_class",
+            connect_onclick="toggleSource",
+        )
+        head.html_button(
+            "✕", type="button", title="Close", class_="bw-close", connect_onclick="closeEditor"
+        )
         pane.dataFormula("site.editor_main_hidden", "!main", main="^site.editor_main", _init=True)
-        original = editor.div(class_="editor-main", hidden="^site.editor_main_hidden")
+        original = window.div(class_="editor-main", hidden="^site.editor_main_hidden")
         original.span("Main language", class_="muted")
-        original.htmlPreview(value="^site.editor_main", height="120px")
-        views = editor.tabContainer(height="300px", tabMode="underline")
-        views.contentPane(title="CodeMirror", pageName="code").codeMirror(
+        original.htmlPreview(value="^site.editor_main", height="96px")
+        body = window.div(class_="bw-body")
+        body.div(class_="bw-rich").htmlEditor(value="^site.editor_text", height="100%")
+        body.div(class_="bw-source", hidden="^site.editor_source_hidden").codeMirror(
             value="^site.editor_text", language="html", height="100%"
         )
-        views.contentPane(title="Jodit", pageName="rich").htmlEditor(
-            value="^site.editor_text", height="100%"
-        )
-        views.contentPane(title="Preview", pageName="preview").htmlPreview(
-            value="^site.editor_text", height="100%"
-        )
-        row = editor.div(class_="editor-actions")
-        row.button("Save", disabled="^site.busy").dataController(func="saveContent")
+        window.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
+        foot = window.div(class_="bw-foot")
+        foot.span("^site.editor_change", class_="muted")
+        foot.span("^site.editor_note", class_="muted")
         pane.dataFormula(
             "site.confirm_hidden", "state !== 'to_review'", state="^site.editor_state", _init=True
         )
-        row.button(
+        foot.button(
             "Confirm translation", class_="button--secondary", hidden="^site.confirm_hidden"
         ).dataController(func="confirmTranslation")
-        row.span("^site.editor_note", class_="muted")
-        editor.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
+        foot.button("Cancel", class_="button--secondary").dataController(func="closeEditor")
+        foot.button("Save", disabled="^site.busy").dataController(func="saveContent")
 
     @source(auth="editor")
     async def seo_panel(self, pane, site="", page_id="", version=0, language=""):
