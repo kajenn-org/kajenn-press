@@ -1,8 +1,8 @@
 """Generate local credentials once, each in the volume of the only services that need it.
 
 /rustfs   root credentials of RustFS (RustFS, storage-init)
-/websites operator password, MCP token, preview key, read-write storage user (websites, builder)
-/child    read-only storage user (child)
+/websites operator password, MCP token, private-link secret, read-write storage user (websites)
+/child    read-only storage user and private-link secret (site server)
 
 Existing files are kept: restarting the composition never rotates credentials.
 """
@@ -28,7 +28,11 @@ write("/websites/storage_access", "websites" + secrets.token_hex(6))
 write("/websites/storage_secret", secrets.token_hex(32))
 write("/websites/token", secrets.token_urlsafe(32))
 write("/websites/operator_password", secrets.token_urlsafe(12))
-write("/websites/preview_secret", secrets.token_hex(32))
+# One private-link secret, shared by websites (signs) and the site server (checks).
+link = Path("/websites/private_link")
+shared = link.read_text() if link.exists() else secrets.token_hex(32)
+write("/websites/private_link", shared)
+write("/child/private_link", shared)
 write("/child/storage_access", "child" + secrets.token_hex(6))
 write("/child/storage_secret", secrets.token_hex(32))
 print("credentials ready", flush=True)

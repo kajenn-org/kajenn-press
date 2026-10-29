@@ -14,8 +14,10 @@ from genro_storage import StorageManager
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
 from ..publication.routes import origin
+from .private import PREFIX, private_token
 from .published import (
     SCHEMA,
+    STATES,
     PublishedPage,
     index_schema,
     make_bindings,
@@ -48,8 +50,9 @@ def refresh_seconds(site, page_id):
 
 
 class Publisher:
-    def __init__(self, config, worker, connections=None):
+    def __init__(self, config, worker, connections=None, private_secret=None):
         self.config = dict(config)
+        self.private_secret = private_secret
         require_versioning(self.config, "release")
         self.storage = StorageManager()
         self.storage.configure([{"name": MOUNT, **self.config}])
@@ -172,6 +175,29 @@ class Publisher:
         except IntegrityError as exc:
             raise DomainError("conflict", str(exc)) from exc
         self.node(BINDINGS_PATH).write_bytes(raw)
+
+    def set_visibility(self, site, state):
+        """Make a site public or private at its address; possible before the first Publish."""
+        if state not in STATES:
+            raise DomainError("invalid_input", "A site is public or private")
+        address = self.site_address(site)
+        if address is None:
+            raise DomainError("invalid_input", "Give the root page a public origin first")
+        self.bind(site.site_id, address, state)
+        return {"address": address, "state": state}
+
+    def private_link(self, site_id, hours):
+        """A link that shows the real site while private or in maintenance (N7-D4)."""
+        if self.private_secret is None:
+            raise DomainError("unavailable", "Private links are not configured")
+        address, _entry = self.binding(site_id)
+        if address is None:
+            raise DomainError("invalid_input", "The site has no address yet")
+        try:
+            token, expires = private_token(self.private_secret, site_id, hours)
+        except ValueError as exc:
+            raise DomainError("invalid_input", str(exc)) from exc
+        return {"url": address + PREFIX + token, "expires": expires}
 
     def publish(self, site, source_version, selected):
         """Write the selected pages, then the index and the address; returns what happened."""

@@ -69,8 +69,10 @@ PUBLISHING = {
     "page_rollback",
     "site_rollback",
     "maintenance_set",
+    "site_visibility_set",
+    "private_link",
 }
-PUBLISHING_READS = {"publish_plan", "page_versions"}
+PUBLISHING_READS = {"publish_plan", "page_versions", "private_link"}
 OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
@@ -270,6 +272,19 @@ class SiteService:
         return self.receipts.run(
             identity, key, "maintenance_set", {"site_id": site_id, "on": bool(on)}, run
         )
+
+    def _site_visibility_set(self, identity, site_id, key, state):
+        def run():
+            result = self.publisher.set_visibility(self.site(identity, site_id), state)
+            self._record(identity, site_id, "site_visibility_set", state=state)
+            return result
+
+        return self.receipts.run(
+            identity, key, "site_visibility_set", {"site_id": site_id, "state": state}, run
+        )
+
+    def _private_link(self, identity, site_id, hours=8):
+        return self.publisher.private_link(site_id, hours)
 
     def _record(self, identity, site_id, operation, **details):
         copy = self.working_copy(site_id)

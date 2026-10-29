@@ -5,7 +5,9 @@ the release bucket at most every `cache_seconds`, so a new address needs no rest
 index pins, assets by content address, redirects with 301, `sitemap.xml`, `robots.txt`
 and the 404 page. Pages whose Data uses resolvers are rendered again by the worker with
 this server's named connections and kept in a local filesystem cache for their refresh
-time (d-rerender-cache). It needs read-only release credentials only.
+time (d-rerender-cache). It needs read-only release credentials only. A private site
+answers 404 and a site in maintenance 503, except to a browser holding the cookie of a
+valid private link (N7-D4); no other response sets a cookie.
 """
 
 import asyncio
@@ -29,6 +31,7 @@ from ..catalog.errors import IntegrityError
 from ..catalog.filesystem import private_directory, sync_directory, sync_file
 from ..domain import DomainError
 from ..publication.routes import origin, request_path
+from .private import COOKIE, PREFIX, cookie_token, valid_token
 from .publish import BINDINGS_PATH
 from .published import read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
@@ -167,12 +170,14 @@ class SiteServerApplication(BaseApplication):
         cache_seconds=5,
         worker=None,
         connections=None,
+        private_secret=None,
         **kwargs,
     ):
         storage = StorageManager()
         storage.configure([{"name": MOUNT, **release_storage}])
         self.storage, self.cache_seconds = storage, cache_seconds
         self.bindings = Bindings(storage, cache_seconds)
+        self.private_secret = private_secret
         self.readers = {}
         self.renders = RenderCache(cache_root, worker, connections or {}) if worker else None
         super().__init__(**kwargs)
@@ -188,7 +193,7 @@ class SiteServerApplication(BaseApplication):
             raise DomainError("not_found", "Unknown host binding")
         return origin(scope["scheme"] + "://" + hosts[0])
 
-    def respond(self, binding, path, method):
+    def respond(self, binding, path, method, token=None):
         if method not in ("GET", "HEAD"):
             return Response(
                 "Method not allowed", status_code=405, headers={**HEADERS, "allow": "GET, HEAD"}
@@ -196,9 +201,46 @@ class SiteServerApplication(BaseApplication):
         bound = self.bindings.get(binding)
         if bound is None:
             raise DomainError("not_found", "Unknown site")
+        if path.startswith(PREFIX):
+            return self.private_entry(binding, bound["site_id"], path.removeprefix(PREFIX))
+        allowed = self.allowed(bound["site_id"], token)
+        if bound["state"] == "private" and not allowed:
+            raise DomainError("not_found", "Unknown site")
         reader = self.reader(bound["site_id"])
         index = reader.index()
-        if index["maintenance"]:
+        response = self.site_response(binding, reader, index, path, allowed)
+        if allowed and (bound["state"] == "private" or index["maintenance"]):
+            # What only the private link shows never reaches a shared cache.
+            response.set_header("cache-control", "private, no-store")
+        return response
+
+    def allowed(self, site_id, token):
+        return (
+            self.private_secret is not None
+            and token is not None
+            and valid_token(self.private_secret, token, site_id) is not None
+        )
+
+    def private_entry(self, binding, site_id, token):
+        """A valid private link sets the cookie for this host and opens the site root."""
+        expires = valid_token(self.private_secret, token, site_id) if self.private_secret else None
+        if expires is None:
+            raise DomainError("not_found", "Unknown private link")
+        response = Response(
+            status_code=303, headers={**HEADERS, "location": "/", "cache-control": "no-store"}
+        )
+        response.set_cookie(
+            COOKIE,
+            token,
+            max_age=max(0, expires - int(time.time())),
+            secure=binding.startswith("https://"),
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
+    def site_response(self, binding, reader, index, path, allowed):
+        if index["maintenance"] and not allowed:
             return Response(
                 "Site under maintenance",
                 status_code=503,
@@ -254,7 +296,8 @@ class SiteServerApplication(BaseApplication):
         try:
             binding = self.binding(scope)
             path = request_path(scope.get("raw_path", scope["path"].encode()))
-            response = await asyncio.to_thread(self.respond, binding, path, scope["method"])
+            token = cookie_token(scope["headers"])
+            response = await asyncio.to_thread(self.respond, binding, path, scope["method"], token)
         except (DomainError, IntegrityError, UnicodeError, ValueError) as exc:
             response = (
                 Response(
@@ -298,7 +341,13 @@ class SiteServerHealth(RoutedApplication):
 
 
 def create_site_server(
-    *, release_storage, cache_root, cache_seconds=5, worker=None, connections=None
+    *,
+    release_storage,
+    cache_root,
+    cache_seconds=5,
+    worker=None,
+    connections=None,
+    private_secret=None,
 ):
     """A Kajenn server whose root application serves the sites bound in `bindings.json`."""
     return AsgiServer(
@@ -315,6 +364,7 @@ def create_site_server(
                     "cache_seconds": cache_seconds,
                     "worker": worker,
                     "connections": connections,
+                    "private_secret": private_secret,
                 },
             ),
         ],

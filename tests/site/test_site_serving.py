@@ -4,6 +4,7 @@ import asyncio
 import base64
 import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from publication.storage_support import versioned_bucket
 from kajenn_press.domain import AccessPolicy, DomainError
 from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.rendering.resolvers import ConfigValueResolver
+from kajenn_press.site.private import sign
 from kajenn_press.site.publish import Publisher
 from kajenn_press.site.published import unpack_page
 from kajenn_press.site.render import published_asset_name
@@ -32,6 +34,7 @@ def build(source, data):
     body.div(node_label="body", kpress_slot="body")
 """
 PNG = b"\x89PNG\r\n\x1a\nlogo"
+SECRET = b"private-link-secret-for-tests-only"
 GRANTS = {"anna": {"*": ["read", "write", "create_site", "build", "publish"]}}
 
 
@@ -44,7 +47,7 @@ def setup(tmp_path):
         SourceStore(versioned_bucket()),
         AccessPolicy(GRANTS),
         worker=worker,
-        publisher=Publisher(releases, worker, {"site": {"headline": "at publish"}}),
+        publisher=Publisher(releases, worker, {"site": {"headline": "at publish"}}, SECRET),
     )
     return service, releases, worker
 
@@ -131,6 +134,7 @@ def server(setup, site, tmp_path, connections=None, cache_seconds=0.2):
         cache_seconds=cache_seconds,
         worker=worker,
         connections=connections or {},
+        private_secret=SECRET,
     )
 
 
@@ -364,3 +368,58 @@ def test_two_sites_cannot_share_an_address(setup):
         run(service, "publish", site_id=second, key="pub2", selected=[page])
     assert service.publisher.binding(first)[0] == ORIGIN
     assert service.publisher.binding(second) == (None, None)
+
+
+def test_a_private_site_is_seen_only_through_its_private_link(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    run(service, "site_visibility_set", site_id=site, key="private", state="private")
+    link = run(service, "private_link", site_id=site, hours=8)["url"]
+    assert link.startswith(ORIGIN + "/_private/")
+    token = link.removeprefix(ORIGIN + "/_private/")
+    forged = token[:-2] + ("AA" if not token.endswith("AA") else "BB")
+    app = server(setup, site, tmp_path)
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            hidden = (await http.get("/")).status_code
+            refused = (await http.get("/_private/" + forged)).status_code
+            entry = await http.get(link.removeprefix(ORIGIN))
+            cookie = entry.headers["set-cookie"]
+            seen = await http.get("/about/", headers={"cookie": "kpress_private=" + token})
+            return hidden, refused, entry, cookie, seen
+
+    hidden, refused, entry, cookie, seen = asyncio.run(scenario())
+    assert (hidden, refused) == (404, 404)
+    assert entry.status_code == 303 and entry.headers["location"] == "/"
+    assert cookie.startswith("kpress_private=" + token)
+    assert "HttpOnly" in cookie and "Secure" not in cookie
+    assert seen.status_code == 200 and "<p>About</p>" in seen.text
+    assert "no-store" in seen.headers["cache-control"]
+    assert "set-cookie" not in seen.headers
+
+    run(service, "site_visibility_set", site_id=site, key="public", state="public")
+    (public,) = get(server(setup, site, tmp_path), "/")
+    assert public.status_code == 200 and "set-cookie" not in public.headers
+
+
+def test_the_private_link_opens_a_site_in_maintenance_and_expires(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, _pages = publish_site(service)
+    run(service, "maintenance_set", site_id=site, key="m", on=True)
+    token = run(service, "private_link", site_id=site)["url"].rsplit("/", 1)[1]
+    other_site = sign(SECRET, "another-site", time.time() + 3600)
+    expired = sign(SECRET, site, time.time() - 1)
+    app = server(setup, site, tmp_path)
+
+    async def scenario():
+        async with running(app, ORIGIN) as http:
+            statuses = []
+            for value in (None, token, other_site, expired):
+                headers = {"cookie": "kpress_private=" + value} if value else {}
+                statuses.append((await http.get("/", headers=headers)).status_code)
+            return statuses
+
+    assert asyncio.run(scenario()) == [503, 200, 503, 503]
+    with pytest.raises(DomainError, match="8 hours or 7 days"):
+        run(service, "private_link", site_id=site, hours=3)

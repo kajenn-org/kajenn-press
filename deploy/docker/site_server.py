@@ -28,6 +28,7 @@ def main():
         release_storage=release_storage(),
         cache_root="/cache",
         cache_seconds=float(os.environ.get("SITE_CACHE_SECONDS", "5")),
+        private_secret=Path(os.environ["PRIVATE_LINK_SECRET_FILE"]).read_text().strip().encode(),
     )
     uvicorn.run(server, host="0.0.0.0", port=8877, log_level="warning")
 

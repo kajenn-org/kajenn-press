@@ -94,6 +94,7 @@ services:
       RELEASE_S3_BUCKET: releases
       RELEASE_S3_ACCESS_FILE: /secrets/storage_access
       RELEASE_S3_SECRET_FILE: /secrets/storage_secret
+      PRIVATE_LINK_SECRET_FILE: /secrets/private_link
     ports:
       - "127.0.0.1:8877:8877"
     volumes:
