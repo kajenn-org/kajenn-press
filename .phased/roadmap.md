@@ -100,9 +100,9 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 
 ### N9 (completed 2026-10-29, branch feat/languages): Languages
 
-- Result: a main language and others per site; translations of contents and site texts with states missing, to update, to review; URLs with the language prefix (main without), redirects and SEO per language; one published object per page and language (schema 3), `hreflang`, sitemap of every language; the editor in one language at a time; Help me proposes translations to review; the example site in English and Italian (49 site operations). Archived plan: [languages](done/languages/plan.md).
+- Result: a main language and others per site; translations of contents and site texts with states missing, to update, to review; URLs with the language prefix (main without), redirects and SEO per language; one published object per page and language (schema 3), `hreflang`, sitemap of every language; the editor in one language at a time; Help me proposes translations to review; the example site in English and Italian (45 site operations). Archived plan: [languages](done/languages/plan.md).
 
-- Delivers: languages back into the model, the editor, the SEO and the publication. Out of scope until the owner reopens it.
+- Planned: languages back into the model, the editor, the SEO and the publication; reopened by the owner on 2026-10-29.
 
 ### N10: Documentation
 
