@@ -48,15 +48,18 @@ Library
 
 The site tab has three tabs: Visual editor, SEO, Published site.
 
-The site and its tabs fit in one bar 40 pixels high: the site's name and holder, the three tabs, the language shown, Help me and Save. The administration's own bar is as thin, with a small logo. Below the bar every pane, editor and preview takes the full remaining height.
+The administration is Gramlot's index page as in its gallery: a column of icons on the left (Sites, Library, Settings, Sign out), the list of sites beside it, and one closable tab per opened site, each holding the site's page in an iframe that keeps its state.
+
+Each of the three tabs is a frame with its own toolbar on top, holding only that tab's commands: the Visual editor has the language, Show slots, Help me and Save; SEO has the language, the checks and Save; Published site has the state, the address and the publication commands. The site's name is in its tab. Every pane, editor and preview takes the full remaining height.
 
 #### Visual editor
 
 - The center shows the site rendered as it would be served locally. It opens on the root page; the operator moves to other pages through the links, as a visitor would.
 - On command, a very thin border marks every slot.
 - A single click on a block selects it: a border, a label with the slot and its content, and a round button with a pen. A single click on a link follows it, as a visitor would.
-- The pen, or a double click on the block, opens the block in a floating window over the preview, full height, moved sideways by its header and widened by its edge. One window is open at a time.
-- The window opens on Jodit, ready to write. A `</> HTML` button slides the source out beside it in CodeMirror; the two stay in step. The window ends with the state of the change, Cancel and Save; Save updates the preview.
+- The pen, or a double click on the block, opens the block in a floating window over the preview: a title bar (collapse, maximize, close), moved and resized, and inside it a frame with four tabs: Preview, Jodit, HTML (CodeMirror) and CSS. One window is open at a time. The frame's footer shows the state of the change, Cancel and Save; Save updates the preview.
+- Preview and Jodit show the block with the page's own CSS, inside the same chain of elements that holds the slot in the page.
+- The CSS tab lists the rules of the page's style sheets that act on the block, grouped by file, each with the number of pages that use the file. Each rule is edited as text and the change shows at once. A click on an element in the Preview tab narrows the list to that element's rules. Save writes the style sheet; the pages holding a copy of it come in the Update plan.
 
 A side drawer holds a tab container with two tabs.
 
@@ -322,6 +325,14 @@ A site is edited by one person at a time. Whoever opens the editor takes the sit
    1. **A click opens a side panel with CodeMirror, Jodit and Preview tabs**
    2. **A click selects; the pen or a double click opens a floating window on Jodit, with the HTML source beside it on demand**
    → Choice: **A click selects; the pen or a double click opens a floating window on Jodit, with the HTML source beside it on demand** (GP, 2026-10-29) — Writing comes first; the source is there when needed; links in blocks keep working.
+- **d-gramlot-shell** `decided` — How is the administration framed?
+   1. **One site shown at a time, a single bar for the site and its tabs**
+   2. **Gramlot's index page as in its gallery: icon column, site list, a closable tab per opened site; each site tab a frame with its own toolbar**
+   → Choice: **Gramlot's index page as in its gallery: icon column, site list, a closable tab per opened site; each site tab a frame with its own toolbar** (GP, 2026-10-29) — Several sites stay open; each tab carries only its own commands.
+- **d-css-rules** `decided` — How are style rules changed while editing a block?
+   1. **A style sheet owned by each content**
+   2. **The rules of the page's style sheets that act on what is seen, edited in place and saved to the style sheet**
+   → Choice: **The rules of the page's style sheets that act on what is seen, edited in place and saved to the style sheet** (GP, 2026-10-29) — Rules are changed where their effect is seen.
 - **d-manager-host** `decided` — Does the Hetzner manager host serve public sites?
    1. **No: public sites go to separate servers**
    2. **Yes, behind its nginx**

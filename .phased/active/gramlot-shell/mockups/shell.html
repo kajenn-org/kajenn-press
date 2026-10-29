@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gramlot shell mockup</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--line:#d5dbe3;--fg:#1d2633;--muted:#6b7686;--accent:#2f6fde;--soft:#e3edfc;--rail:#1d2633}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.note{background:#fff8e0;border-bottom:1px solid #ecd98f;padding:5px 12px;font-size:12px;flex:none}
+.shell{flex:1;display:flex;min-height:0}
+/* rail: vertical icon menu, as in the Gramlot gallery */
+.rail{width:52px;background:var(--rail);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0}
+.rail .logo{width:30px;height:30px;border-radius:7px;background:var(--accent);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.rail button{width:38px;height:38px;border:0;border-radius:8px;background:transparent;color:#9aa6b6;font-size:18px;cursor:pointer}
+.rail button.on,.rail button:hover{background:#2b394c;color:#fff}
+.rail .grow{flex:1}
+.nav{width:220px;background:#243042;color:#e8ecf2;padding:10px 6px;display:flex;flex-direction:column;gap:2px}
+.nav .group{font-weight:600;padding:6px 8px;color:#9aa6b6;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.nav a{padding:6px 10px;border-radius:6px;cursor:pointer;color:#e8ecf2}
+.nav a.on{background:#315f85}
+.nav .holder{color:#9aa6b6;font-size:11px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+/* one closable tab per opened page (Gramlot IndexPage, as in the gallery); each tab holds the page in an iframe */
+.ptabs{display:flex;gap:2px;padding:4px 8px 0;background:#dfe4ea;border-bottom:1px solid var(--line)}
+.ptabs a{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:7px 7px 0 0;color:var(--muted);cursor:pointer}
+.ptabs a.on{background:var(--panel);color:var(--fg);font-weight:600}
+.ptabs a i{font-style:normal;font-size:11px;opacity:.6}
+.page{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+/* site page: one menu bar on top */
+.bar{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line);white-space:nowrap}
+.bar .tabs{display:flex;align-self:stretch;margin-left:12px}
+.bar .tabs a{display:flex;align-items:center;padding:0 12px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}
+.bar .tabs a.on{color:var(--fg);border-color:var(--accent);font-weight:600}
+.spacer{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--fg);border-radius:6px;padding:4px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:#fff}
+.work{flex:1;display:flex;min-height:0}
+.tb{height:38px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#f7f9fc;border-bottom:1px solid var(--line);white-space:nowrap}
+.tb[hidden]{display:none}.tb label{display:flex;gap:4px;align-items:center}
+.tb .crumb{color:var(--muted);font-size:12px}
+.tb .chip{border:1px solid #5fae3c;color:#3c7d22;border-radius:10px;padding:0 8px;font-size:12px}
+.drawer{width:230px;background:var(--panel);border-right:1px solid var(--line);padding:8px}
+.drawer .t{display:flex;gap:2px;margin-bottom:8px}.drawer .t span{padding:4px 10px;border-radius:6px}.drawer .t span.on{background:var(--soft);color:var(--accent);font-weight:600}
+.drawer div.i{padding:3px 6px}.drawer div.s{padding:3px 6px 3px 24px;color:var(--muted)}
+.stage{flex:1;position:relative;padding:10px;min-width:0}
+.preview{background:#fff;border:1px solid var(--line);border-radius:8px;height:100%;overflow:auto}
+/* the site as rendered, with its own CSS */
+.site{font-family:Georgia,serif;color:#1d2633}
+.site .snav{display:flex;gap:18px;padding:14px 26px;border-bottom:1px solid #eee;font:600 14px system-ui}.site .snav b{margin-right:auto;font-size:20px}
+.blk{position:relative;margin:10px 16px;padding:12px 10px;border-radius:6px}
+.blk.sel{outline:2px solid var(--accent)}
+.blk .tag{display:none;position:absolute;top:-11px;left:10px;background:var(--accent);color:#fff;font:600 11px system-ui;padding:0 7px;border-radius:4px}
+.blk.sel .tag{display:block}
+.pen{display:none;position:absolute;top:-15px;right:10px;width:30px;height:30px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.blk.sel .pen{display:block}
+/* floating window: title bar (Gramlot floatingPane), framePane inside */
+.float{position:absolute;top:10px;bottom:10px;right:10px;width:720px;display:none;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 40px rgba(20,30,50,.3);overflow:hidden;resize:horizontal;min-width:480px}
+.float.open{display:flex}
+.title{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#1d2633;color:#e8ecf2;cursor:move}
+.title b{margin-right:auto}.title button{border:0;background:transparent;color:#9aa6b6;font-size:14px;width:26px;height:24px;border-radius:5px;cursor:pointer}.title button:hover{background:#2b394c;color:#fff}
+.ftabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line);background:#f7f9fc}
+.ftabs a{padding:8px 12px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}.ftabs a.on{color:var(--fg);border-color:var(--accent);font-weight:600}
+.fcenter{flex:1;min-height:0;position:relative}
+.fpane{position:absolute;inset:0;display:none;overflow:auto}.fpane.on{display:flex;flex-direction:column}
+.jtools{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid var(--line)}.jtools span{padding:2px 8px;font-weight:600;color:#3b4554}
+.code{flex:1;margin:0;border:0;background:#1e2430;color:#d8e0ea;font:12px/1.5 ui-monospace,monospace;padding:10px;resize:none;outline:none}
+.fpreview{padding:8px 4px}
+.fpreview [data-el]:hover{outline:1px dashed var(--accent);cursor:crosshair}
+.fpreview .picked{outline:2px solid #e0952a!important}
+/* CSS tab */
+.css{display:flex;flex-direction:column;gap:10px;padding:10px 12px}
+.css .filter{color:var(--muted);font-size:12px}.css .filter b{color:var(--fg)}
+.css h4{margin:4px 0 0;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rule{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.rule .rh{display:flex;justify-content:space-between;padding:4px 10px;background:#f7f9fc;font:12px ui-monospace,monospace}
+.rule .rh small{color:var(--muted);font-family:system-ui}
+.rule textarea{width:100%;border:0;font:12px/1.5 ui-monospace,monospace;padding:6px 10px;resize:vertical;min-height:54px;outline:none}
+.rule.dim{opacity:.4}
+.ffoot{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--line)}
+.ffoot .muted{color:var(--muted);font-size:12px;margin-right:auto}
+</style>
+<style id="site-css">
+.hero h1{font-size:44px;margin:.2em 0;color:#1d2633}
+.hero .lead{font:17px/1.6 system-ui;color:#4a5566;max-width:640px}
+.button{display:inline-block;background:#1d2633;color:#fff;padding:10px 18px;border-radius:6px;font:600 14px system-ui;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="note">Mockup · the rail and the navigation are the Gramlot gallery's shell; each site opens as a page in its own closable tab (an iframe), as in the gallery · in the site: click a block, then the pen · in the window try the CSS tab, and click an element in Preview to see only its rules</div>
+<div class="shell">
+  <div class="rail"><div class="logo">k</div><button class="on" title="Sites">▦</button><button title="Library">❏</button><span class="grow"></span><button title="Settings">⚙</button><button title="Sign out">⎋</button></div>
+  <div class="nav"><div class="group">Sites</div><a class="on">Kajenn Press <span class="holder">· you</span></a><a>Bottega Rossi <span class="holder">· anna</span></a><a>+ new site</a></div>
+  <div class="main">
+  <div class="ptabs"><a class="on">Kajenn Press <i>✕</i></a><a>Bottega Rossi <i>✕</i></a></div>
+  <div class="page">
+    <div class="bar"><div class="tabs" id="stabs" style="margin-left:0"><a class="on" data-t="visual">Visual editor</a><a data-t="seo">SEO</a><a data-t="pub">Published site</a></div></div>
+    <!-- each tab is a framePane: its own toolbar on top (a Gramlot menu bar), its content in the center -->
+    <div class="tb" data-tb="visual"><select><option>EN · main</option><option>IT</option></select><label><input type="checkbox" checked> Show slots</label><span class="crumb">/ · Home</span><span class="spacer"></span><button class="btn">✦ Help me</button><button class="btn primary">Save</button></div>
+    <div class="tb" data-tb="seo" hidden><select><option>EN · main</option><option>IT</option></select><span class="crumb">Site checks: no problem found</span><span class="spacer"></span><button class="btn primary">Save</button></div>
+    <div class="tb" data-tb="pub" hidden><span class="chip">Public</span><span class="crumb">https://press.example/ · published 13:03</span><span class="spacer"></span><button class="btn">Publish…</button><button class="btn">Rollback…</button><button class="btn">Maintenance</button><button class="btn">Private link</button><button class="btn">Go live…</button></div>
+    <div class="work">
+      <div class="drawer"><div class="t"><span class="on">Pages</span><span>Contents</span></div><div class="i">▾ Home</div><div class="s">hero ← home hero</div><div class="s">body ← home body</div><div class="i">▸ Features</div><div class="i">▸ Get started</div></div>
+      <div class="stage">
+        <div class="preview"><div class="site" id="site">
+          <div class="snav"><b>kajenn press</b><span>Overview</span><span>Features</span><span>Get started</span></div>
+          <div class="blk hero" id="hero"><span class="tag">hero · home hero</span><button class="pen" id="pen">✎</button>
+            <div class="content"><h1>Build it. Review it. <em>Publish</em> it.</h1><p class="lead">Kajenn Press builds a website page by page in the browser.</p><a class="button" href="#">See the features →</a></div></div>
+        </div></div>
+        <div class="float" id="win">
+          <div class="title" id="title"><b>hero · home hero</b><button title="Collapse">▁</button><button title="Maximize">▢</button><button title="Close" id="x">✕</button></div>
+          <div class="ftabs" id="ftabs"><a data-p="prev">Preview</a><a data-p="jodit" class="on">Jodit</a><a data-p="html">HTML</a><a data-p="css">CSS</a></div>
+          <div class="fcenter">
+            <div class="fpane fpreview" data-pane="prev"><div class="site hero" id="fprev"></div></div>
+            <div class="fpane on" data-pane="jodit"><div class="jtools"><span>B</span><span><i>I</i></span><span><u>U</u></span><span>¶</span><span>• list</span><span>🔗</span><span>🖼</span></div><div class="site hero" id="jarea" contenteditable="true" style="padding:10px 14px;flex:1"></div></div>
+            <div class="fpane" data-pane="html"><textarea class="code" id="src" spellcheck="false"></textarea></div>
+            <div class="fpane" data-pane="css"><div class="css" id="css"></div></div>
+          </div>
+          <div class="ffoot"><span class="muted" id="state">No changes</span><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="save">Save</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+<script>
+document.getElementById('stabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;document.querySelectorAll('#stabs a').forEach(a=>a.classList.toggle('on',a.dataset.t===t));document.querySelectorAll('.tb').forEach(b=>b.hidden=b.dataset.tb!==t)};
+const RULES=[{sel:'.hero h1',el:'h1',file:'site.css',pages:3,body:'font-size:44px;\nmargin:.2em 0;\ncolor:#1d2633;'},
+ {sel:'.hero .lead',el:'p',file:'site.css',pages:3,body:'font:17px/1.6 system-ui;\ncolor:#4a5566;\nmax-width:640px;'},
+ {sel:'.button',el:'a',file:'site.css',pages:6,body:'display:inline-block;\nbackground:#1d2633;\ncolor:#fff;\npadding:10px 18px;\nborder-radius:6px;\nfont:600 14px system-ui;\ntext-decoration:none;'}];
+const hero=document.getElementById('hero'),win=document.getElementById('win'),state=document.getElementById('state');
+const content=()=>hero.querySelector('.content').innerHTML;
+let picked=null;
+hero.addEventListener('click',e=>{if(e.target.id!=='pen')hero.classList.add('sel')});
+hero.addEventListener('dblclick',open);document.getElementById('pen').onclick=open;
+function open(){hero.classList.add('sel');document.getElementById('jarea').innerHTML=content();document.getElementById('src').value=content().replace(/></g,'>\n<');fillPreview();renderCss();win.classList.add('open')}
+function fillPreview(){const p=document.getElementById('fprev');p.innerHTML=document.getElementById('jarea').innerHTML;p.querySelectorAll('h1,p,a').forEach(el=>{el.dataset.el=el.tagName.toLowerCase();el.onclick=ev=>{ev.preventDefault();p.querySelectorAll('.picked').forEach(x=>x.classList.remove('picked'));el.classList.add('picked');picked=el.dataset.el;renderCss();show('css')}})}
+function renderCss(){const box=document.getElementById('css');box.innerHTML='<div class="filter">'+(picked?'Rules of the <b>&lt;'+picked+'&gt;</b> picked in Preview · <a href="#" id="all">show all</a>':'Rules acting on this block · click an element in Preview to narrow them')+'</div><h4>site.css</h4>';
+ RULES.forEach((r,i)=>{const d=document.createElement('div');d.className='rule'+(picked&&r.el!==picked?' dim':'');d.innerHTML='<div class="rh"><span>'+r.sel+' { }</span><small>used by '+r.pages+' pages</small></div>';const t=document.createElement('textarea');t.value=r.body;t.oninput=()=>{r.body=t.value;apply();state.textContent='CSS changed, not saved'};d.appendChild(t);box.appendChild(d)});
+ const a=document.getElementById('all');if(a)a.onclick=e=>{e.preventDefault();picked=null;renderCss()}}
+function apply(){document.getElementById('site-css').textContent=RULES.map(r=>r.sel+'{'+r.body.replace(/\n/g,'')+'}').join('\n')}
+function show(p){document.querySelectorAll('#ftabs a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));document.querySelectorAll('.fpane').forEach(x=>x.classList.toggle('on',x.dataset.pane===p));if(p==='prev')fillPreview()}
+document.getElementById('ftabs').onclick=e=>{if(e.target.dataset.p)show(e.target.dataset.p)};
+document.getElementById('jarea').oninput=()=>{document.getElementById('src').value=document.getElementById('jarea').innerHTML.replace(/></g,'>\n<');state.textContent='Changed, not saved'};
+document.getElementById('src').oninput=()=>{document.getElementById('jarea').innerHTML=document.getElementById('src').value;state.textContent='Changed, not saved'};
+document.getElementById('x').onclick=document.getElementById('cancel').onclick=()=>win.classList.remove('open');
+document.getElementById('save').onclick=()=>{hero.querySelector('.content').innerHTML=document.getElementById('jarea').innerHTML;win.classList.remove('open')};
+const title=document.getElementById('title');title.onmousedown=e=>{if(e.target.tagName==='BUTTON')return;const sx=e.clientX-win.offsetLeft,sy=e.clientY-win.offsetTop;const mv=m=>{win.style.right='auto';win.style.bottom='auto';win.style.height=win.offsetHeight+'px';win.style.left=(m.clientX-sx)+'px';win.style.top=(m.clientY-sy)+'px'};document.addEventListener('mousemove',mv);document.addEventListener('mouseup',()=>document.removeEventListener('mousemove',mv),{once:true})};
+</script>
+</body>
+</html>
