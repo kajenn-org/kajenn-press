@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!-- generated from install.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Installing and running</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>Installing and running</h1><div class="doc-meta"><span>booklet/install</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
+    <p>How to run Kajenn Press with Docker: on a workstation with local S3 storage, on a server behind nginx with external buckets, with Help me, and how to run its tests. The step-by-step installation of the Hetzner host is <code>deploy/docker/HETZNER.md</code>.</p>
+  </section><section class="part requires"><h2>Requirements</h2>
+    <ul>
+      <li>Docker with Compose, and this repository checked out.</li>
+      <li>On a server: an S3-compatible service with two buckets with versioning, a reverse proxy with TLS, DNS for the administration's name.</li>
+    </ul>
+  </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-local"><h3><span class="step-num">1.</span>Run it on a workstation</h3>
+    <figure class="code"><figcaption>bash</figcaption><pre><code>cp deploy/docker/.env.example deploy/docker/.env
+docker compose -f deploy/docker/compose.yaml --profile demo up -d --build
+docker compose -f deploy/docker/compose.yaml exec websites cat /secrets/operator_password</code></pre></figure>
+    <p>The composition starts:</p>
+    <div class="table-wrap"><table><caption>Services</caption>
+      <tr><th>Service</th><th>Role</th></tr>
+      <tr><td><code>secrets</code></td><td>Generates the local credentials once: storage users, operator password, MCP token, and one private-link secret written to both the websites and the site-server volumes.</td></tr>
+      <tr><td><code>rustfs</code>, <code>storage-init</code></td><td>Local S3 storage; creates the buckets <code>sources</code> and <code>releases</code> with versioning, a read-write user for websites and a user for the site server that reads only <code>releases</code>.</td></tr>
+      <tr><td><code>websites</code></td><td>Administration, REST and MCP, render worker, on port 8875: <code>http://kpress.localhost:8875/admin/</code>, user <code>operator</code>.</td></tr>
+      <tr><td><code>site-publisher</code> (profile <code>demo</code>)</td><td>Publishes the example site through MCP.</td></tr>
+      <tr><td><code>site-server</code> (profile <code>demo</code>)</td><td>Serves the published sites on port 8877: <code>http://press.localhost:8877/</code>.</td></tr>
+    </table></div>
+    <p><code>down</code> keeps volumes; <code>down -v</code> deletes working copies, buckets and credentials.</p>
+  </section><section class="section step" id="s-server"><h3><span class="step-num">2.</span>Run it on a server</h3>
+    <p>Set <code>KPRESS_SCHEME=https</code>, the administration's name in <code>KPRESS_MANAGEMENT_HOST</code>, and in <code>KPRESS_TRUSTED_PROXIES</code> the address the proxy connects from: websites answers only requests whose scheme and host match the administration's origin, and reads the scheme from <code>X-Forwarded-Proto</code> only from a trusted address. <code>deploy/docker/nginx-kpress.conf</code> is the nginx configuration of the Hetzner host.</p>
+    <p>With external buckets, add <code>compose.external-s3.yaml</code>; it does not start RustFS nor the demo services and reads:</p>
+    <div class="table-wrap"><table><caption>External storage</caption>
+      <tr><th>Variable</th><th>Meaning</th></tr>
+      <tr><td><code>KPRESS_S3_ENDPOINT</code></td><td>The S3 endpoint.</td></tr>
+      <tr><td><code>KPRESS_S3_BUCKET</code></td><td>The release bucket.</td></tr>
+      <tr><td><code>KPRESS_SOURCES_BUCKET</code></td><td>The source bucket; empty turns the site operations off.</td></tr>
+      <tr><td><code>KPRESS_S3_CREDENTIALS_DIR</code></td><td>Host directory with the files <code>access</code> and <code>secret</code>, mounted read-only.</td></tr>
+    </table></div>
+    <figure class="code"><figcaption>bash</figcaption><pre><code>docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build</code></pre></figure>
+    <p>websites refuses to start with a bucket whose versioning is not enabled.</p>
+  </section><section class="section step" id="s-help"><h3><span class="step-num">3.</span>Enable Help me</h3>
+    <p>Put the installation's Claude API key in a private file readable by websites, name it in <code>KPRESS_HELP_KEY_FILE</code>, and add <code>compose.help.yaml</code> to every Compose command. The key is never generated and never enters a volume. Without it, the Help me pane says Help me is not configured.</p>
+  </section><section class="section step" id="s-tests"><h3><span class="step-num">4.</span>Run the tests</h3>
+    <p>The full suite needs a render interpreter and a disposable S3 endpoint; the administration tests an interpreter with the <code>admin</code> extra; the Docker tests drive the composition and delete its volumes.</p>
+    <figure class="code"><figcaption>bash</figcaption><pre><code>KAJENN_RENDER_PYTHON=/path/to/render/python KAJENN_RELEASE_S3=/path/to/s3.json .venv/bin/python -m pytest -q tests
+KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=importlib tests/docker</code></pre></figure>
+    <p><code>KAJENN_RELEASE_S3</code> is a private JSON file with <code>endpoint_url</code>, <code>access_key</code> and <code>secret_key</code>. The live Help me tests run only with <code>KAJENN_HELP_LIVE=1</code> and cost tokens.</p>
+  </section></section><section class="part rules"><h2>Rules</h2>
+    <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Run <code>tests/docker</code> on a server with a real installation.</div><div class="muted why">They delete the composition's volumes.</div></div>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Enable versioning on both buckets before the first start.</div><div class="muted why">Pages and sources are read and restored by version.</div></div>
+    <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Give site servers keys that read the source bucket.</div><div class="muted why">Project-wide keys would let a site server read the sources.</div></div>
+  </section><section class="part limits"><h2>Current limits</h2>
+    <div class="box limit"><div>The hashed dependency locks target <code>aarch64</code> Linux.</div><div class="box-foot"><code class="source">deploy/docker/lock.sh:7</code></div></div>
+    <div class="box limit"><div>Kajenn has no ACME client: TLS comes from the reverse proxy.</div></div>
+  </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">deploy/docker/compose.yaml:41</code><span class="muted">2026-10-29</span></div><div>The composition starts websites on 8875 and, with the demo profile, the site publisher and the site server on 8877.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">deploy/docker/credentials.py:32</code><span class="muted">2026-10-29</span></div><div>One private-link secret is written to both the websites and the site-server volumes.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/store.py:19</code><span class="muted">2026-10-29</span></div><div>websites refuses a source or release bucket whose versioning is not enabled.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">deploy/docker/websites.py:58</code><span class="muted">2026-10-29</span></div><div>Help me is configured only when <code>ANTHROPIC_API_KEY_FILE</code> names a file.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">tests/docker/test_external_s3_contract.py:1</code><span class="muted">2026-10-29</span></div><div>The external-bucket composition writes sources and releases to the given buckets.</div></div>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../booklet/publication.html">booklet/publication</a></li>
+  </ul></section></main></body></html>

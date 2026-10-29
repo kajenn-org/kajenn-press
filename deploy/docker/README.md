@@ -1,5 +1,7 @@
 # websites composition
 
+The booklet [Installing and running](../../xmldocs/booklet/install.md) explains the composition, the server setup, Help me and the tests; this file is the reference of its files and variables.
+
 `compose.yaml` runs the kajenn-press manager (websites: administration, site operations,
 render worker) with RustFS as S3 storage for site sources and releases. The `demo` profile
 adds a **site publisher**, which publishes the Kajenn Press example site page by page

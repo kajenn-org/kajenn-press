@@ -47,7 +47,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `xmldocs/booklet/publication.{xml,md,html}`.
   - Done: object names, index schema 3, bindings and private links match `published.py`, `publish.py`, `private.py`, `serving.py`.
 
-- [ ] **Phase 5**: Booklet "Installing and running"
+- [x] **Phase 5**: Booklet "Installing and running"
+  > Done: `xmldocs/booklet/install.xml` (workstation with services table, server behind a proxy with external buckets, Help me key, tests; rules, limits, 5 facts); `deploy/docker/README.md` points to it. Valid, rendered.
   - Files: `xmldocs/booklet/install.{xml,md,html}`, `deploy/docker/README.md` (pointer).
   - Done: the commands are the ones the Docker tests run.
 
