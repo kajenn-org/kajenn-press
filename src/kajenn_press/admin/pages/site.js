@@ -201,6 +201,28 @@ export class Logic {
         } catch (error) { node.SET('site.seo_message', error.message); }
         node.SET('site.busy', false);
     }
+    toggleHelp(node, _args) { node.SET('site.help_open', !node.GET('site.help_open')); }
+    async helpSend(node, _args) {
+        const text = (node.GET('site.help_text') || '').trim();
+        if (!text) { node.SET('site.help_message', 'Write a message first.'); return; }
+        await this.helpTurn(node, text);
+    }
+    async helpPick(node, _event) { await this.helpTurn(node, node.getAttr('title')); }
+    async helpTurn(node, text) {
+        node.SET('site.help_busy', true);
+        node.SET('site.help_message', 'Help me is working…');
+        try {
+            const reply = await this.page.rpc.call('data', 'help_call', {call: 'send',
+                arguments: {site_id: this.siteId(node), text, chat_id: node.GET('site.help_chat') || null}});
+            if (!reply.ok) throw new Error(reply.error.message);
+            node.SET('site.help_text', '');
+            node.SET('site.help_message', '');
+            node.SET('site.help_chat', reply.result.chat_id);
+            node.SET('site.help_version', node.GET('site.help_version') + 1);
+            this.refresh(node);
+        } catch (error) { node.SET('site.help_message', error.message); }
+        node.SET('site.help_busy', false);
+    }
     showPublish(node, _args) { node.SET('site.pub_panel', 'publish'); }
     showRollback(node, _args) { node.SET('site.pub_panel', 'rollback'); }
     showPrivate(node, _args) { node.SET('site.pub_panel', 'private'); }
