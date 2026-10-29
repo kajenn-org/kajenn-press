@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <booklet id="booklet/operations" title="The site operations over REST and MCP" date="2026-10-29" lang="en" author="Giovanni Porcari">
   <purpose>
-    <p>How a program or an agent works on Kajenn Press sites through the 52 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
+    <p>How a program or an agent works on Kajenn Press sites through the 53 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
   </purpose>
 
   <requires>
@@ -48,6 +48,7 @@ curl -s -X POST https://kpress.example/content_add \
     <table title="Editing (working copy)">
       <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
       <row><cell><c>asset_add</c></cell><cell>name, kind, data_base64, mime_type</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add a CSS, JavaScript or media asset.</cell></row>
+      <row><cell><c>asset_save</c></cell><cell>asset_id, data_base64</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Replace the bytes of a site asset; page copies change only through <c>copies_update</c>.</cell></row>
       <row><cell><c>content_add</c></cell><cell>name, format, text</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add an HTML or Markdown content.</cell></row>
       <row><cell><c>content_save</c></cell><cell>content_id, text</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Replace the text of a content; page copies change only through copies_update.</cell></row>
       <row><cell><c>content_translate</c></cell><cell>content_id, language, text, proposed</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Write the translation of a content into one of the site&#x27;s other languages.</cell></row>
@@ -113,11 +114,11 @@ curl -s -X POST https://kpress.example/content_add \
   </rules>
 
   <limits>
-    <limit source="src/kajenn_press/site/service.py:107">One holder edits a site at a time; there is no merge of concurrent changes.</limit>
+    <limit source="src/kajenn_press/site/service.py:108">One holder edits a site at a time; there is no merge of concurrent changes.</limit>
   </limits>
 
   <facts>
-    <fact source="src/kajenn_press/site/service.py:107" method="test" verified="2026-10-29">The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 52, each a route of <c>PressApplication</c> (<c>tests/site/test_site_service.py</c>).</fact>
+    <fact source="src/kajenn_press/site/service.py:107" method="test" verified="2026-10-29">The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 53, each a route of <c>PressApplication</c> (<c>tests/site/test_site_service.py</c>).</fact>
     <fact source="src/kajenn_press/application.py:18" method="read" verified="2026-10-29">REST maps <c>unauthenticated</c>, <c>forbidden</c>, <c>not_found</c>, <c>conflict</c>, <c>unavailable</c> to 401, 403, 404, 409, 503 and other errors to 422.</fact>
     <fact source="tests/api/support.py:49" method="test" verified="2026-10-29">REST calls are <c>POST /&lt;operation&gt;</c>; MCP calls are JSON-RPC <c>tools/call</c> on <c>/mcp</c>.</fact>
     <fact source="src/kajenn_press/site/receipts.py:24" method="read" verified="2026-10-29">Idempotency receipts are kept 24 hours.</fact>

@@ -15,9 +15,9 @@ How an operator builds, translates and publishes a site in the Kajenn Press admi
 
 #### 1. Open or create a site
 
-The navigation tree has two groups. **Sites** lists every site the account can read, with who is editing it, and **+ new site**; **Library** lists the starting sites. One site is shown at a time: choosing another in the tree shows it, and a site already opened keeps its state.
+The administration is framed as Gramlot's gallery. A column of icons on the left opens and closes the navigation and signs out. The navigation has two groups: **Sites** lists every site the account can read, with who is editing it, and **+ new site**; **Library** lists the starting sites. Each page opened gets a closable tab; a site keeps its state while another tab is shown.
 
-The site tab starts with one bar: the site's name and who holds it, the three tabs, the language shown, **Help me**, **Take the site** when another person holds it, and **Save**. Every pane below it takes the full height.
+A site has three tabs, Visual editor, SEO and Published site. Each is a frame with its own toolbar on top: the Visual editor's holds the language, **Show slots**, the page shown, **Help me**, **Take the site** when another person holds it, and **Save**; SEO's holds the language and the site's checks; Published site's holds the state, the address and the publication commands. Every pane takes the full height.
 
 Opening a site takes it: one person edits a site at a time. The others see who holds it and can only look; **Take the site** takes it from the holder, whose unsaved changes are lost. The lock expires after 30 minutes without changes.
 
@@ -32,13 +32,15 @@ The Visual editor has a drawer with two trees and, in the centre, the page rende
 
 A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing **Assign**. **Show slots** outlines the slots in the preview.
 
-In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a window over the preview:
+In the preview a click on a block selects it: a blue border, a label with the slot and its content, and a round button with a pen. A click on a link follows it, as a visitor would, also inside a block. The pen, a double click on the block, or a slot chosen in the Pages tree opens the block in a floating window: a title bar that moves it, collapses it, maximizes it and closes it, asking first when changes are not saved. One block is open at a time. The window has four tabs:
 
-- the window takes the full height; its header moves it sideways and its edge widens it; one block is open at a time;
-- it opens on Jodit, ready to write; **</> HTML** shows the source beside it in CodeMirror, and the two stay in step;
-- the footer says whether there are changes not saved; **Cancel** discards them, **Save** writes them and shows the page again.
+- **Preview**: the block as in the page, with the page's style sheets and inside the elements that hold its slot; a click on an element opens the CSS tab on that element's rules;
+- **Jodit**, ready to write, with the page's style sheets too; **HTML**, the source in CodeMirror; the two stay in step;
+- **CSS**: the rules of the page's style sheets that act on the block, by style sheet, each with the number of pages using it; each rule is edited as text and the change shows at once in Preview, in Jodit and in the page.
 
-A page holds a *copy* of each content it shows. Editing a content in the block window changes the original; **Save** then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. **Update and render** brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.
+The window's footer says whether there are changes not saved; **Cancel** discards them, **Save** writes the content and the style sheets changed.
+
+A page holds a *copy* of each content it shows. Editing a content or a style sheet in the block window changes the original; **Save** then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. **Update and render** brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.
 
 #### 3. SEO
 
@@ -89,6 +91,8 @@ A site server reads its addresses from the release bucket and serves a new one w
 
 ### Current limits
 
+- A style sheet saved from the CSS tab is the browser's serialization of its rules: comments and the file's own formatting are not kept.
+- The CSS tab ignores states and pseudo-elements when it matches rules: a rule for `a:hover` is shown for the link; a rule only for `::selection` is not shown.
 - SEO checks run in the main language only. · `src/kajenn_press/site/seo.py:398`
 - Servers are registered through `server_add` (REST or MCP); the tab has no form for it.
 - While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.
@@ -96,8 +100,9 @@ A site server reads its addresses from the release bucket and serves a new one w
 ### Verified facts
 
 - `RUN` `src/kajenn_press/admin/pages/site.js:9` · 2026-10-29 — In the preview a click selects a block, a link inside a block is followed, and the pen or a double click asks to edit it.
-- `RUN` `src/kajenn_press/admin/pages/site.py:499` · 2026-10-29 — The block window opens on Jodit at full height; text typed in Jodit appears in CodeMirror and the reverse; Cancel discards; Save and Update and render show the change in the preview.
-- `READ` `src/kajenn_press/admin/pages/index.py:89` · 2026-10-29 — The administration shows one site at a time, without a strip of open-site tabs.
+- `RUN` `src/kajenn_press/admin/pages/index.py:45` · 2026-10-29 — Two pages opened from the navigation show in two closable tabs; closing one keeps the other's state.
+- `RUN` `src/kajenn_press/admin/pages/site.py:483` · 2026-10-29 — The block window shows the hero in Jodit and Preview with the page's Georgia titles; Save and Update and render show the change in the page.
+- `RUN` `src/kajenn_press/admin/pages/site.js:277` · 2026-10-29 — For the h1 picked in Preview the CSS tab shows `body, h1, …`, `h1, h2` and `h1`; a colour added to `h1` shows at once and, after Save and Update and render, in the rendered page.
 - `READ` `src/kajenn_press/admin/pages/index.py:33` · 2026-10-29 — The navigation lists Sites (with holder and `+ new site`) and Library (starting sites).
 - `READ` `src/kajenn_press/site/lock.py:15` · 2026-10-29 — The editing lock expires after 30 minutes without activity.
 - `READ` `src/kajenn_press/site/service.py:344` · 2026-10-29 — `site_save` writes the working copy as a new version of the source zip.

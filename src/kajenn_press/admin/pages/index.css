@@ -1,23 +1,11 @@
 /* Layout over the shipped Gramlot Base theme; colors follow its native navigation. */
 body { margin:0; }
-.admin-top header { height:100%; display:flex; align-items:center; gap:18px; padding:0 16px; }
-.admin-top strong { white-space:nowrap; }
-.account { margin-left:auto; display:flex; align-items:center; gap:12px; }
-.admin-toolbar { display:flex; align-items:center; gap:12px; padding:0 14px; height:100%; }
-.admin-toolbar label { margin:0; font-size:12px; white-space:nowrap; }
-.admin-toolbar select { width:170px; min-height:32px; padding:4px 8px; }
-.admin-toolbar button { min-height:32px; padding:4px 10px; white-space:nowrap; }
 .index-sidebar { --gramlot-tree-row-height:32px; --gramlot-tree-hover-background:#2b394c; }
 .admin-tree { color:inherit; width:100%; --gramlot-tree-selected-background:#315f85; --gramlot-tree-selected-color:#fff; }
 .admin-tree::part(tree) { padding:4px 0; }
 .admin-tree::part(row) { padding-inline:4px; }
 .admin-tree::part(branch-row) { font-weight:600; }
 .admin-tree::part(caption) { font-size:13px; }
-.admin-brand { display:flex; align-items:center; gap:10px; padding-right:6px; }
-.admin-brand img { width:24px; height:24px; object-fit:contain; }
-.admin-top .account button { min-height:28px; }
-.admin-status { display:flex; align-items:center; justify-content:space-between; gap:16px; height:100%; }
-.active-title { font-weight:600; color:var(--gramlot-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .scope-permissions p { display:inline; margin:0 8px 0 0; }
 .new-site-dialog { position:fixed; top:80px; width:min(420px,90vw); z-index:10; margin-inline:auto; }
 .new-site-dialog label,.new-site-dialog input { display:block; width:100%; margin-bottom:10px; }
@@ -45,16 +33,14 @@ body { margin:0; }
 .record-detail dd { margin:3px 0 0; overflow-wrap:anywhere; }
 .record-detail pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 .empty { padding:16px; }
-.admin-footer { padding:0 16px; font-size:11px; background:var(--gramlot-surface); border-top:1px solid var(--gramlot-border); color:var(--gramlot-text-secondary); }
 .login-shell { min-height:100vh; display:grid; place-items:center; background:var(--gramlot-background); }
 .login-card { width:min(380px,90vw); padding:28px; background:var(--gramlot-surface); border:1px solid var(--gramlot-border); border-radius:8px; }
 .login-card label,.login-card input { display:block; width:100%; margin-bottom:12px; }
 .login-card button { margin-top:12px; }
 .login-logo { display:block; width:160px; height:160px; margin:0 auto 12px; }
 button:focus-visible,select:focus-visible,input:focus-visible { outline:3px solid var(--gramlot-focus-ring); outline-offset:2px; }
-@media(max-width:850px) { .workspace { grid-template-columns:1fr; } .workspace-host { padding:0 12px 16px; } .toolbar { padding:12px; } .admin-toolbar strong,.admin-toolbar label { display:none; } .scope-permissions { display:none; } .admin-top header { gap:8px; padding:0 10px; } .account { gap:5px; font-size:12px; } }
+@media(max-width:850px) { .workspace { grid-template-columns:1fr; } .workspace-host { padding:0 12px 16px; } .toolbar { padding:12px; } .scope-permissions { display:none; } }
 
-@media(max-width:500px) { .admin-toolbar { gap:5px; padding:0 6px; } .admin-toolbar select { width:130px; } .account span { display:none; } }
 
 /* The orientation page uses the same Base tokens as the working pages. */
 .guide { max-width:1100px; margin:0 auto; padding:36px clamp(20px,4vw,52px) 56px; color:var(--gramlot-ink); line-height:1.65; }
@@ -149,3 +135,11 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:3px soli
 .deploy-note { border-left:3px solid var(--gramlot-warning); padding:10px 14px; background:var(--gramlot-warning-background); color:var(--gramlot-warning); font-size:13px; }
 .deploy-page label,.deploy-page input,.deploy-page select { display:block; width:100%; margin-bottom:8px; }
 @media(max-width:850px) { .deploy-cards,.deploy-compare { grid-template-columns:1fr; } .deploy-table { display:block; overflow-x:auto; } }
+
+/* Gallery shell (d-gramlot-shell): icon column, navigation header, open-site tabs. */
+.press-frame { background:var(--gramlot-background); }
+.press-rail-region { padding:8px 3px; background:var(--gramlot-surface-strong, #111823); border-right:1px solid var(--gramlot-border); }
+.press-navigation-header { display:flex; align-items:center; gap:10px; padding:10px 12px; }
+.press-navigation-header img { width:28px; height:28px; object-fit:contain; }
+.press-navigation-header strong { white-space:nowrap; }
+.press-pages { --gramlot-tab-height:30px; --gramlot-tab-background:var(--gramlot-surface-subtle); --gramlot-tab-selected-background:var(--gramlot-surface); --gramlot-tab-color:var(--gramlot-text-secondary); --gramlot-tab-selected-color:var(--gramlot-ink); }

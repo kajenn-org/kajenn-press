@@ -33,6 +33,7 @@ COMMANDS = frozenset(
         "slot_assign",
         "content_add",
         "content_save",
+        "asset_save",
         "page_add",
         "folder_add",
         "tree_move",
@@ -87,6 +88,19 @@ def translation_mark(content, language):
     """The mark of a content's translation in the language shown; none for the main one."""
     state = content["translations"].get(language)
     return TRANSLATION_MARKS.get(state["state"], "") if state else ""
+
+
+def toolbar(frame):
+    """The toolbar on top of a tab's frame: a Gramlot menu bar (d-gramlot-shell)."""
+    return frame.top.menu(presentation="bar", iconSize=18, class_="tab-toolbar")
+
+
+def language_select(parent, languages):
+    """The language shown, when the site has more than one."""
+    if len(languages) > 1:
+        menu = parent.select(value="^site.language", aria_label="Language shown")
+        for code in languages:
+            menu.option(code.upper() + (" · main" if code == languages[0] else ""), value=code)
 
 
 def pages_bag(read, language):
@@ -327,7 +341,18 @@ class Page(AdminPage):
             "editor_title": "",
             "editor_text": "",
             "editor_original": "",
-            "editor_source": False,
+            "editor_tab": "rich",
+            "css_assets_json": json.dumps(
+                {
+                    a["id"]: {"name": a["name"], "text": a["text"], "uses": a["uses"]}
+                    for a in read["assets"]
+                    if a["kind"] == "css"
+                }
+            ),
+            "css_rules_json": "",
+            "css_dirty": False,
+            "css_filter": "",
+            "block_preview": "",
             "plan_json": "",
             "assign_slot": "",
             "assign_page": "",
@@ -336,21 +361,12 @@ class Page(AdminPage):
         }.items():
             pane.dataSetter("site." + name, value)
         pane.dataFormula("site.assign_hidden", "!slot", slot="^site.assign_slot", _init=True)
-        pane.dataFormula("site.editor_hidden", "!open", open="^site.editor_open", _init=True)
         pane.dataFormula(
             "site.editor_change",
-            "text === original ? 'No changes' : 'Changed, not saved'",
+            "text === original && !css ? 'No changes' : 'Changed, not saved'",
             text="^site.editor_text",
             original="^site.editor_original",
-            _init=True,
-        )
-        pane.dataFormula(
-            "site.editor_source_hidden", "!shown", shown="^site.editor_source", _init=True
-        )
-        pane.dataFormula(
-            "site.editor_source_class",
-            "shown ? 'bw-toggle on' : 'bw-toggle'",
-            shown="^site.editor_source",
+            css="^site.css_dirty",
             _init=True,
         )
         pane.dataSetter("site.pages_tree", pages_bag(read, language))
@@ -360,49 +376,6 @@ class Page(AdminPage):
             func="renderPage", page="^site.page", slots="^site.show_slots", _onBuilt=True
         )
         layout = pane.borderContainer(height="100vh", class_="site-tab")
-        # One 40-pixel row: the site, its three tabs and its commands (proposal, The site tab).
-        pane_top = layout.contentPane(region="top", height="40px", class_="site-bar")
-        # A content pane lays its children out in its own box: the row is a div of ours.
-        top = pane_top.div(class_="site-bar-row")
-        literal_text(top, "strong", read["name"], class_="site-name")
-        pane.dataFormula(
-            "site.holder_text",
-            "editing ? 'you hold it' : (holder ? 'read only · ' + holder : 'nobody holds it')",
-            editing="^site.editing",
-            holder="^site.holder",
-            _init=True,
-        )
-        top.span("^site.holder_text", class_="site-holder")
-        nav = top.nav(class_="site-tabs", aria_label="Site tabs")
-        for page_name, title in (
-            ("visual", "Visual editor"),
-            ("seo", "SEO"),
-            ("published", "Published site"),
-        ):
-            pane.dataFormula(
-                f"site.tab_class_{page_name}",
-                f"tab === '{page_name}' ? 'site-tab-link on' : 'site-tab-link'",
-                tab="^site.tab",
-                _init=True,
-            )
-            nav.html_button(
-                title,
-                type="button",
-                class_=f"^site.tab_class_{page_name}",
-                tab=page_name,
-                connect_onclick="showTab",
-            )
-        top.span("^site.message", role="status", class_="site-message")
-        actions = top.div(class_="site-actions")
-        if len(languages) > 1:
-            menu = actions.select(value="^site.language", aria_label="Language shown")
-            for code in languages:
-                menu.option(code.upper() + (" · main" if code == languages[0] else ""), value=code)
-        actions.button("Help me", class_="button--secondary").dataController(func="toggleHelp")
-        actions.button(
-            "Take the site", class_="button--secondary", hidden="^site.editing"
-        ).dataController(func="takeSite")
-        actions.button("Save", disabled="^site.busy").dataController(func="save")
         pane.dataFormula("site.help_hidden", "!open", open="^site.help_open", _init=True)
         chat = layout.contentPane(
             region="right",
@@ -412,11 +385,26 @@ class Page(AdminPage):
             hidden="^site.help_hidden",
         )
         self.help_pane(chat, site)
-        tabs = layout.contentPane(region="center").stackContainer(
-            height="100%", selectedPage="^site.tab"
+        # Three tabs, each a frame with its own toolbar (d-gramlot-shell).
+        tabs = layout.contentPane(region="center").tabContainer(
+            height="100%", selectedPage="^site.tab", class_="site-tabs"
         )
         visual = tabs.contentPane(title="Visual editor", pageName="visual")
-        self.visual_editor(visual, read["contents"])
+        frame = visual.framePane(height="100%", class_="tab-frame")
+        bar = toolbar(frame)
+        group = bar.menuline(group=True, overflowable=False)
+        language_select(group, languages)
+        group.html_label("Show slots", for_="show-slots")
+        group.input(id="show-slots", type="checkbox", value="^site.show_slots")
+        group.span("^site.status", class_="tab-crumb")
+        group.span("^site.message", role="status", class_="tab-message")
+        bar.spacer(flex=1)
+        bar.menuline(caption="Help me", action="toggleHelp", overflowable=False)
+        bar.menuline(
+            caption="Take the site", action="takeSite", hidden="^site.editing", overflowable=False
+        )
+        bar.menuline(caption="Save", action="save", disabled="^site.busy", overflowable=False)
+        self.visual_editor(frame.center, read["contents"])
         root = [p["id"] for p in read["pages"] if p["url"] == "/"]
         pane.dataSetter("site.seo_page", (root or [first_page])[0])
         pane.dataSetter("site.seo_version", 0)
@@ -484,10 +472,6 @@ class Page(AdminPage):
         add.button("+ content", class_="button--quiet").dataController(func="addContent")
         center = layout.contentPane(region="center", class_="site-stage")
         stage = center.div(class_="stage-box")
-        bar = stage.div(class_="stage-bar")
-        bar.span("^site.status", class_="muted")
-        bar.html_label("Show slots", for_="show-slots")
-        bar.input(id="show-slots", type="checkbox", value="^site.show_slots")
         stage.iframe(
             srcdoc="^site.preview",
             sandbox="allow-scripts",
@@ -497,41 +481,71 @@ class Page(AdminPage):
         self.block_window(pane, center)
 
     def block_window(self, pane, center):
-        """The block in a floating window over the preview (d-block-editing): full height,
-        moved sideways by its header, Jodit first and the HTML source beside it on demand."""
-        window = center.div(class_="block-window", hidden="^site.editor_hidden")
-        head = window.div(class_="bw-head", connect_onmousedown="dragWindow")
-        head.strong("^site.editor_title")
-        head.html_button(
-            "</> HTML",
-            type="button",
-            class_="^site.editor_source_class",
-            connect_onclick="toggleSource",
+        """The block in Gramlot's floating window (d-block-editing, d-gramlot-shell): a title
+        bar, and a frame with the tabs Preview, Jodit, HTML and CSS and a footer bar."""
+        window = pane.floatingPane(
+            title="^site.editor_title",
+            open="^site.editor_open",
+            beforeClose="blockBeforeClose",
+            movable=True,
+            resizable=True,
+            collapsible=True,
+            maximizable=True,
+            width="760px",
+            height="86vh",
+            top="48px",
+            left="calc(100vw - 800px)",
+            minWidth="460px",
+            minHeight="320px",
         )
-        head.html_button(
-            "✕", type="button", title="Close", class_="bw-close", connect_onclick="closeEditor"
-        )
+        frame = window.frame
         pane.dataFormula("site.editor_main_hidden", "!main", main="^site.editor_main", _init=True)
-        original = window.div(class_="editor-main", hidden="^site.editor_main_hidden")
+        original = frame.top.div(class_="editor-main", hidden="^site.editor_main_hidden")
         original.span("Main language", class_="muted")
         original.htmlPreview(value="^site.editor_main", height="96px")
-        body = window.div(class_="bw-body")
-        body.div(class_="bw-rich").htmlEditor(value="^site.editor_text", height="100%")
-        body.div(class_="bw-source", hidden="^site.editor_source_hidden").codeMirror(
-            value="^site.editor_text", language="html", height="100%"
+        tabs = frame.center.tabContainer(height="100%", selectedPage="^site.editor_tab")
+        # Preview: the block inside the chain of elements that holds its slot, with the
+        # page's style sheets; built in Logic (blockPreviewHtml).
+        tabs.contentPane(title="Preview", pageName="preview", overflow="hidden").iframe(
+            srcdoc="^site.block_preview",
+            sandbox="allow-scripts",
+            title="Block preview",
+            class_="block-preview",
         )
-        window.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
-        foot = window.div(class_="bw-foot")
-        foot.span("^site.editor_change", class_="muted")
-        foot.span("^site.editor_note", class_="muted")
+        tabs.contentPane(
+            title="Jodit", pageName="rich", overflow="hidden", class_="block-editor-pane"
+        ).htmlEditor(value="^site.editor_text", height="100%", class_="block-rich")
+        tabs.contentPane(
+            title="HTML", pageName="html", overflow="hidden", class_="block-editor-pane"
+        ).codeMirror(value="^site.editor_text", language="html", height="100%")
+        css = tabs.contentPane(title="CSS", pageName="css", class_="block-css", overflow="auto")
+        head = css.div(class_="css-head")
+        head.span("^site.css_filter", class_="muted")
+        head.html_button(
+            "Show all", type="button", class_="bw-toggle", connect_onclick="cssShowAll"
+        )
+        css.div(class_="css-rules").remote("css_rules_view", rules="^site.css_rules_json")
+        frame.bottom.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
+        bar = frame.bottom.menu(presentation="bar", class_="tab-toolbar block-footer")
+        group = bar.menuline(group=True, overflowable=False)
+        group.span("^site.editor_change", class_="tab-crumb")
+        group.span("^site.editor_note", class_="tab-crumb")
+        bar.spacer(flex=1)
         pane.dataFormula(
             "site.confirm_hidden", "state !== 'to_review'", state="^site.editor_state", _init=True
         )
-        foot.button(
-            "Confirm translation", class_="button--secondary", hidden="^site.confirm_hidden"
-        ).dataController(func="confirmTranslation")
-        foot.button("Cancel", class_="button--secondary").dataController(func="closeEditor")
-        foot.button("Save", disabled="^site.busy").dataController(func="saveContent")
+        bar.menuline(
+            caption="Confirm translation",
+            action="confirmTranslation",
+            hidden="^site.confirm_hidden",
+            overflowable=False,
+        )
+        bar.menuline(caption="Cancel", action="closeEditor", overflowable=False)
+        bar.menuline(
+            caption="Save", action="saveContent", disabled="^site.busy", overflowable=False
+        )
+        pane.dataController(func="styleBlockEditor", tab="^site.editor_tab")
+        pane.dataController(func="cssEdited", edits="^site.css_edit")
 
     @source(auth="editor")
     async def seo_panel(self, pane, site="", page_id="", version=0, language=""):
@@ -543,8 +557,13 @@ class Page(AdminPage):
             return
         item = localized(pages[page_id], read["languages"], language)
         images = {a["id"]: a["name"] for a in read["assets"] if a["mime_type"].startswith("image/")}
-        layout = pane.borderContainer(height="100%", class_="seo-tab")
-        self.seo_summary(layout.contentPane(region="top").div(class_="seo-checks"), problems)
+        frame = pane.framePane(height="100%", class_="tab-frame seo-tab")
+        bar = toolbar(frame)
+        group = bar.menuline(group=True, overflowable=False)
+        language_select(group, read["languages"])
+        self.seo_summary(group, problems)
+        bar.spacer(flex=1)
+        layout = frame.center.borderContainer(height="100%")
         listing = layout.contentPane(region="left", width="240px", splitter=True, class_="seo-list")
         pane.dataSetter("site.seo_pages", seo_pages_bag(read["pages"], problems))
         listing.tree(
@@ -853,29 +872,29 @@ class Page(AdminPage):
             pane.dataFormula(
                 f"site.pub_hide_{name}", f"p !== '{name}'", p="^site.pub_panel", _init=True
             )
-        layout = pane.borderContainer(height="100%", class_="pub-tab")
-        bar = layout.contentPane(region="top").div(class_="pub-bar")
+        frame = pane.framePane(height="100%", class_="tab-frame pub-tab")
+        bar = toolbar(frame)
+        group = bar.menuline(group=True, overflowable=False)
         label, kind = publication_label(state)
-        bar.span(label, class_="pub-chip pub-" + kind)
+        group.span(label, class_="pub-chip pub-" + kind)
         if state["address"]:
             literal_text(
-                bar, "a", state["address"] + "/", href=state["address"] + "/", target="_blank"
+                group, "a", state["address"] + "/", href=state["address"] + "/", target="_blank"
             )
         else:
-            bar.span("No address yet", class_="muted")
-        bar.span(publication_summary(state), class_="muted")
-        actions = bar.div(class_="pub-actions")
-        actions.button("Publish…").dataController(func="showPublish")
-        actions.button("Rollback…", class_="button--secondary").dataController(func="showRollback")
-        actions.button(
-            "Maintenance off" if state["maintenance"] else "Maintenance on",
-            class_="button--secondary",
-        ).dataController(func="toggleMaintenance")
-        actions.button("Private link", class_="button--secondary").dataController(
-            func="showPrivate"
-        )
-        actions.button("Go live…", class_="button--secondary").dataController(func="showGoLive")
-        bar.span("^site.pub_message", role="status", class_="pub-message")
+            group.span("No address yet", class_="tab-crumb")
+        group.span(publication_summary(state), class_="tab-crumb")
+        group.span("^site.pub_message", role="status", class_="tab-message")
+        bar.spacer(flex=1)
+        for caption, action in (
+            ("Publish…", "showPublish"),
+            ("Rollback…", "showRollback"),
+            ("Maintenance off" if state["maintenance"] else "Maintenance on", "toggleMaintenance"),
+            ("Private link", "showPrivate"),
+            ("Go live…", "showGoLive"),
+        ):
+            bar.menuline(caption=caption, action=action, overflowable=False)
+        layout = frame.center.borderContainer(height="100%")
         if state["next_address"] or state["address_problem"]:
             note = layout.contentPane(region="bottom").div(class_="pub-note")
             literal_text(note, "span", address_note(state))
@@ -1049,6 +1068,24 @@ class Page(AdminPage):
             panel.button("Make private", class_="button--secondary").dataController(
                 func="makePrivate"
             )
+
+    @source(auth="editor")
+    async def css_rules_view(self, pane, rules=""):
+        """The style rules acting on the block, by style sheet, each edited as text (d-css-rules)."""
+        if not rules:
+            return
+        sheet = None
+        for item in json.loads(rules):
+            if item["asset_name"] != sheet:
+                sheet = item["asset_name"]
+                literal_text(pane, "h4", sheet + ".css", class_="css-sheet")
+            box = pane.div(class_="css-rule" + (" css-dim" if item["dim"] else ""))
+            head = box.div(class_="css-rule-head")
+            literal_text(head, "code", item["selector"] + " { }")
+            literal_text(head, "small", f"used by {item['uses']} pages")
+            path = f"site.css_edit.{item['key']}"
+            pane.dataSetter(path, item["style"])
+            box.textarea(value="^" + path, class_="css-text", spellcheck="false")
 
     @source(auth="editor")
     async def plan_view(self, pane, plan=""):

@@ -210,6 +210,71 @@ def test_assets_and_the_audit_log(service):
     assert {n.attr["identity"] for n in site.audit.nodes} == {"anna"}
 
 
+def test_asset_save_changes_the_original_and_copies_follow_through_update(service):
+    """A style sheet is rewritten once; the pages holding it come in the Update plan (GS-D2)."""
+    site_id, _template, pages, _footer = build_site(service)
+
+    def css(text):
+        return base64.b64encode(text.encode()).decode()
+
+    asset = run(
+        service,
+        "anna",
+        "asset_add",
+        site_id=site_id,
+        key="gs-css",
+        name="site",
+        kind="css",
+        data_base64=css("h1{color:red}"),
+        mime_type="text/css",
+    )["asset_id"]
+    for index, page in enumerate(pages):
+        run(
+            service,
+            "anna",
+            "page_asset_add",
+            site_id=site_id,
+            key=f"gs-page-{index}",
+            page_id=page,
+            asset_id=asset,
+        )
+
+    run(
+        service,
+        "anna",
+        "asset_save",
+        site_id=site_id,
+        key="gs-save",
+        asset_id=asset,
+        data_base64=css("h1{color:blue}"),
+    )
+
+    plan = run(service, "anna", "copies_update_plan", site_id=site_id, original_id=asset)
+    assert sorted(item["page_id"] for item in plan) == sorted(pages)
+    assert all(item["selected"] for item in plan)
+    run(
+        service,
+        "anna",
+        "copies_update",
+        site_id=site_id,
+        key="gs-update",
+        original_id=asset,
+        selected=[[item["page_id"], item["path"]] for item in plan],
+    )
+    read = run(service, "anna", "copies_update_plan", site_id=site_id, original_id=asset)
+    assert not any(item["selected"] for item in read)
+    with pytest.raises(DomainError, match="No asset"):
+        run(
+            service,
+            "anna",
+            "asset_save",
+            site_id=site_id,
+            key="gs-missing",
+            asset_id="nothing",
+            data_base64=css(""),
+        )
+
+
 def test_invalid_input_is_a_domain_error(service):
     site_id, *_ = build_site(service)
     with pytest.raises(DomainError, match="either source or python_source"):

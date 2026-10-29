@@ -1,12 +1,14 @@
 """Public Gramlot adapter, trusted request context and management-origin boundary."""
 
 import asyncio
-import json
 from contextvars import ContextVar
-from importlib.resources import files
 from pathlib import Path
 
 from genro_routes import route
+from gramlot.collections.editors import mygramlot as editors
+from gramlot.collections.inputs import mygramlot as inputs
+from gramlot.collections.layout import mygramlot as layout
+from gramlot.collections.tree import mygramlot as tree
 from gramlot_py_server.kajenn import Application
 from kajenn.config.templates import ShortcutConfiguration
 from kajenn.response import Response
@@ -56,26 +58,9 @@ class AdminConfiguration(ShortcutConfiguration):
 
 class AdminApplication(Application):
     def __init__(self, **kwargs):
-        core = files("gramlot")
-        collections, assets = [], {}
-        for name in ("layout", "tree", "inputs", "editors"):
-            collections.append(
-                {
-                    "grammar": json.loads(core.joinpath(f"collections/{name}.json").read_text()),
-                    "module": f"/assets/{name}.js",
-                }
-            )
-        resources = core.joinpath("resources/components")
-        # Serve only the shipped collection files, including lazy engine chunks.
-        for resource in resources.rglob("*"):
-            if resource.is_file() and resource.suffix in {".js", ".css", ".woff2"}:
-                relative = resource.relative_to(resources).as_posix()
-                assets[f"/assets/{relative}"] = {
-                    "file": resource,
-                    "type": {".js": "text/javascript", ".css": "text/css", ".woff2": "font/woff2"}[
-                        resource.suffix
-                    ],
-                }
+        # Gramlot's prepared collections; the adapter serves them under /gramlot/collections.
+        collections = (layout, tree, inputs, editors)
+        assets = {}
         assets[LOGO_URL] = {
             "file": Path(__file__).parent / "branding" / "kajenn-press-256.png",
             "type": "image/png",

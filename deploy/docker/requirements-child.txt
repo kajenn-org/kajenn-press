@@ -514,6 +514,7 @@ genro-bag==0.28.0 \
     --hash=sha256:4be78bc5eaa84b18328d3474c9bc129bfb9198c84c411af51082d4cba06b04d1 \
     --hash=sha256:a4be93c9867028d308f3c9d24f4f89b4f2acf41e64b57ef4adf413dfac384a3d
     # via
+    #   kajenn-press (pyproject.toml)
     #   genro-builders
     #   genro-storage
     #   kajenn
@@ -578,9 +579,9 @@ jmespath==1.1.0 \
     # via
     #   aiobotocore
     #   botocore
-kajenn==0.5.0 \
-    --hash=sha256:0bcf39ffece2445dee2ab8318ded4709babd81891fe866f04c6fe74216dc4544 \
-    --hash=sha256:937cf31db4644369792a6396bb148f404b9ee2d81d9bc7772e883b3b52f3f58b
+kajenn==0.7.0 \
+    --hash=sha256:4edd76a8f80ea65bfa9048f9ab1310c9b777716b94d460d4c4ccad8d70683f86 \
+    --hash=sha256:a28d5184e1365ecc49278b8f0710e5444ecad6393c4080f199136743e5b4a74a
     # via kajenn-press (pyproject.toml)
 kajenn-kbus==0.1.2 \
     --hash=sha256:435c42b22b6027ae471e04243d0fea3889aad4b213a9601e113a9375772431bd \

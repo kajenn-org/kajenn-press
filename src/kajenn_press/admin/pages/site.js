@@ -34,6 +34,16 @@ const PREVIEW_SCRIPT = `
     place();
   }
   window.addEventListener('resize', place);
+  // The chain of elements holding each slot, for the block window's own preview and Jodit.
+  var chains = {};
+  document.querySelectorAll('[kpress_slot]').forEach(function (slot) {
+    var chain = [];
+    for (var el = slot; el && el.nodeType === 1; el = el.parentElement) {
+      chain.unshift({tag: el.tagName.toLowerCase(), id: el.id || '', cls: el.getAttribute('class') || ''});
+    }
+    chains[slot.getAttribute('kpress_slot')] = chain;
+  });
+  parent.postMessage({kind: 'chains', chains: chains}, '*');
   document.addEventListener('click', function (event) {
     if (event.target.closest('[kpress_chrome]')) return;
     var link = event.target.closest('a[href]');
@@ -47,6 +57,19 @@ const PREVIEW_SCRIPT = `
     if (slot && !event.target.closest('a[href]')) { event.preventDefault(); select(slot); report('edit', slot); }
   });
 })();`;
+
+// The block window's Preview: a click picks an element and reports its path from the block's root.
+const PICK_SCRIPT = `
+document.addEventListener('click', function (event) {
+  var root = document.querySelector('[data-kpress-block]'), el = event.target;
+  if (!root || !root.contains(el) || el === root) return;
+  event.preventDefault();
+  document.querySelectorAll('[data-kpress-picked]').forEach(function (old) { old.removeAttribute('data-kpress-picked'); });
+  el.setAttribute('data-kpress-picked', '');
+  var path = [];
+  for (var at = el; at !== root; at = at.parentElement) path.unshift([].indexOf.call(at.parentElement.children, at));
+  parent.postMessage({kind: 'pick', path: path, tag: el.tagName.toLowerCase()}, '*');
+});`;
 
 function previewHtml(html, slots, nonce, labels) {
     // Labels go into a script: `<` is escaped so no text can close it.
@@ -64,11 +87,17 @@ export class Logic {
         return reply.result;
     }
     siteId(node) { return node.GET('site.id'); }
-    showTab(node, _event) { node.SET('site.tab', node.getAttr('tab')); }
     refresh(node) { node.SET('site.version', node.GET('site.version') + 1); }
     initialize(node, _args) {
         const listener = event => {
             if (!event.data || typeof event.data !== 'object') return;
+            if (event.data.kind === 'chains') { this.chains = event.data.chains; return; }
+            if (event.data.kind === 'pick') {
+                this.picked = {path: event.data.path, tag: event.data.tag};
+                this.cssRefresh(node);
+                node.SET('site.editor_tab', 'css');
+                return;
+            }
             if (event.data.kind === 'select' || event.data.kind === 'edit') {
                 const page = node.GET('site.page');
                 const path = this.slotPath(node.GET('site.pages_tree'), page, event.data.slot);
@@ -197,25 +226,192 @@ export class Logic {
         node.SET('site.editor_main', main ? '' : read[content].text);
         node.SET('site.editor_text', main ? read[content].text : (translation.text ?? ''));
         node.SET('site.editor_original', node.GET('site.editor_text'));
+        node.SET('site.block_preview', this.blockPreviewHtml(node, slot, node.GET('site.editor_text')));
+        this.cssOpen(node);
+        node.SET('site.editor_tab', 'rich');
+        this.styleBlockEditor(node, {});
         node.SET('site.editor_state', main ? '' : translation.state);
         node.SET('site.editor_note', main || translation.state === 'done' ? '' : translation.state.replace('_', ' '));
         node.SET('site.plan_json', '');
         node.SET('site.editor_open', true);
     }
     closeEditor(node, _args) { node.SET('site.editor_open', false); }
-    toggleSource(node, _event) { node.SET('site.editor_source', !node.GET('site.editor_source')); }
-    dragWindow(_node, event) {
-        // Full height always: the window moves sideways only, inside the stage.
-        if (event.target.closest('button')) return;
-        const win = event.currentTarget.closest('.block-window'), stage = win.parentElement;
-        const start = event.clientX - win.offsetLeft;
-        const move = m => {
-            const left = Math.max(0, Math.min(m.clientX - start, stage.clientWidth - win.offsetWidth));
-            win.style.right = 'auto';
-            win.style.left = left + 'px';
+    cssOpen(node) {
+        // The site's style sheets parsed once per opening; edits go to drafts (d-css-rules).
+        const assets = JSON.parse(node.GET('site.css_assets_json') || '{}');
+        this.cssAssets = {};
+        for (const [id, asset] of Object.entries(assets)) {
+            const sheet = new CSSStyleSheet();
+            try { sheet.replaceSync(asset.text); } catch { continue; }
+            this.cssAssets[id] = {...asset, sheet, dirty: false};
+        }
+        this.cssPreview = node.GET('site.preview');
+        this.picked = null;
+        this.cssIndex = {};
+        node.SET('site.css_dirty', false);
+        this.cssRefresh(node);
+    }
+    cssDraftText(node, text) {
+        // The draft of the asset whose original is this text, if the operator changed it.
+        for (const asset of Object.values(this.cssAssets || {})) {
+            if (asset.dirty && asset.text === text) return [...asset.sheet.cssRules].map(rule => rule.cssText).join('\n');
+        }
+        return null;
+    }
+    cssStyleRules(rules, path = []) {
+        // Style rules inside layers, media and supports blocks, with their index path.
+        const found = [];
+        [...rules].forEach((rule, index) => {
+            if (rule instanceof CSSStyleRule) found.push({rule, path: [...path, index]});
+            else if (rule.cssRules) found.push(...this.cssStyleRules(rule.cssRules, [...path, index]));
+        });
+        return found;
+    }
+    cssMatches(element, selector) {
+        // States and pseudo-elements are ignored: a rule for a:hover acts on the a.
+        const plain = selector.replace(/::?(before|after|marker|placeholder|selection|first-line|first-letter|hover|focus-visible|focus-within|focus|active|visited|target)\b/g, '');
+        // A rule of states or pseudo-elements only (::selection, :focus-visible) acts on no element shown.
+        if (!plain.trim()) return false;
+        try { return element.matches(plain); } catch { return false; }
+    }
+    cssRefresh(node) {
+        const doc = new DOMParser().parseFromString(this.blockPreviewHtml(node, node.GET('site.assign_slot'), node.GET('site.editor_text')), 'text/html');
+        const root = doc.querySelector('[data-kpress-block]');
+        if (!root) { node.SET('site.css_rules_json', ''); return; }
+        let picked = null;
+        if (this.picked) {
+            picked = root;
+            for (const index of this.picked.path) picked = picked && picked.children[index];
+        }
+        const elements = [root, ...root.querySelectorAll('*')], items = [];
+        this.cssIndex = {};
+        for (const [id, asset] of Object.entries(this.cssAssets || {})) {
+            for (const {rule, path} of this.cssStyleRules(asset.sheet.cssRules)) {
+                if (!elements.some(el => this.cssMatches(el, rule.selectorText))) continue;
+                const key = 'r' + id + '_' + path.join('_');
+                this.cssIndex[key] = {asset: id, path, style: rule.style.cssText.replace(/; /g, ';\n')};
+                items.push({key, asset_name: asset.name, uses: asset.uses, selector: rule.selectorText,
+                    style: this.cssIndex[key].style, dim: !!picked && !this.cssMatches(picked, rule.selectorText)});
+            }
+        }
+        node.SET('site.css_filter', picked ? `Rules of the <${this.picked.tag}> picked in Preview` : 'Rules acting on this block · click an element in Preview to narrow them');
+        node.SET('site.css_rules_json', JSON.stringify(items));
+    }
+    cssShowAll(node, _event) { this.picked = null; this.cssRefresh(node); }
+    cssEdited(node, _args) {
+        // A rule's text changed: its style sheet's draft changes and the block and the page show it.
+        let changed = false;
+        for (const [key, entry] of Object.entries(this.cssIndex || {})) {
+            const value = node.GET('site.css_edit.' + key);
+            if (value == null || value === entry.style) continue;
+            const asset = this.cssAssets[entry.asset];
+            let rule = {cssRules: asset.sheet.cssRules};
+            for (const index of entry.path) rule = rule.cssRules[index];
+            rule.style.cssText = value;
+            entry.style = value;
+            asset.dirty = changed = true;
+        }
+        if (!changed) return;
+        node.SET('site.css_dirty', true);
+        node.SET('site.block_preview', this.blockPreviewHtml(node, node.GET('site.assign_slot'), node.GET('site.editor_text')));
+        this.styleBlockEditor(node, {});
+        node.SET('site.preview', this.cssPagePreview());
+    }
+    cssPagePreview() {
+        // The page preview with each changed style sheet's data: URL replaced by its draft.
+        let html = this.cssPreview;
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        for (const link of doc.querySelectorAll('link[rel="stylesheet"]')) {
+            const href = link.getAttribute('href') || '', comma = href.indexOf(',');
+            if (!href.startsWith('data:') || !href.slice(0, comma).endsWith(';base64')) continue;
+            const text = new TextDecoder().decode(Uint8Array.from(atob(href.slice(comma + 1)), c => c.charCodeAt(0)));
+            const draft = this.cssDraftText(null, text);
+            if (draft == null) continue;
+            const encoded = btoa(String.fromCharCode(...new TextEncoder().encode(draft)));
+            html = html.split(href).join('data:text/css;base64,' + encoded);
+        }
+        return html;
+    }
+    blockBeforeClose(node) {
+        // The title bar's close button: changes not saved are lost only on confirmation.
+        if (node.GET('site.editor_text') === node.GET('site.editor_original') && !node.GET('site.css_dirty')) return true;
+        return window.confirm('Close the block and lose the changes not saved?');
+    }
+    pageStyleTexts(node) {
+        // The text of the page's style sheets: the admin renders them as data: URLs (render.py).
+        const doc = new DOMParser().parseFromString(node.GET('site.preview') || '', 'text/html');
+        const texts = [];
+        for (const el of doc.querySelectorAll('link[rel="stylesheet"], style')) {
+            if (el.tagName === 'STYLE') {
+                if (!el.textContent.includes('kpress_slot') && !el.textContent.includes('kpress_chrome')) texts.push(el.textContent);
+                continue;
+            }
+            const href = el.getAttribute('href') || '', comma = href.indexOf(',');
+            if (!href.startsWith('data:') || comma < 0) continue;
+            const data = href.slice(comma + 1);
+            const bytes = href.slice(0, comma).endsWith(';base64')
+                ? Uint8Array.from(atob(data), c => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(data));
+            texts.push(new TextDecoder().decode(bytes));
+        }
+        return texts.map(text => this.cssDraftText(node, text) ?? text);
+    }
+    pageStyles(node) {
+        // `<` cannot close a style element's text, but `</style` could: it is escaped.
+        return this.pageStyleTexts(node).map(text => `<style>${text.replace(/<\/style/gi, '<\\/style')}</style>`).join('');
+    }
+    blockPreviewHtml(node, slot, text) {
+        // The block inside the chain of elements that holds its slot in the page.
+        const chain = (this.chains || {})[slot] || [];
+        const quote = value => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        const attrs = item => (item.id ? ` id="${quote(item.id)}"` : '') + (item.cls ? ` class="${quote(item.cls)}"` : '');
+        const html = chain.find(item => item.tag === 'html'), body = chain.find(item => item.tag === 'body');
+        const inner = chain.filter(item => item.tag !== 'html' && item.tag !== 'body');
+        // The innermost element is the slot's: it is the block's root for the CSS tab.
+        const open = inner.map((item, index) => `<${item.tag}${attrs(item)}${index === inner.length - 1 ? ' data-kpress-block' : ''}>`).join('');
+        const close = inner.slice().reverse().map(item => `</${item.tag}>`).join('');
+        const nonce = document.querySelector('script[nonce]')?.nonce ?? '';
+        return `<!doctype html><html${html ? attrs(html) : ''}><head><meta charset="utf-8">${this.pageStyles(node)}`
+            + `<style>[data-kpress-picked]{outline:2px solid #e0952a!important;outline-offset:2px}</style></head>`
+            + `<body${body ? attrs(body) : ''}>${inner.length ? open : '<div data-kpress-block>'}${text}${inner.length ? close : '</div>'}`
+            + `<script nonce="${nonce}">${PICK_SCRIPT}<\/script></body></html>`;
+    }
+    styleBlockEditor(node, _args) {
+        // Jodit edits inside a same-origin iframe: it gets the page's style sheets and, on its
+        // root elements, the classes of the chain that holds the slot.
+        const slot = node.GET('site.assign_slot'), chain = (this.chains || {})[slot] || [];
+        if (node.GET('site.editor_tab') === 'preview') {
+            // The Preview tab shows the text as it is now, saved or not.
+            node.SET('site.block_preview', this.blockPreviewHtml(node, slot, node.GET('site.editor_text')));
+        }
+        const styles = this.pageStyleTexts(node);
+        let tries = 0;
+        const apply = () => {
+            const editor = document.querySelector('.block-rich');
+            const frame = editor && editor.shadowRoot && editor.shadowRoot.querySelector('iframe');
+            const doc = frame && frame.contentDocument;
+            if (!doc || !doc.body) { if (tries++ < 20) setTimeout(apply, 100); return; }
+            doc.querySelectorAll('[data-kpress-page-css]').forEach(el => el.remove());
+            // The editor's own unlayered styles would beat a site's layered ones: they move into
+            // a layer declared first, so the page's rules win as they do in the page.
+            if (!doc.querySelector('[data-kpress-layer]')) {
+                doc.querySelectorAll('style').forEach(el => { el.textContent = `@layer kpress-editor{${el.textContent}}`; });
+                const order = doc.createElement('style');
+                order.setAttribute('data-kpress-layer', '');
+                order.textContent = '@layer kpress-editor;';
+                doc.head.prepend(order);
+            }
+            for (const text of styles) {
+                const el = doc.createElement('style');
+                el.setAttribute('data-kpress-page-css', '');
+                el.textContent = text;
+                doc.head.appendChild(el);
+            }
+            const classes = chain.filter(item => item.tag !== 'html' && item.tag !== 'body')
+                .flatMap(item => item.cls.split(/\s+/)).filter(Boolean);
+            doc.documentElement.classList.add(...(chain.find(item => item.tag === 'html')?.cls.split(/\s+/).filter(Boolean) ?? []));
+            doc.body.classList.add(...classes);
         };
-        document.addEventListener('mousemove', move);
-        document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once: true});
+        apply();
     }
     async confirmTranslation(node, _args) {
         try {
@@ -231,7 +427,21 @@ export class Logic {
         node.SET('site.busy', true);
         try {
             const language = node.GET('site.language');
-            if (language === node.GET('site.main_language')) {
+            const originals = [];
+            const textChanged = node.GET('site.editor_text') !== node.GET('site.editor_original');
+            for (const [id, asset] of Object.entries(this.cssAssets || {})) {
+                if (!asset.dirty) continue;
+                const text = [...asset.sheet.cssRules].map(rule => rule.cssText).join('\n');
+                await this.callCommand('asset_save', {site_id: site, key: crypto.randomUUID(), asset_id: id,
+                    data_base64: btoa(String.fromCharCode(...new TextEncoder().encode(text)))});
+                asset.text = text;
+                asset.dirty = false;
+                originals.push(id);
+            }
+            node.SET('site.css_dirty', false);
+            if (!textChanged && originals.length) {
+                // Only style sheets changed: their copies come in the Update plan.
+            } else if (language === node.GET('site.main_language')) {
                 await this.callCommand('content_save', {site_id: site, key: crypto.randomUUID(), content_id: content,
                     text: node.GET('site.editor_text')});
             } else {
@@ -240,10 +450,17 @@ export class Logic {
                 node.SET('site.editor_state', 'done');
                 node.SET('site.editor_note', '');
             }
-            const plan = await this.callCommand('copies_update_plan', {site_id: site, original_id: content});
-            const pages = JSON.parse(node.GET('site.pages_json'));
-            node.SET('site.plan_json', JSON.stringify(plan.map(item => ({...item, page_name: pages[item.page_id].name}))));
+            if (textChanged || !originals.length) originals.unshift(content);
+            const pages = JSON.parse(node.GET('site.pages_json')), plan = [];
+            for (const original of originals) {
+                const items = await this.callCommand('copies_update_plan', {site_id: site, original_id: original});
+                const sheet = this.cssAssets?.[original];
+                plan.push(...items.map(item => ({...item, original_id: original,
+                    page_name: (sheet ? sheet.name + '.css · ' : '') + pages[item.page_id].name})));
+            }
+            node.SET('site.plan_json', JSON.stringify(plan));
             node.SET('site.editor_original', node.GET('site.editor_text'));
+            node.SET('site.block_preview', this.blockPreviewHtml(node, node.GET('site.assign_slot'), node.GET('site.editor_text')));
             // Without copies to update, the window closes and the preview shows the change.
             if (!plan.length) { node.SET('site.editor_open', false); this.refresh(node); }
         } catch (error) { node.SET('site.message', error.message); }
@@ -251,10 +468,14 @@ export class Logic {
     }
     async applyUpdate(node, _args) {
         const plan = JSON.parse(node.GET('site.plan_json') || '[]');
-        const selected = plan.filter((_item, index) => node.GET('site.plan.i' + index)).map(item => [item.page_id, item.path]);
         try {
-            await this.callCommand('copies_update', {site_id: this.siteId(node), key: crypto.randomUUID(),
-                original_id: node.GET('site.editor_content'), selected});
+            // One copies_update per original: the content and each style sheet saved.
+            for (const original of [...new Set(plan.map(item => item.original_id))]) {
+                const selected = plan.filter((item, index) => item.original_id === original && node.GET('site.plan.i' + index))
+                    .map(item => [item.page_id, item.path]);
+                await this.callCommand('copies_update', {site_id: this.siteId(node), key: crypto.randomUUID(),
+                    original_id: original, selected});
+            }
             node.SET('site.plan_json', '');
             node.SET('site.editor_open', false);
             this.refresh(node);

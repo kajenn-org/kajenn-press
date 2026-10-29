@@ -255,6 +255,20 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def asset_save(
+        self, site_id: str, key: str, asset_id: str, data_base64: str, _request=None
+    ) -> dict:
+        """Replace the bytes of a site asset; page copies change only through copies_update."""
+        return self._site(
+            _request,
+            "asset_save",
+            site_id=site_id,
+            key=key,
+            asset_id=asset_id,
+            data_base64=data_base64,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def asset_add(
         self,
         site_id: str,

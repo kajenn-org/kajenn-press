@@ -104,8 +104,10 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
             shell_page = await login(http)
             shell = (await rpc(http, shell_page, "main", "source"))["value"]
             assert "Sites" in shell and "Library" in shell and "Demo site" in shell
-            # One site at a time and no status bar (BE-D1).
-            assert "stackContainer" in shell and "admin-footer" not in shell
+            # The gallery shell (d-gramlot-shell): icon column, open-site tabs, no status bar.
+            for text in ("framePane", "pressToggleNavigation", "pressSignOut", "press-pages"):
+                assert text in shell, text
+            assert "admin-footer" not in shell
 
             tab = await open_page(http, "/admin/site?site=" + site)
             view = (await rpc(http, tab, "site_workspace", "source", site=site))["value"]
@@ -116,19 +118,23 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 "Pages",
                 "Contents",
                 "Show slots",
-                # The block window (d-block-editing): Jodit, the HTML source, Cancel and Save.
-                "block-window",
+                # The block in Gramlot's floating window: Preview, Jodit, HTML, CSS, Cancel, Save.
+                "floatingPane",
+                "block-preview",
                 "htmlEditor",
                 "codeMirror",
-                "toggleSource",
+                "blockBeforeClose",
                 "Cancel",
+                # The CSS tab (d-css-rules).
+                "css_rules_view",
+                "cssShowAll",
             ):
                 assert text in view, text
-            assert "block-editor" not in view
+            assert "block-window" not in view
             assert "hero ← Welcome" in view and "body · empty" in view
-            # The site and its tabs in one row; the tabs switch a stack, not a tab strip.
-            assert "site-bar-row" in view and view.count("site-tab-link") >= 3
-            assert "stackContainer" in view
+            # Each tab is a frame with its own toolbar, a Gramlot menu bar (d-gramlot-shell).
+            assert "tabContainer" in view and "framePane" in view and "tab-toolbar" in view
+            assert "site-bar-row" not in view
             assert 'sandbox="allow-scripts"' in view or "allow-scripts" in view
 
             reply = await rpc(

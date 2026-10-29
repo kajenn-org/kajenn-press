@@ -5,7 +5,7 @@
 
 ### Purpose
 
-How a program or an agent works on Kajenn Press sites through the 52 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.
+How a program or an agent works on Kajenn Press sites through the 53 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.
 
 ### Requirements
 
@@ -57,6 +57,7 @@ Every operation except `site_list`, `starters_list`, `site_new` and `site_import
 | Operation | Arguments | Permission | Lock | Key | What it does |
 |---|---|---|---|---|---|
 | `asset_add` | name, kind, data\_base64, mime\_type | write | yes | yes | Add a CSS, JavaScript or media asset. |
+| `asset_save` | asset\_id, data\_base64 | write | yes | yes | Replace the bytes of a site asset; page copies change only through `copies_update`. |
 | `content_add` | name, format, text | write | yes | yes | Add an HTML or Markdown content. |
 | `content_save` | content\_id, text | write | yes | yes | Replace the text of a content; page copies change only through copies\_update. |
 | `content_translate` | content\_id, language, text, proposed | write | yes | yes | Write the translation of a content into one of the site's other languages. |
@@ -129,11 +130,11 @@ Every operation except `site_list`, `starters_list`, `site_new` and `site_import
 
 ### Current limits
 
-- One holder edits a site at a time; there is no merge of concurrent changes. · `src/kajenn_press/site/service.py:107`
+- One holder edits a site at a time; there is no merge of concurrent changes. · `src/kajenn_press/site/service.py:108`
 
 ### Verified facts
 
-- `TEST` `src/kajenn_press/site/service.py:107` · 2026-10-29 — The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 52, each a route of `PressApplication` (`tests/site/test_site_service.py`).
+- `TEST` `src/kajenn_press/site/service.py:107` · 2026-10-29 — The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 53, each a route of `PressApplication` (`tests/site/test_site_service.py`).
 - `READ` `src/kajenn_press/application.py:18` · 2026-10-29 — REST maps `unauthenticated`, `forbidden`, `not_found`, `conflict`, `unavailable` to 401, 403, 404, 409, 503 and other errors to 422.
 - `TEST` `tests/api/support.py:49` · 2026-10-29 — REST calls are `POST /<operation>`; MCP calls are JSON-RPC `tools/call` on `/mcp`.
 - `READ` `src/kajenn_press/site/receipts.py:24` · 2026-10-29 — Idempotency receipts are kept 24 hours.

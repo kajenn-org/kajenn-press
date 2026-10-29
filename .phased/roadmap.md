@@ -94,6 +94,10 @@ Order: N1 → N2 → N3 → N4 → N5, then N6–N9 in any order, then N10. Each
 - Result: a registry of servers (`servers.json`, grant `servers`); bindings schema 2 with server and alias (`www.` or the bare domain answers 301); site servers serve only their own sites and answer Caddy's `ask`; a server agent with four actions and nginx+certbot, Caddy on-demand and Traefik drivers; DNS records planned and checked through 1.1.1.1 and 8.8.8.8; Go live in the Published site tab; `deploy/agent/install.sh` (52 site operations). Archived plan: [first-publication](done/first-publication/plan.md).
 - Planned: a registry of Kajenn site servers; domain and `www`; DNS with or without provider credentials; TLS, which Kajenn does not provide (no ACME client): a decision between a proxy with certificates (nginx and certbot, Caddy) and an ACME client in Kajenn comes first.
 
+### Gramlot shell (completed 2026-10-29, branch feat/gramlot-shell)
+
+- Result: Gramlot 0.3.20, gramlot-py-server 0.3.20 and Kajenn 0.7.0 (render worker on gramlot 0.3.8); the administration framed as Gramlot's gallery (icon column, navigation, a closable tab per opened page); each site tab a frame with its own toolbar; the block in Gramlot's floating window with Preview, Jodit, HTML and CSS tabs showing the page's own CSS; the CSS tab with the rules acting on the block, edited in place and saved with `asset_save` (53 site operations) (`d-gramlot-shell`, `d-css-rules`). Archived plan: [gramlot-shell](done/gramlot-shell/plan.md).
+
 ### Block editing (completed 2026-10-29, branch feat/block-editing)
 
 - Result: the administration bar and the site bar 40 pixels each, the site's tabs inline, one site shown at a time, every pane at full height; in the preview a click selects a block (border, label, pen) and links are followed; the pen, a double click or the Pages tree opens the block in a full-height floating window on Jodit with the HTML source beside it on demand (`d-block-editing`). Archived plan: [block-editing](done/block-editing/plan.md).

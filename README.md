@@ -30,7 +30,7 @@ operations, with tokens and cost shown per chat and per site.
 |---|---|
 | [Building a site in the site tab](xmldocs/booklet/site-tab.md) | Operators: pages, slots, copies, SEO, languages, Help me, publication |
 | [Writing a template](xmldocs/booklet/templates.md) | Template authors: build code, slots, site texts, assets, resolvers |
-| [The site operations over REST and MCP](xmldocs/booklet/operations.md) | Programs and agents: the 52 operations, keys, lock, errors |
+| [The site operations over REST and MCP](xmldocs/booklet/operations.md) | Programs and agents: the 53 operations, keys, lock, errors |
 | [Publication and serving](xmldocs/booklet/publication.md) | Objects in the release bucket, the site server, rollback, private links |
 | [Installing and running](xmldocs/booklet/install.md) | Docker composition, external buckets, Help me key, tests |
 
