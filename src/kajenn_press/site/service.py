@@ -17,8 +17,9 @@ from genro_bag import Bag, BagException
 
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
+from ..rendering.contract import RenderProblem
 from .lock import EditingLock
-from .model import Site, new_id
+from .model import ENGINES, Site, new_id
 from .published import page_fingerprint
 from .receipts import Receipts
 from .render import page_request
@@ -423,10 +424,17 @@ class SiteService:
     def _template_add(self, identity, site, name, engine, source=None, python_source=None):
         if (source is None) == (python_source is None):
             raise DomainError("invalid_input", "Give either source or python_source")
+        if engine not in ENGINES:
+            raise DomainError("invalid_input", "Template engine is gramlot or htmlbuilder")
         if python_source is not None:
             if self.worker is None:
                 raise DomainError("unavailable", "Configure the render worker first")
-            plain = self.worker.plain_template(engine, python_source)
+            try:
+                plain = self.worker.plain_template(engine, python_source)
+            except RenderProblem as problem:
+                raise DomainError(
+                    "invalid_template", str(problem), details=problem.diagnostic
+                ) from problem
         else:
             try:
                 plain = Bag.from_tytx(source)

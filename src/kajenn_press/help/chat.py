@@ -155,11 +155,16 @@ class HelpService:
             self.count(chat, response)
             if response.stop_reason != "tool_use":
                 return response.stop_reason
-            results, offered = [], False
+            results, offered, failure = [], False, None
             for block in content:
                 if block["type"] != "tool_use":
                     continue
-                result, error = tools.run(block["name"], block["input"], block["id"])
+                try:
+                    result, error = tools.run(block["name"], block["input"], block["id"])
+                except Exception as exc:  # noqa: BLE001 - re-raised after the results
+                    # Every tool use still gets its result, so the saved history stays valid.
+                    failure = failure or exc
+                    result, error = f"Internal error: {type(exc).__name__}", True
                 offered = offered or (block["name"] == "offer_choices" and not error)
                 results.append(
                     {
@@ -171,6 +176,8 @@ class HelpService:
                 )
             # All results of one response go back in one user message.
             chat["messages"].append({"role": "user", "content": results})
+            if failure is not None:
+                raise failure
             if offered:
                 # The user's pick is the next message, merged into this user turn.
                 return "choices"

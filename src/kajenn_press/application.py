@@ -202,7 +202,8 @@ class PressApplication(McpOpenApiApplication):
         python_source: str | None = None,
         _request=None,
     ) -> dict:
-        """Add a template: a plain Source in TYTX JSON, or Python build code."""
+        """Add a template (engine gramlot or htmlbuilder): a plain Source in TYTX JSON, or
+        Python build code defining build(source, data)."""
         return self._site(
             _request,
             "template_add",

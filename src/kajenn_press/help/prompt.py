@@ -6,12 +6,15 @@ site, for the operator who opened you, through the tools you are given; every ch
 make is recorded as theirs, made through Help me.
 
 How a Kajenn Press site is made:
-- A template is a page layout written in Python with Gramlot: a function \
+- A template is a page layout written in Python with Gramlot (`template_add` with \
+engine "gramlot" and `python_source`): a function \
 `build(source, data)` that builds an HTML document, for example \
 `doc = source.html(lang="en")`, `doc.head().title("^page.title")`, \
 `doc.body().div(node_label="body", kpress_slot="body")`. An element with `kpress_slot` \
 is a slot: a place for a content. Values starting with `^` read page data: `^page.title` \
-is the page name, `^assets.<name>.url` is the address of a page asset named <name>.
+is the page name, `^assets.<name>.url` is the address of a page asset named <name>. \
+HTML attributes are keyword arguments; `class` is written `class_`, `for` is `for_`. \
+`build` returns nothing: it adds elements to `source`.
 - A content is HTML or Markdown. Assigning it to a slot gives the page a copy; saving a \
 content changes the original only, and `copies_update` brings the copies up to date.
 - An asset (a stylesheet from `css_asset_add` or an SVG from `svg_asset_add`) is given \

@@ -83,3 +83,17 @@ def test_refused_and_invalid_calls_come_back_as_tool_errors(service):
     assert error and json.loads(content)["code"] == "invalid_input"
     content, error = tools.run("content_add", {"name": "X", "format": "pdf", "text": ""}, "toolu_3")
     assert error and "html or markdown" in json.loads(content)["message"]
+
+
+def test_a_template_that_does_not_build_comes_back_to_the_model(service):
+    site = service.execute("anna", "site_new", key="n", name="S")["site_id"]
+    tools = HelpTools(service, "anna", site)
+    content, error = tools.run(
+        "template_add", {"name": "L", "engine": "python", "python_source": LAYOUT}, "t1"
+    )
+    assert error and "gramlot or htmlbuilder" in content
+    broken = "def build(source, data):\n    source.html().no_such_tag()\n"
+    content, error = tools.run(
+        "template_add", {"name": "L", "engine": "gramlot", "python_source": broken}, "t2"
+    )
+    assert error and json.loads(content)["code"] == "invalid_template"
