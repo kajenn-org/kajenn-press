@@ -20,6 +20,23 @@ PAGES = (
     ("features", "Features · Kajenn Press", "/features/"),
     ("start", "Get started · Kajenn Press", "/get-started/"),
 )
+# Site texts of the layout: English (main) and Italian.
+TEXTS = {
+    "skip": ("Skip to content", "Vai al contenuto"),
+    "nav_overview": ("Overview", "Panoramica"),
+    "nav_features": ("Features", "Funzioni"),
+    "nav_start": ("Get started", "Per iniziare"),
+    "href_overview": ("/", "/it/"),
+    "href_features": ("/features/", "/it/features/"),
+    "href_start": ("/get-started/", "/it/get-started/"),
+    "footer_about": (
+        "Write, review and publish sites as complete releases, with exact history and rollback.",
+        "Scrivi, rivedi e pubblica siti come release complete, con storia esatta e rollback.",
+    ),
+    "footer_family": ("Part of the Genro family.", "Parte della famiglia Genro."),
+    "footer_learn": ("Learn", "Scopri"),
+    "footer_links": ("Family", "Famiglia"),
+}
 DESCRIPTIONS = {
     "home": "Kajenn Press manages a website as editorial content with exact history.",
     "features": "What Kajenn Press does today.",
@@ -72,6 +89,11 @@ def wait_until_ready(mcp, seconds=300):
 
 def publish(mcp, origin):
     site = mcp("site_new", key="press-site", name="Kajenn Press")["site_id"]
+    mcp("site_languages_set", site_id=site, key="press-languages", languages=["en", "it"])
+    for name, (english, italian) in TEXTS.items():
+        mcp("site_text_set", site_id=site, key=f"press-text-{name}", name=name, text=english)
+        mcp("site_text_set", site_id=site, key=f"press-text-{name}-it", name=name, text=italian,
+            language="it")
     template = mcp(
         "template_add", site_id=site, key="press-layout", name="Layout", engine="gramlot",
         python_source=(HERE / "layout.py").read_text(),
@@ -103,11 +125,15 @@ def publish(mcp, origin):
                 "content_add", site_id=site, key=f"press-{key}-{slot}", name=f"{key} {slot}",
                 format="html", text=(HERE / "pages" / f"{key}.{slot}.html").read_text(),
             )["content_id"]
+            italian = HERE / "pages" / f"{key}.{slot}.it.html"
+            if italian.exists():
+                mcp("content_translate", site_id=site, key=f"press-it-{key}-{slot}",
+                    content_id=content, language="it", text=italian.read_text())
             mcp("slot_assign", site_id=site, key=f"press-slot-{key}-{slot}", page_id=page,
                 slot=slot, content_id=content)
     plan = mcp("publish_plan", site_id=site)
     result = mcp("publish", site_id=site, key="press-publish",
-                 selected=[p["page_id"] for p in plan if p["selected"]])
+                 selected=[p["entry"] for p in plan if p["selected"]])
     if result["failed"]:
         raise RuntimeError(json.dumps(result["failed"], indent=2))
     return site

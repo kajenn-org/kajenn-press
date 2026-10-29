@@ -60,7 +60,8 @@ Entry: main `1029f6d`. Inventory: no part of the code knows a language today. A 
   - Details: per d-lang-help: tools to propose a translation of a content or of page texts, always marked to review; the prompt explains languages; one live check with the owner's go-ahead.
   - Done: a scripted chat proposes translations that stay to review until confirmed; the live check translates one page.
 
-- [ ] **Phase 6**: Example site, Docker and documentation
+- [x] **Phase 6**: Example site, Docker and documentation
+  > Done: `page_request` gives templates `page.urls` (the page in every language); the example layout reads menu labels, menu links, footer texts and the skip link from site texts and has EN/IT links to the same page; `publish.py` sets the languages (en main, it), the texts in both languages and the Italian home hero (`pages/home.hero.it.html`); the other contents show English under `/it/`. `test_page_rendering` uses the publisher's texts and checks the Italian home. Docker: `/it/` in Italian, `hreflang`, the Italian URLs in the sitemap, `/en/features/` answering 301. READMEs updated. Suites: main 207 passed, 12 skipped; admin 3 passed; Docker 9 passed (external S3 included).
   - Files: `examples/kajenn_press_site/`, `tests/docker/`, `README.md`, `deploy/docker/README.md`.
   - Details: the example layout reads its menu texts and `lang` from page data; the example site gains Italian; the Docker test checks `/`, `/it/`, `hreflang` and the sitemap.
   - Done: full, admin and Docker suites green.

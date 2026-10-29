@@ -11,7 +11,10 @@ application serves the pages, renders pages with resolvers again into a local ca
 answers redirects, `sitemap.xml`, `robots.txt` and maintenance. Every page has its SEO
 (title, description, canonical, robots, social share, JSON-LD, alt texts); the root page
 holds the site defaults, and checks before Publish report missing descriptions, duplicate
-titles, images without alt and broken internal links. A site's address is its root
+titles, images without alt and broken internal links. A site can have several
+languages: each content and site text has one translation per language, marked missing,
+to update or to review; URLs carry the language as a prefix (the main language has none);
+pages carry `hreflang` and the sitemap lists every language. A site's address is its root
 page's public origin: Publish binds it in the release bucket, where running site servers
 read it. A site can be private, or in maintenance, and still be seen through a signed
 private link. The same operations are offered on REST, MCP and in the Gramlot
@@ -33,7 +36,7 @@ rewritten with the documentation macro (N10).
 | `src/kajenn_press/help/` | Help me: tools from the site operations, SVG cleaning, the chat loop and its store |
 | `src/kajenn_press/admin/` | Gramlot administration: navigation Sites/Library, the site tab with the Visual editor, SEO and Published site tabs |
 | `deploy/docker/` | Docker composition (manager, RustFS, demo publisher and site server), nginx example, Hetzner runbook |
-| `examples/kajenn_press_site/` | The Kajenn Press site: layout, contents, assets and `publish.py` |
+| `examples/kajenn_press_site/` | The Kajenn Press site in English and Italian: layout, contents, site texts, assets and `publish.py` |
 
 ## Run the tests
 

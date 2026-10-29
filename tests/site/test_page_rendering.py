@@ -2,6 +2,7 @@
 
 import os
 import re
+import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 
 from kajenn_press.rendering.process import RenderWorker
 from kajenn_press.rendering.resolvers import ConfigValueResolver
+from kajenn_press.site.languages import set_languages, set_site_text
 from kajenn_press.site.model import Site
 from kajenn_press.site.render import page_request
 
@@ -46,8 +48,22 @@ def body_text(html):
     return re.sub(r"\s+", " ", "".join(parser.parts)).strip()
 
 
+def example_texts():
+    """The layout's site texts, as the example publisher sets them."""
+    sys.path.insert(0, str(EXAMPLE))
+    try:
+        from publish import TEXTS
+    finally:
+        sys.path.remove(str(EXAMPLE))
+    return TEXTS
+
+
 def example_site(worker):
     site = Site.create("Kajenn Press")
+    set_languages(site, ["en", "it"])
+    for name, (english, italian) in example_texts().items():
+        set_site_text(site, name, english)
+        set_site_text(site, name, italian, language="it")
     layout = worker.plain_template("gramlot", (EXAMPLE / "layout.py").read_text())
     template = site.add_template("Layout", "gramlot", layout)
     css = site.add_asset("site", "css", (EXAMPLE / "site.css").read_bytes(), "text/css")
@@ -84,6 +100,9 @@ def test_example_pages_render_their_slot_contents_inside_the_layout(worker):
             content = (EXAMPLE / "pages" / f"{key}.{slot}.html").read_text()
             assert body_text("<body>" + content + "</body>") in text
         assert "Skip to content" in text and "Built with Kajenn Press" in text
+    italian = worker.render_page(page_request(site, pages["home"], {}, language="it"))["html"]
+    assert '<html lang="it"' in italian and "Vai al contenuto" in body_text(italian)
+    assert 'href="/it/features/"' in italian and 'href="/features/" hreflang="en"' not in italian
 
 
 def small_site(worker, layout):

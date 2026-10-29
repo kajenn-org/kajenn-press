@@ -104,7 +104,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
 ```
 
 The tests remove the composition's volumes, start it from nothing and check: the example
-site served page by page with its SEO, maintenance on and off, a private link opening the site during maintenance, a site source saved in four versions, that the site server's credentials cannot write releases nor read sources,
+site served page by page with its SEO, in English and Italian, maintenance on and off, a private link opening the site during maintenance, a site source saved in four versions, that the site server's credentials cannot write releases nor read sources,
 that no credential reaches storage or git, and the external-bucket setup. They set their
 own addresses, which take precedence over `deploy/docker/.env`. `test_proxy_origin_contract.py` starts the manager without
 the demo profile on an `https` origin and checks that only a forwarded `https`

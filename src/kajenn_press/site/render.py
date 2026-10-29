@@ -1,6 +1,8 @@
 """Build the worker request that renders one page of a site.
 
-Data given to the template: `page.title` (the page name) and, for each page asset copy,
+Data given to the template: `page.title` (the page name), `page.language`, `page.urls`
+(this page's path in every language), `texts.<name>` (site texts in the page's language)
+and, for each page asset copy,
 `assets.<asset name>.url`: a `data:` URL of its bytes for previews, or the
 content-addressed path `/_assets/<sha256>.<ext>` for publication (N4-D1). Slot contents
 travel as their copies' source and format. `head` holds the SEO tags the worker writes into
@@ -107,7 +109,12 @@ def page_request(site, page_id, connections, published=False, language=None):
         "template": template.value.to_tytx(transport="json"),
         "slots": slots,
         "data": {
-            "page": {"title": page.name, "language": language},
+            "page": {
+                "title": page.name,
+                "language": language,
+                # This page in every language, for a language selector in the template.
+                "urls": {code: language_url(site, page_id, code) for code in site_languages(site)},
+            },
             "texts": page_texts(site, language),
             "assets": assets,
         },

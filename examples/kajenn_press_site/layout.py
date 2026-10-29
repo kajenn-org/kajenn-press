@@ -1,15 +1,13 @@
 """Kajenn Press site layout as a static Source with slots `hero` and `body`.
 
-Same structure as `template.py`, without reading Data while building: the title and the
-asset URLs are Data pointers resolved at render time, and the two blocks are slots.
-The menu does not mark the current page.
+Nothing is read from Data while building: the title, the asset URLs, the menu labels and
+links (site texts, translated per language) and the language links are Data pointers
+resolved at render time, and the two blocks are slots. The menu does not mark the
+current page.
 """
 
-NAV = (
-    ("/", "Overview", "Kajenn Press · Editorial publishing with releases"),
-    ("/features/", "Features", "Features · Kajenn Press"),
-    ("/get-started/", "Get started", "Get started · Kajenn Press"),
-)
+NAV = ("overview", "features", "start")
+LANGUAGES = ("en", "it")
 REPOSITORY = "https://github.com/kajenn-org/kajenn-press"
 
 
@@ -23,15 +21,17 @@ def build(source, data):
     head.link(rel="icon", type="image/png", href="^assets.logo.url")
     logo = "^assets.logo.url"
     body = doc.body()
-    body.a("Skip to content", href="#main", class_="skip")
+    body.a("^texts.skip", href="#main", class_="skip")
     inner = body.header(class_="site-header").div(class_="header-inner")
-    brand = inner.a(href="/", class_="brand", aria_label="Kajenn Press home")
+    brand = inner.a(href="^texts.href_overview", class_="brand", aria_label="Kajenn Press home")
     brand.img(src=logo, width="48", height="48", alt="")
     brand.span("kajenn", class_="brand-name")
     brand.span("press", class_="brand-press")
     nav = inner.nav(id="site-nav", aria_label="Main navigation")
-    for href, label, _page_title in NAV:
-        nav.a(label, href=href)
+    for key in NAV:
+        nav.a(f"^texts.nav_{key}", href=f"^texts.href_{key}")
+    for code in LANGUAGES:
+        nav.a(code.upper(), href=f"^page.urls.{code}", hreflang=code, class_="nav-language")
     nav.a("GitHub ↗", href=REPOSITORY, class_="nav-cta")
     main = body.main(id="main")
     main.div(node_label="hero", kpress_slot="hero")
@@ -39,19 +39,17 @@ def build(source, data):
     footer = body.footer(class_="site-footer")
     top = footer.div(class_="footer-top")
     about = top.div()
-    mark = about.a(href="/", class_="brand")
+    mark = about.a(href="^texts.href_overview", class_="brand")
     mark.span("kajenn", class_="brand-name")
     mark.span("press", class_="brand-press")
-    about.p(
-        "Write, review and publish sites as complete releases, with exact history and rollback."
-    )
-    about.p("Part of the Genro family.")
+    about.p("^texts.footer_about")
+    about.p("^texts.footer_family")
     learn = top.div()
-    learn.h2("Learn")
-    for href, label, _page_title in NAV:
-        learn.a(label, href=href)
+    learn.h2("^texts.footer_learn")
+    for key in NAV:
+        learn.a(f"^texts.nav_{key}", href=f"^texts.href_{key}")
     family = top.div()
-    family.h2("Family")
+    family.h2("^texts.footer_links")
     family.a("Source on GitHub ↗", href=REPOSITORY)
     family.a("kajenn ↗", href="https://github.com/kajenn-org/kajenn")
     family.a("Gramlot ↗", href="https://www.gramlot.org/")

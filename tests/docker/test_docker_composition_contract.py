@@ -141,7 +141,7 @@ def press_get(path, cookie=None):
 
 
 def test_site_server_serves_the_site_published_page_by_page(composition):
-    """N4, N6: the example site is published page by page, with its SEO, and served."""
+    """N4, N6, N9: the example site is published page by page, in two languages, and served."""
     deadline = time.monotonic() + 300
     while time.monotonic() < deadline:
         try:
@@ -157,6 +157,11 @@ def test_site_server_serves_the_site_published_page_by_page(composition):
     assert b"http://press.localhost:8877/features/" in press_get("/sitemap.xml")[1]
     assert b'<link rel="canonical" href="http://press.localhost:8877/">' in home
     assert b'<meta name="description" content="Kajenn Press manages a website' in home
+    status, italian = press_get("/it/")
+    assert status == 200 and b'<html lang="it"' in italian and b"Scrivilo." in italian
+    assert b'hreflang="it" href="http://press.localhost:8877/it/"' in home
+    assert b"<loc>http://press.localhost:8877/it/features/</loc>" in press_get("/sitemap.xml")[1]
+    assert press_get("/en/features/")[0] == 301
 
     mcp = Mcp("http://127.0.0.1:8875", "127.0.0.1:8875", secret("websites", "token"))
     (site,) = [s["site_id"] for s in mcp("site_list") if s["name"] == "Kajenn Press"]
