@@ -18,8 +18,12 @@ pytestmark = pytest.mark.skipif(
     os.environ.get("KAJENN_DOCKER") != "1", reason="Set KAJENN_DOCKER=1 to drive Docker"
 )
 NGINX = "nginx@sha256:77e5d4a6ad906c5d3793764085706577fa705b1dc6f244ea0241c4b5e2155385"
-CADDY = "caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d"  # 2.10.2-alpine
-TRAEFIK = "traefik@sha256:d6be8725d21b45bdd84b93ea01438256e0e3c94aa8fa51834fe87f37cd5d4af8"  # v3.5.3
+CADDY = (
+    "caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d"  # 2.10.2-alpine
+)
+TRAEFIK = (
+    "traefik@sha256:d6be8725d21b45bdd84b93ea01438256e0e3c94aa8fa51834fe87f37cd5d4af8"  # v3.5.3
+)
 NETWORK = "kajenn-websites_default"
 NAME = "www.bottega.example"
 

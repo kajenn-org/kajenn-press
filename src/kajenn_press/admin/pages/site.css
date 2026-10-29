@@ -81,3 +81,9 @@
 .help-empty{padding:16px}
 .editor-main{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .editor-actions{display:flex;gap:8px;align-items:center;margin-top:8px}
+.golive{width:440px}
+.gl-step{border:1px solid var(--gramlot-border, #ddd);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.gl-dns{border-collapse:collapse;width:100%;font-family:ui-monospace,monospace;font-size:12px}
+.gl-dns td,.gl-dns th{border-bottom:1px solid var(--gramlot-border, #ddd);padding:3px 5px;text-align:left}
+.gl-ok{color:#5fae3c}.gl-missing,.gl-wrong{color:#e05a5a}.gl-unknown{color:#d99a2b}
+.gl-result{font-size:12px;color:var(--gramlot-text-secondary, #6b6963)}

@@ -168,8 +168,14 @@ def test_navigation_and_site_tab_show_sites_pages_slots_and_contents(tmp_path):
                 "Private link",
                 "Whole site",
                 "The next Publish puts the site at https://demo.example",
+                "Go live…",
+                "1 · Server",
+                "No server is registered",
+                "4 · Publish and certificate",
             ):
                 assert text in published, text
+            dns = (await rpc(http, tab, "dns_view", "source", site=site))["value"]
+            assert "Choose a registered server for the site first" in dns
             reply = await rpc(
                 http,
                 tab,

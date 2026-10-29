@@ -26,7 +26,7 @@ ADDRESSES = {
     "KPRESS_PREVIEW_HOST": "localhost:8875",
     "KPRESS_TRUSTED_PROXIES": "127.0.0.1",
 }
-MC ="minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
+MC = "minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
 sys.path.insert(0, str(ROOT / "examples/kajenn_press_site"))
 
 from publish import Mcp
@@ -34,8 +34,12 @@ from publish import Mcp
 
 def compose(*arguments, check=True, addresses=ADDRESSES):
     return subprocess.run(
-        [*COMPOSE, "--profile", "demo", *arguments], capture_output=True, text=True,
-        check=check, timeout=900, env={**os.environ, **addresses},
+        [*COMPOSE, "--profile", "demo", *arguments],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=900,
+        env={**os.environ, **addresses},
     )
 
 
@@ -102,7 +106,11 @@ def mc(hosts, *arguments, stdin=None, mount=None):
         command += ["-v", f"{mount}:/out"]
     return subprocess.run(
         [*command, MC, *arguments],
-        input=stdin, capture_output=True, text=True, timeout=120, check=False,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
         env={**os.environ, **hosts},
     )
 

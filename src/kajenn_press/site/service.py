@@ -19,6 +19,7 @@ from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
 from .dns import dns_check, dns_plan, public_lookup
+from .golive import AgentClient, address_answers, go_live
 from .languages import (
     confirm_translation,
     language_url,
@@ -93,6 +94,7 @@ PUBLISHING = {
     "site_server_set",
     "dns_plan",
     "dns_check",
+    "site_go_live",
 }
 PUBLISHING_READS = {
     "publish_plan",
@@ -118,7 +120,16 @@ def decode_base64(value):
 
 
 class SiteService:
-    def __init__(self, root, store, policy, worker=None, connections=None, publisher=None):
+    def __init__(
+        self,
+        root,
+        store,
+        policy,
+        worker=None,
+        connections=None,
+        publisher=None,
+        agent_tokens=None,
+    ):
         self.root = private_directory(root)
         self.store = store
         self.policy = policy
@@ -127,8 +138,10 @@ class SiteService:
         self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
         self.servers = ServerRegistry(store)
-        # Public resolvers; tests replace the lookup (N7b-D3).
+        # Public resolvers, real agents and real addresses; tests replace them (N7b-D3).
         self.dns_lookup = public_lookup
+        self.agents = AgentClient(agent_tokens) if agent_tokens else None
+        self.address_answers = address_answers
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
 
@@ -367,7 +380,25 @@ class SiteService:
         return self.site_dns_plan(identity, site_id)
 
     def _dns_check(self, identity, site_id):
-        return dns_check(self.site_dns_plan(identity, site_id), self.dns_lookup)
+        return self.dns_check_plan(self.site_dns_plan(identity, site_id))
+
+    def dns_check_plan(self, plan):
+        return dns_check(plan, self.dns_lookup)
+
+    def _site_go_live(self, identity, site_id, key):
+        """DNS check, Publish, the agent's domain and certificate, the address answering."""
+        if self.agents is None:
+            raise DomainError("unavailable", "Configure the agent tokens directory first")
+
+        def publish():
+            site = self.working_copy(site_id).load()
+            selected = [p["entry"] for p in self.publisher.plan(site) if p["selected"]]
+            return self._publish(identity, site_id, key + "-publish", selected)
+
+        def run():
+            return go_live(self, identity, site_id, publish)
+
+        return self.receipts.run(identity, key, "site_go_live", {"site_id": site_id}, run)
 
     def _private_link(self, identity, site_id, hours=8):
         return self.publisher.private_link(site_id, hours)
@@ -482,6 +513,7 @@ class SiteService:
             "site_id": site.site_id,
             "name": site.name,
             "languages": site_languages(site),
+            "server": site.bag.get_node("info").attr.get("server", ""),
             "texts": {
                 n.label: {
                     "text": n.value,

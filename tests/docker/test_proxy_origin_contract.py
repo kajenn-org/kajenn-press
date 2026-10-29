@@ -37,7 +37,11 @@ for host, proto in (sys.argv[1], sys.argv[2]), (sys.argv[1], ""), ("other.exampl
 
 def compose(*arguments, check=True):
     return subprocess.run(
-        [*COMPOSE, *arguments], capture_output=True, text=True, check=check, timeout=900,
+        [*COMPOSE, *arguments],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=900,
         env={**os.environ, **SERVER},
     )
 
@@ -72,9 +76,23 @@ def test_without_profile_only_the_manager_runs(manager_only):
 
 def test_forwarded_https_from_a_trusted_proxy_reaches_the_administration(manager_only):
     probe = subprocess.run(
-        ["docker", "run", "--rm", "--network", "kajenn-websites_default", PYTHON,
-         "python", "-c", PROBE, "kpress.example", "https"],
-        capture_output=True, text=True, check=True, timeout=120,
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "kajenn-websites_default",
+            PYTHON,
+            "python",
+            "-c",
+            PROBE,
+            "kpress.example",
+            "https",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=120,
     )
     configured, plain_http, wrong_host = probe.stdout.split()
     assert configured == "200"

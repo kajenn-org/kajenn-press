@@ -29,7 +29,11 @@ CONTAINER = "kpress-test-nginx"
 
 def compose(*arguments, check=True):
     return subprocess.run(
-        [*COMPOSE, *arguments], capture_output=True, text=True, check=check, timeout=900,
+        [*COMPOSE, *arguments],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=900,
         env={**os.environ, **SERVER},
     )
 
@@ -53,10 +57,27 @@ def request(port, host, path, tls):
 def proxied(tmp_path_factory):
     work = tmp_path_factory.mktemp("nginx")
     subprocess.run(
-        ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
-         "-subj", "/CN=" + NAMES[0], "-addext", "subjectAltName=DNS:" + NAMES[0],
-         "-keyout", str(work / "privkey.pem"), "-out", str(work / "fullchain.pem")],
-        capture_output=True, check=True, timeout=60,
+        [
+            "openssl",
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-days",
+            "1",
+            "-subj",
+            "/CN=" + NAMES[0],
+            "-addext",
+            "subjectAltName=DNS:" + NAMES[0],
+            "-keyout",
+            str(work / "privkey.pem"),
+            "-out",
+            str(work / "fullchain.pem"),
+        ],
+        capture_output=True,
+        check=True,
+        timeout=60,
     )
     # On the server nginx runs on the host; here it shares the composition network.
     example = (ROOT / "deploy/docker/nginx-kpress.conf").read_text()
@@ -68,9 +89,25 @@ def proxied(tmp_path_factory):
     for name in NAMES:
         mounts += ["-v", f"{work}:/etc/letsencrypt/live/{name}:ro"]
     subprocess.run(
-        ["docker", "run", "-d", "--name", CONTAINER, "--network", "kajenn-websites_default",
-         "-p", "127.0.0.1:18080:80", "-p", "127.0.0.1:18443:443", *mounts, NGINX],
-        capture_output=True, text=True, check=True, timeout=120,
+        [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            CONTAINER,
+            "--network",
+            "kajenn-websites_default",
+            "-p",
+            "127.0.0.1:18080:80",
+            "-p",
+            "127.0.0.1:18443:443",
+            *mounts,
+            NGINX,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=120,
     )
     deadline = time.monotonic() + 600
     while time.monotonic() < deadline:

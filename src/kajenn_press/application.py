@@ -73,6 +73,7 @@ class PressApplication(McpOpenApiApplication):
             releases = config.pop("releases", None)
             private_secret = config.pop("private_secret", None)
             help_config = config.pop("help", None)
+            agent_tokens = config.pop("agent_tokens", None)
             self.sites = SiteService(
                 config.pop("root", self.root / "sites"),
                 SourceStore(config.pop("sources")),
@@ -82,6 +83,7 @@ class PressApplication(McpOpenApiApplication):
                 publisher=Publisher(releases, worker, connections, private_secret)
                 if releases
                 else None,
+                agent_tokens=agent_tokens,
             )
             if config:
                 raise ValueError("Unknown site configuration")
@@ -590,6 +592,12 @@ class PressApplication(McpOpenApiApplication):
     def dns_check(self, site_id: str, _request=None) -> dict:
         """What public resolvers answer for each record of the site, and whether all are right."""
         return self._site(_request, "dns_check", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_go_live(self, site_id: str, key: str, _request=None) -> dict:
+        """Put the site online on its server: DNS check, Publish, the agent serves its names
+        with TLS, the address answers; each step reports its outcome."""
+        return self._site(_request, "site_go_live", site_id=site_id, key=key)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_state(self, site_id: str, _request=None) -> dict:
