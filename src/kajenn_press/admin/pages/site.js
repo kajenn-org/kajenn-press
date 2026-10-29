@@ -1,6 +1,6 @@
 // Preview HTML additions, never part of published pages: slot borders and a script that
 // reports clicks on slots and links to the administration with postMessage.
-const SLOT_CSS = '<style>[kpress_slot]{outline:1px dashed #1d5fa5;outline-offset:2px;cursor:pointer}</style>';
+const SLOT_CSS = '<style>[kpress_slot]{outline:1px dashed #1d5fa5;outline-offset:2px;cursor:pointer}[kpress_fallback]{outline:1px dashed #e05a5a;background:#fdecec}</style>';
 const PREVIEW_SCRIPT = `
 document.addEventListener('click', function (event) {
   var slot = event.target.closest('[kpress_slot]');
@@ -52,7 +52,8 @@ export class Logic {
         const pages = JSON.parse(node.GET('site.pages_json'));
         node.SET('site.status', 'Rendering ' + pages[page].url + ' …');
         try {
-            const result = await this.callCommand('page_render', {site_id: this.siteId(node), page_id: page});
+            const result = await this.callCommand('page_render', {site_id: this.siteId(node), page_id: page,
+                language: node.GET('site.language')});
             if (result.status !== 'succeeded') {
                 node.SET('site.status', result.diagnostics.map(d => d.message).join(' · '));
                 return;
@@ -111,19 +112,41 @@ export class Logic {
         const item = node.GET('site.pages_tree').getNode(page + '.slot_' + slot);
         const content = item ? item.attr.content : '';
         if (!content) { node.SET('site.message', 'Slot ' + slot + ' is empty: assign a content first.'); return; }
+        const language = node.GET('site.language'), main = language === node.GET('site.main_language');
+        const translation = main ? null : read[content].translations[language];
         node.SET('site.editor_content', content);
-        node.SET('site.editor_title', slot + ' · ' + read[content].name);
-        node.SET('site.editor_text', read[content].text);
+        node.SET('site.editor_title', slot + ' · ' + read[content].name + (main ? '' : ' · ' + language.toUpperCase()));
+        node.SET('site.editor_main', main ? '' : read[content].text);
+        node.SET('site.editor_text', main ? read[content].text : (translation.text ?? ''));
+        node.SET('site.editor_state', main ? '' : translation.state);
+        node.SET('site.editor_note', main || translation.state === 'done' ? '' : translation.state.replace('_', ' '));
         node.SET('site.plan_json', '');
         node.SET('site.editor_open', true);
     }
     closeEditor(node, _args) { node.SET('site.editor_open', false); }
+    async confirmTranslation(node, _args) {
+        try {
+            await this.callCommand('translation_confirm', {site_id: this.siteId(node), key: crypto.randomUUID(),
+                translation: 'content_' + node.GET('site.editor_content'), language: node.GET('site.language')});
+            node.SET('site.editor_state', 'done');
+            node.SET('site.editor_note', '');
+            this.refresh(node);
+        } catch (error) { node.SET('site.message', error.message); }
+    }
     async saveContent(node, _args) {
         const site = this.siteId(node), content = node.GET('site.editor_content');
         node.SET('site.busy', true);
         try {
-            await this.callCommand('content_save', {site_id: site, key: crypto.randomUUID(), content_id: content,
-                text: node.GET('site.editor_text')});
+            const language = node.GET('site.language');
+            if (language === node.GET('site.main_language')) {
+                await this.callCommand('content_save', {site_id: site, key: crypto.randomUUID(), content_id: content,
+                    text: node.GET('site.editor_text')});
+            } else {
+                await this.callCommand('content_translate', {site_id: site, key: crypto.randomUUID(),
+                    content_id: content, language, text: node.GET('site.editor_text')});
+                node.SET('site.editor_state', 'done');
+                node.SET('site.editor_note', '');
+            }
             const plan = await this.callCommand('copies_update_plan', {site_id: site, original_id: content});
             const pages = JSON.parse(node.GET('site.pages_json'));
             node.SET('site.plan_json', JSON.stringify(plan.map(item => ({...item, page_name: pages[item.page_id].name}))));
@@ -179,16 +202,22 @@ export class Logic {
             const value = node.GET('site.seo.' + name) ?? '';
             if (value !== initial.fields[name]) fields[name] = value;
         }
+        const language = initial.language;
         node.SET('site.busy', true);
         try {
+            const languages = node.GET('site.seo.languages') ?? '';
+            if (!language && languages !== initial.languages) {
+                await this.callCommand('site_languages_set', {site_id: site, key: crypto.randomUUID(),
+                    languages: languages.split(',').map(code => code.trim().toLowerCase()).filter(Boolean)});
+            }
             if (Object.keys(fields).length) {
                 await this.callCommand('page_seo_set', {site_id: site, key: crypto.randomUUID(),
-                    page_id: initial.page, fields});
+                    page_id: initial.page, fields, language});
             }
             const url = node.GET('site.seo.url');
             if (url !== initial.url) {
                 await this.callCommand('page_url_set', {site_id: site, key: crypto.randomUUID(),
-                    page_id: initial.page, url});
+                    page_id: initial.page, url, language});
             }
             for (const [index, image] of initial.images.entries()) {
                 const alt = node.GET('site.seo.alt.i' + index) ?? '';
@@ -198,6 +227,7 @@ export class Logic {
                 }
             }
             node.SET('site.seo_version', node.GET('site.seo_version') + 1);
+            if (!language && languages !== initial.languages) this.refresh(node);
         } catch (error) { node.SET('site.seo_message', error.message); }
         node.SET('site.busy', false);
     }

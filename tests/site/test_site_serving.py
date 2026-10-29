@@ -17,7 +17,7 @@ from kajenn_press.rendering.resolvers import ConfigValueResolver
 from kajenn_press.site.private import sign
 from kajenn_press.site.publish import Publisher
 from kajenn_press.site.published import unpack_page
-from kajenn_press.site.render import published_asset_name
+from kajenn_press.site.render import page_request, published_asset_name
 from kajenn_press.site.service import SiteService
 from kajenn_press.site.serving import create_site_server
 from kajenn_press.site.store import SourceStore
@@ -283,11 +283,11 @@ def test_noindex_pages_leave_the_sitemap_and_a_noindex_root_closes_the_site(setu
     assert robots.text == "User-agent: *\nDisallow: /\n"
 
 
-def test_publish_replaces_an_index_written_before_n6(setup):
+def test_publish_replaces_an_index_of_an_earlier_schema(setup):
     service, _releases, _worker = setup
     site, pages = publish_site(service)
     node = service.publisher.node(service.publisher.index_path(site))
-    node.write_bytes(node.read_bytes().replace(b'"schema":2', b'"schema":1'))
+    node.write_bytes(node.read_bytes().replace(b'"schema":3', b'"schema":2'))
 
     plan = run(service, "publish_plan", site_id=site)
     assert {item["state"] for item in plan} == {"new"}
@@ -467,3 +467,89 @@ def test_publication_state_follows_publish_visibility_and_maintenance(setup):
     )
     state = run(service, "publication_state", site_id=site)
     assert state["next_address"] is None and "HTTPS" in state["address_problem"]
+
+
+def test_a_two_language_site_is_published_and_served_in_both(setup, tmp_path):
+    service, _releases, _worker = setup
+    site, pages = publish_site(service)
+    read = run(service, "site_read", site_id=site)
+    home_content = next(c["id"] for c in read["contents"] if c["name"] == "Home")
+    run(service, "site_languages_set", site_id=site, key="lang-l", languages=["en", "it"])
+    run(
+        service,
+        "content_translate",
+        site_id=site,
+        key="lang-t1",
+        content_id=home_content,
+        language="it",
+        text="<p>Casa</p>",
+    )
+    run(
+        service,
+        "copies_update",
+        site_id=site,
+        key="lang-u1",
+        original_id=home_content,
+        selected=[
+            [p["page_id"], p["path"]]
+            for p in run(service, "copies_update_plan", site_id=site, original_id=home_content)
+        ],
+    )
+    plan = run(service, "publish_plan", site_id=site)
+    assert {(p["entry"], p["state"]) for p in plan} == {
+        (pages["Home"], "changed"),
+        (pages["About"], "changed"),
+        (pages["Home"] + ".it", "new"),
+        (pages["About"] + ".it", "new"),
+    }
+    run(service, "publish", site_id=site, key="lang-p", selected=list(pages.values()))
+
+    home, italian, about_it, prefixed, sitemap = get(
+        server(setup, site, tmp_path), "/", "/it/", "/it/about/", "/en/about/", "/sitemap.xml"
+    )
+    assert '<html lang="en"' in home.text and "<p>Home</p>" in home.text
+    assert '<html lang="it"' in italian.text and "<p>Casa</p>" in italian.text
+    assert "<p>About</p>" in about_it.text  # no Italian yet: the main text
+    assert "kpress_fallback" not in about_it.text
+    assert '<link rel="alternate" hreflang="it" href="http://site.localhost/it/">' in home.text
+    assert (
+        '<link rel="alternate" hreflang="x-default" href="http://site.localhost/">' in italian.text
+    )
+    assert prefixed.status_code == 301 and prefixed.headers["location"] == "/about/"
+    for path in ("/", "/about/", "/it/", "/it/about/"):
+        assert f"<loc>{ORIGIN}{path}</loc>" in sitemap.text
+
+    run(
+        service,
+        "content_translate",
+        site_id=site,
+        key="lang-t2",
+        content_id=home_content,
+        language="it",
+        text="<p>La casa</p>",
+    )
+    run(
+        service,
+        "copies_update",
+        site_id=site,
+        key="lang-u2",
+        original_id=home_content,
+        selected=[
+            [p["page_id"], p["path"]]
+            for p in run(service, "copies_update_plan", site_id=site, original_id=home_content)
+        ],
+    )
+    changed = {
+        p["entry"] for p in run(service, "publish_plan", site_id=site) if p["state"] != "unchanged"
+    }
+    assert changed == {pages["Home"] + ".it"}
+    # The pages read the `site` connection: the preview gets it here, as Publish does.
+    request = page_request(
+        service.working_copy(site).load(),
+        pages["About"],
+        {"site": {"headline": "x"}},
+        language="it",
+    )
+    preview = setup[2].render_page(request)
+    assert preview["status"] == "succeeded", preview["diagnostics"]
+    assert "kpress_fallback" in preview["html"]

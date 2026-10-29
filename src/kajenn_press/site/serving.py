@@ -265,6 +265,15 @@ class SiteServerApplication(BaseApplication):
             )
         if path in pages:
             return self.page(reader, index, pages[path], 200)
+        first = path.strip("/").split("/")[0]
+        main = main_language(index)
+        if first == main and len(languages(index)) > 1:
+            # The main language answers without prefix; its prefixed URL redirects (N9-D2).
+            location = quote(path.removeprefix("/" + main) or "/", safe="/")
+            return Response(status_code=301, headers={**HEADERS, "location": location})
+        localized = f"/{first}{NOT_FOUND_URL}"
+        if first in languages(index) and localized in pages:
+            return self.page(reader, index, pages[localized], 404)
         if NOT_FOUND_URL in pages:
             return self.page(reader, index, pages[NOT_FOUND_URL], 404)
         raise DomainError("not_found", "No page at this URL")
@@ -313,6 +322,17 @@ class SiteServerApplication(BaseApplication):
         if scope["method"] == "HEAD":
             response.body = b""
         await response(scope, receive, send)
+
+
+def languages(index):
+    """The languages a site index publishes."""
+    return {entry["language"] for entry in index["pages"].values()}
+
+
+def main_language(index):
+    """The language of the entries keyed by a bare page id: the main language."""
+    found = {e["language"] for key, e in index["pages"].items() if "." not in key}
+    return next(iter(found)) if found else None
 
 
 def robots(binding, index):

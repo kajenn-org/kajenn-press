@@ -49,3 +49,35 @@ def test_one_request_builds_a_two_page_site(tmp_path):
         rendered = service.execute("anna", "page_render", site_id=site, page_id=page.page_id)
         assert rendered["status"] == "succeeded", rendered
     assert len(service.store.versions(site)) >= 2
+
+
+def test_one_request_translates_a_page(tmp_path):
+    import anthropic
+
+    service = SiteService(
+        tmp_path / "s",
+        SourceStore(versioned_bucket()),
+        AccessPolicy({"anna": {"*": ["read", "write", "create_site", "build"]}}),
+        worker=RenderWorker(os.environ["KAJENN_RENDER_PYTHON"], timeout=60),
+    )
+    site = service.execute("anna", "site_new", key="n", name="Bottega Rossi")["site_id"]
+    contents = [
+        service.execute(
+            "anna", "content_add", site_id=site, key=f"c{i}", name=name, format="html", text=text
+        )["content_id"]
+        for i, (name, text) in enumerate(
+            (
+                ("Welcome", "<h1>Benvenuti in bottega</h1>"),
+                ("Intro", "<p>Mobili fatti a mano dal 1962.</p>"),
+            )
+        )
+    ]
+    service.execute("anna", "site_languages_set", site_id=site, key="l", languages=["it", "en"])
+    help_me = HelpService(service, HelpStore(service.store), anthropic.Anthropic())
+
+    shown = help_me.send("anna", site, "Translate every content into English.")
+    print(f"\nstop {shown['stop']} · usage {shown['usage']} · cost ${shown['cost']:.4f}")
+    read = service.execute("anna", "site_read", site_id=site)
+    states = {c["id"]: c["translations"]["en"] for c in read["contents"]}
+    assert set(states) == set(contents)
+    assert all(state["state"] == "to_review" and state["text"] for state in states.values())

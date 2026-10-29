@@ -1,6 +1,8 @@
 """Build the worker request that renders one page of a site.
 
-Data given to the template: `page.title` (the page name) and, for each page asset copy,
+Data given to the template: `page.title` (the page name), `page.language`, `page.urls`
+(this page's path in every language), `texts.<name>` (site texts in the page's language)
+and, for each page asset copy,
 `assets.<asset name>.url`: a `data:` URL of its bytes for previews, or the
 content-addressed path `/_assets/<sha256>.<ext>` for publication (N4-D1). Slot contents
 travel as their copies' source and format. `head` holds the SEO tags the worker writes into
@@ -12,6 +14,7 @@ import hashlib
 import mimetypes
 
 from ..domain import DomainError
+from .languages import language_url, main_language, site_languages
 from .seo import effective_seo, head_html
 
 EXTENSIONS = {
@@ -57,26 +60,69 @@ def social_image_file(site, page_id):
     return published_asset_name(node.value, node.attr["mime_type"]), node.value
 
 
-def page_request(site, page_id, connections, published=False):
+def page_texts(site, language):
+    """Site texts in a language; a missing translation shows the main text (d-lang-missing)."""
+    translations = site.section("translations")
+    texts = {}
+    for node in site.section("texts").nodes:
+        translated = translations.get_node(f"text_{node.label}.{language}")
+        texts[node.label] = translated.value if translated is not None else node.value
+    return texts
+
+
+def alternates(site, page_id):
+    """(language, href) of every language of a page, for hreflang; empty with one language."""
+    languages = site_languages(site)
+    if len(languages) < 2:
+        return []
+    origin = effective_seo(site, page_id)["origin"]
+    found = [(code, origin + language_url(site, page_id, code)) for code in languages]
+    return [*found, ("x-default", found[0][1])]
+
+
+def page_request(site, page_id, connections, published=False, language=None):
+    """The worker request of one page in one language (main language by default)."""
     page = site.page(page_id)
+    language = language or main_language(site)
+    main = language == main_language(site)
     template = page.template
     assets = {
         name: {"url": url}
         for name, (url, _file, _data) in page_assets(site, page_id, published).items()
     }
-    slots = {
-        node.attr["slot"]: {"format": node.attr["format"], "source": node.value}
-        for node in page.slots.nodes
-    }
+    translations = page.bag.get_item("translations")
+    slots, fallback = {}, []
+    for node in page.slots.nodes:
+        source = node.value
+        if not main:
+            translated = translations.get_node(f"{node.label}.{language}")
+            if translated is None:
+                fallback.append(node.attr["slot"])
+            else:
+                source = translated.value
+        slots[node.attr["slot"]] = {"format": node.attr["format"], "source": source}
     data = page.bag.get_item("data")
     image = social_image_file(site, page_id)
+    seo = effective_seo(site, page_id, language=language)
     return {
         "engine": template.attr["engine"],
         "template": template.value.to_tytx(transport="json"),
         "slots": slots,
-        "data": {"page": {"title": page.name}, "assets": assets},
+        "data": {
+            "page": {
+                "title": page.name,
+                "language": language,
+                # This page in every language, for a language selector in the template.
+                "urls": {code: language_url(site, page_id, code) for code in site_languages(site)},
+            },
+            "texts": page_texts(site, language),
+            "assets": assets,
+        },
         "page_data": data.to_tytx(transport="json") if len(data) else "",
         "connections": connections,
         "resource_id": page_id,
-        "head": head_html(effective_seo(site, page_id), image and "/_assets/" + image[0]),
+        "head": head_html(seo, image and "/_assets/" + image[0], alternates(site, page_id)),
+        "language": language,
+        # Previews mark the slots shown in the main language; published pages do not.
+        "fallback": [] if published else fallback,
     }

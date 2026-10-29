@@ -32,8 +32,19 @@ SECTIONS = (
     "folders",
     "redirects",
     "audit",
+    "texts",
+    "translations",
 )
-PAGE_SECTIONS = ("template", "slots", "unplaced", "assets", "data", "seo")
+PAGE_SECTIONS = (
+    "template",
+    "slots",
+    "unplaced",
+    "assets",
+    "data",
+    "seo",
+    "translations",
+    "languages",
+)
 
 
 def new_id():
@@ -324,8 +335,11 @@ class Site:
             original_id = copy.attr.get("original_id")
             if original_id is None:
                 continue
-            _section, original = self.original(original_id)
-            if value_digest(original.value) != copy.attr["original_digest"]:
+            section, original = self.original(original_id)
+            if value_digest(original.value) != copy.attr["original_digest"] or (
+                section == "contents"
+                and not self._translations_match(page, copy.label, original_id)
+            ):
                 outdated.append({"path": path, "original_id": original_id})
         return outdated
 
@@ -360,6 +374,10 @@ class Site:
         if old == url:
             return
         node.attr["url"] = url
+        self.redirect(old, url)
+
+    def redirect(self, old, url):
+        """The old URL path redirects to the new one; chains collapse."""
         redirects = self.section("redirects")
         for redirect in list(redirects.nodes):
             if redirect.attr["source"] == url:
@@ -427,7 +445,9 @@ class Site:
             if node.attr["slot"] == slot_name:
                 self._unplace(page, node)
         original = self.node("contents", content_id)
-        return self._place_copy(page.slots, content_id, original, slot=slot_name)
+        key = self._place_copy(page.slots, content_id, original, slot=slot_name)
+        self._copy_translations(page, key, content_id)
+        return key
 
     def add_page_asset(self, page_id, asset_id):
         return self._place_copy(self.page(page_id).assets, asset_id, self.node("assets", asset_id))
@@ -450,20 +470,23 @@ class Site:
 
     def update_plan(self, original_id):
         """What Update would do for each copy of an original (d-update-local)."""
-        _section, original = self.original(original_id)
+        section, original = self.original(original_id)
         current = value_digest(original.value)
         plan = []
         for page_id, path in self.uses(original_id):
             copy = self.page(page_id).bag.get_node(path)
             copy_digest = value_digest(copy.value)
             changed = copy_digest != copy.attr["original_digest"]
+            translated = section != "contents" or self._translations_match(
+                self.page(page_id), copy.label, original_id
+            )
             plan.append(
                 UpdateItem(
                     page_id=page_id,
                     path=path,
                     locally_changed=changed,
-                    up_to_date=copy_digest == current,
-                    selected=not changed and copy_digest != current,
+                    up_to_date=copy_digest == current and translated,
+                    selected=not changed and (copy_digest != current or not translated),
                     difference=text_difference(copy.value, original.value),
                 )
             )
@@ -483,6 +506,8 @@ class Site:
             copy = self.page(page_id).bag.get_node(path)
             copy.value = copy_value(original.value)
             copy.attr.update(self.copy_attributes(original_id, original))
+            if section == "contents":
+                self._copy_translations(self.page(page_id), copy.label, original_id)
             if section == "templates":
                 self._unplace_missing_slots(self.page(page_id))
 
@@ -557,6 +582,23 @@ class Site:
         for node in list(page.slots.nodes):
             if node.attr["slot"] not in names:
                 self._unplace(page, node)
+
+    def _copy_translations(self, page, key, content_id):
+        """The page's copy of a content carries the content's translations (N9-D1)."""
+        translations = page.bag.get_item("translations")
+        source = self.section("translations").get_item("content_" + content_id)
+        if source is None:
+            if translations.get_node(key) is not None:
+                translations.pop(key)
+            return
+        translations.set_item(key, source.deepcopy())
+
+    def _translations_match(self, page, key, content_id):
+        copy = page.bag.get_item("translations").get_item(key)
+        source = self.section("translations").get_item("content_" + content_id)
+        if copy is None or source is None:
+            return copy is None and (source is None or not len(source))
+        return value_digest(copy) == value_digest(source)
 
     def _place_copy(self, target, original_id, original, **extra):
         key = new_id()

@@ -97,3 +97,32 @@ def test_a_template_that_does_not_build_comes_back_to_the_model(service):
         "template_add", {"name": "L", "engine": "gramlot", "python_source": broken}, "t2"
     )
     assert error and json.loads(content)["code"] == "invalid_template"
+
+
+def test_help_me_translations_are_proposals_to_review(service):
+    site = service.execute("anna", "site_new", key="n", name="S")["site_id"]
+    content = service.execute(
+        "anna",
+        "content_add",
+        site_id=site,
+        key="c",
+        name="Intro",
+        format="html",
+        text="<p>Ciao</p>",
+    )["content_id"]
+    service.execute("anna", "site_languages_set", site_id=site, key="l", languages=["it", "en"])
+    tools = HelpTools(service, "anna", site)
+    definition = next(t for t in tool_definitions() if t["name"] == "content_translate")
+    assert "proposed" not in definition["input_schema"]["properties"]
+
+    content_json, error = tools.run(
+        "content_translate",
+        {"content_id": content, "language": "en", "text": "<p>Hello</p>", "proposed": False},
+        "t1",
+    )
+    assert not error, content_json
+    read = service.execute("anna", "site_read", site_id=site)
+    assert read["contents"][0]["translations"]["en"] == {
+        "state": "to_review",
+        "text": "<p>Hello</p>",
+    }

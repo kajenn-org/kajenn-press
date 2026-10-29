@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Languages mockup</title>
+<style>
+:root{--bg:#1d2633;--panel:#243042;--soft:#1a222e;--line:#3a4658;--fg:#e8ecf2;--muted:#9aa6b6;--accent:#7fb2ec;--ok:#5fae3c;--warn:#d99a2b;--bad:#e05a5a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,sans-serif}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line)}.tab{padding:7px 12px;border-bottom:2px solid transparent;color:var(--muted)}.tab.on{border-color:var(--accent);color:var(--fg)}
+.grow{flex:1}.muted{color:var(--muted)}
+button,select{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:4px 10px}
+.langs{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}.langs span{padding:3px 10px;cursor:pointer}.langs .on{background:var(--accent);color:#10213a}
+.main{display:grid;grid-template-columns:260px minmax(0,1fr) 360px;height:calc(100vh - 90px)}
+.drawer{border-right:1px solid var(--line);padding:8px}
+.drawer div{padding:3px 6px}
+.miss{color:var(--bad)}.old{color:var(--warn)}.rev{color:var(--accent)}
+.stage{padding:12px}.frame{background:#fff;color:#222;border-radius:8px;padding:20px;min-height:300px}
+.fallback{background:#fdecec;outline:1px dashed #e05a5a;padding:4px}
+.editor{border-left:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cols div{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:90px}
+.note{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="bar"><b>Bottega Rossi</b><span class="muted">· You are editing this site</span><span class="grow"></span>
+    <span class="muted">Language</span><div class="langs"><span>IT · main</span><span class="on">EN</span><span>DE</span></div>
+    <button>Help me</button><button>Save</button></div>
+  <div class="tabs"><span class="tab on">Visual editor</span><span class="tab">SEO</span><span class="tab">Published site</span></div>
+  <div class="main">
+    <div class="drawer">
+      <div><b>Pages</b> <span class="muted">· EN</span></div>
+      <div>Home <span class="muted">/en/</span></div>
+      <div style="margin-left:14px">hero ← Welcome <span class="old">↻ to update</span></div>
+      <div style="margin-left:14px">body ← Intro <span class="rev">◐ to review</span></div>
+      <div>Contacts <span class="muted">/en/contacts/</span></div>
+      <div style="margin-left:14px">body ← Address <span class="miss">○ missing</span></div>
+      <div style="margin-top:10px"><b>Contents</b></div>
+      <div>Welcome <span class="old">↻</span></div><div>Intro <span class="rev">◐</span></div><div>Address <span class="miss">○</span></div><div>Menu texts</div>
+      <div class="note" style="margin-top:10px">○ missing: the page shows the Italian text · ↻ the Italian text changed · ◐ proposed by Help me, to review</div>
+    </div>
+    <div class="stage"><div class="muted">/en/ · Home</div>
+      <div class="frame"><b>Bottega Rossi</b> · Home · Works · Contacts <span style="float:right">IT · EN · DE</span>
+        <h2>Welcome to the workshop</h2><p class="fallback">Mobili fatti a mano a Bologna dal 1962.</p><p style="color:#888;font-size:12px">Red dashes: shown in the main language because the English text is missing.</p></div></div>
+    <div class="editor"><b>Intro · EN</b>
+      <div class="cols"><div><span class="muted">IT (main)</span><br>Mobili fatti a mano a Bologna dal 1962.</div><div><span class="muted">EN</span><br>Hand-made furniture in Bologna since 1962.</div></div>
+      <div class="note">Proposed by Help me · to review</div>
+      <div style="display:flex;gap:8px"><button>Confirm translation</button><button>Ask Help me to translate</button></div>
+    </div>
+  </div>
+</body>
+</html>

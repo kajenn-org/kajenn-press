@@ -18,6 +18,16 @@ from genro_bag import Bag, BagException
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
+from .languages import (
+    confirm_translation,
+    language_url,
+    set_languages,
+    set_page_url,
+    set_site_text,
+    set_translation,
+    site_languages,
+    translation_states,
+)
 from .lock import EditingLock
 from .model import ENGINES, Site, new_id
 from .published import page_fingerprint
@@ -53,6 +63,10 @@ CHANGES = {
     "page_url_set",
     "page_seo_set",
     "page_alt_set",
+    "site_languages_set",
+    "content_translate",
+    "site_text_set",
+    "translation_confirm",
     "folder_add",
     "tree_move",
     "page_asset_add",
@@ -374,16 +388,40 @@ class SiteService:
                     "seo": stored_seo(site, node.label),
                     "seo_effective": effective_seo(site, node.label),
                     "seo_inherited": effective_seo(site, node.label, {}),
+                    "urls": {
+                        language: language_url(site, node.label, language)
+                        for language in site_languages(site)
+                    },
+                    "seo_languages": {
+                        language: {
+                            "seo": stored_seo(site, node.label, language),
+                            "seo_effective": effective_seo(site, node.label, None, language),
+                            "seo_inherited": effective_seo(site, node.label, {}, language),
+                        }
+                        for language in site_languages(site)[1:]
+                    },
                     "images": page_images(site, node.label),
                 }
             )
         return {
             "site_id": site.site_id,
             "name": site.name,
+            "languages": site_languages(site),
+            "texts": {
+                n.label: {
+                    "text": n.value,
+                    "translations": translation_states(site, "text_" + n.label),
+                }
+                for n in site.section("texts").nodes
+            },
             "holder": self.lock.holder(site_id),
             "templates": items("templates"),
             "contents": [
-                {**item, "text": site.node("contents", item["id"]).value}
+                {
+                    **item,
+                    "text": site.node("contents", item["id"]).value,
+                    "translations": translation_states(site, "content_" + item["id"]),
+                }
                 for item in items("contents")
             ],
             "assets": items("assets"),
@@ -413,11 +451,14 @@ class SiteService:
     def _seo_check(self, identity, site_id, page_id=None):
         return seo_check(self.site(identity, site_id), page_id)
 
-    def _page_render(self, identity, site_id, page_id):
+    def _page_render(self, identity, site_id, page_id, language=None):
         if self.worker is None:
             raise DomainError("unavailable", "Configure the render worker first")
         site = self.site(identity, site_id)
-        return self.worker.render_page(page_request(site, page_id, self.connections))
+        if language is not None and language not in site_languages(site):
+            raise DomainError("invalid_input", f"{language} is not a language of the site")
+        request = page_request(site, page_id, self.connections, language=language)
+        return self.worker.render_page(request)
 
     # Changes on the working copy
 
@@ -464,17 +505,32 @@ class SiteService:
         site.move(item_id, parent, position)
         return {"item_id": item_id, "parent": parent}
 
-    def _page_url_set(self, identity, site, page_id, url):
-        site.set_page_url(page_id, url)
-        return {"page_id": page_id, "url": url}
+    def _page_url_set(self, identity, site, page_id, url, language=None):
+        return {"page_id": page_id, "url": set_page_url(site, page_id, url, language)}
 
-    def _page_seo_set(self, identity, site, page_id, fields):
-        set_page_seo(site, page_id, fields)
-        return {"page_id": page_id, "seo": stored_seo(site, page_id)}
+    def _page_seo_set(self, identity, site, page_id, fields, language=None):
+        set_page_seo(site, page_id, fields, language)
+        return {"page_id": page_id, "seo": stored_seo(site, page_id, language)}
 
     def _page_alt_set(self, identity, site, page_id, image, alt):
         set_image_alt(site, page_id, image, alt)
         return {"page_id": page_id, "image": image}
+
+    def _site_languages_set(self, identity, site, languages):
+        set_languages(site, languages)
+        return {"languages": site_languages(site)}
+
+    def _content_translate(self, identity, site, content_id, language, text, proposed=False):
+        set_translation(site, "content_" + content_id, language, text, proposed)
+        return {"content_id": content_id, "language": language}
+
+    def _site_text_set(self, identity, site, name, text, language=None, proposed=False):
+        set_site_text(site, name, text, language, proposed)
+        return {"name": name, "language": language}
+
+    def _translation_confirm(self, identity, site, translation, language):
+        confirm_translation(site, translation, language)
+        return {"translation": translation, "language": language}
 
     def _page_asset_add(self, identity, site, page_id, asset_id):
         return {"copy": site.add_page_asset(page_id, asset_id)}

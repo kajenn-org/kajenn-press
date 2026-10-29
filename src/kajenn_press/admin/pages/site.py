@@ -41,6 +41,9 @@ COMMANDS = frozenset(
         "page_seo_set",
         "page_url_set",
         "page_alt_set",
+        "content_translate",
+        "translation_confirm",
+        "site_languages_set",
         "publish",
         "page_rollback",
         "site_rollback",
@@ -71,10 +74,23 @@ PAGE_FIELDS = (
 )
 
 
-def pages_bag(read):
+TRANSLATION_MARKS = {
+    "missing": "  ○ missing",
+    "to_update": "  ↻ to update",
+    "to_review": "  ◐ to review",
+}
+
+
+def translation_mark(content, language):
+    """The mark of a content's translation in the language shown; none for the main one."""
+    state = content["translations"].get(language)
+    return TRANSLATION_MARKS.get(state["state"], "") if state else ""
+
+
+def pages_bag(read, language):
     """The Pages tree for the tree component: folders, pages, and slots under each page."""
     pages = {page["id"]: page for page in read["pages"]}
-    contents = {content["id"]: content["name"] for content in read["contents"]}
+    contents = {content["id"]: content for content in read["contents"]}
 
     def fill(bag, items):
         for item in items:
@@ -90,7 +106,12 @@ def pages_bag(read):
             slots = Bag()
             for name in page["slot_names"]:
                 assigned = page["slots"].get(name)
-                caption = f"{name} ← {contents[assigned]}" if assigned else f"{name} · empty"
+                caption = (
+                    f"{name} ← {contents[assigned]['name']}"
+                    + translation_mark(contents[assigned], language)
+                    if assigned
+                    else f"{name} · empty"
+                )
                 slots.set_item(
                     "slot_" + name,
                     None,
@@ -109,11 +130,12 @@ def pages_bag(read):
     return root
 
 
-def contents_bag(read):
+def contents_bag(read, language):
     bag = Bag()
     for content in read["contents"]:
         uses = content["uses"]
         caption = content["name"] + (f"  ({uses})" if uses > 1 else "")
+        caption += translation_mark(content, language)
         bag.set_item(
             content["id"],
             None,
@@ -123,6 +145,22 @@ def contents_bag(read):
             unused=uses == 0,
         )
     return bag
+
+
+def localized(item, languages, language):
+    """The SEO tab's view of a page in a language: its own fields, URL without prefix."""
+    base = {**item, "language": None, "languages": languages}
+    if language in ("", languages[0]) or language not in languages:
+        return base
+    own = item["seo_languages"][language]
+    return {
+        **base,
+        "language": language,
+        "seo": own["seo"],
+        "seo_effective": own["seo_effective"],
+        "seo_inherited": own["seo_inherited"],
+        "url": item["urls"][language].removeprefix("/" + language),
+    }
 
 
 def cost_line(chat, site_cost):
@@ -220,6 +258,7 @@ class Page(AdminPage):
             "help_text": "",
             "help_busy": False,
             "help_message": "",
+            "language": "",
         }.items():
             root.dataSetter(f"site.{name}", value)
         root.dataController(
@@ -231,11 +270,12 @@ class Page(AdminPage):
             "site_workspace",
             site="^site.id",
             version="^site.version",
+            language="^site.language",
             _onCalling="if(this.requests.inflight)this.requests.inflight.cancel()",
         )
 
     @source(auth="editor")
-    async def site_workspace(self, pane, site="", version=0):
+    async def site_workspace(self, pane, site="", version=0, language=""):
         if not site:
             self.new_site(pane)
             return
@@ -247,6 +287,11 @@ class Page(AdminPage):
             return
         holder = read["holder"]
         first_page = read["pages"][0]["id"] if read["pages"] else ""
+        languages = read["languages"]
+        if language not in languages:
+            # The language shown is page state: set once, kept across refreshes.
+            pane.dataSetter("site.language", languages[0])
+            language = languages[0]
         for name, value in {
             "name": read["name"],
             "holder": holder or "",
@@ -257,8 +302,16 @@ class Page(AdminPage):
                 {p["id"]: {"name": p["name"], "url": p["url"]} for p in read["pages"]}
             ),
             "contents_json": json.dumps(
-                {c["id"]: {"name": c["name"], "text": c["text"]} for c in read["contents"]}
+                {
+                    c["id"]: {
+                        "name": c["name"],
+                        "text": c["text"],
+                        "translations": c["translations"],
+                    }
+                    for c in read["contents"]
+                }
             ),
+            "main_language": languages[0],
             "template_id": read["templates"][0]["id"] if read["templates"] else "",
             "show_slots": True,
             "preview": "",
@@ -278,8 +331,8 @@ class Page(AdminPage):
             pane.dataSetter("site." + name, value)
         pane.dataFormula("site.assign_hidden", "!slot", slot="^site.assign_slot", _init=True)
         pane.dataFormula("site.editor_hidden", "!open", open="^site.editor_open", _init=True)
-        pane.dataSetter("site.pages_tree", pages_bag(read))
-        pane.dataSetter("site.contents_tree", contents_bag(read))
+        pane.dataSetter("site.pages_tree", pages_bag(read, language))
+        pane.dataSetter("site.contents_tree", contents_bag(read, language))
         pane.dataController(func="initialize", _onBuilt=True)
         pane.dataController(
             func="renderPage", page="^site.page", slots="^site.show_slots", _onBuilt=True
@@ -300,6 +353,10 @@ class Page(AdminPage):
         actions.button(
             "Take the site", class_="button--secondary", hidden="^site.editing"
         ).dataController(func="takeSite")
+        if len(languages) > 1:
+            menu = actions.select(value="^site.language", aria_label="Language shown")
+            for code in languages:
+                menu.option(code.upper() + (" · main" if code == languages[0] else ""), value=code)
         actions.button("Help me", class_="button--secondary").dataController(func="toggleHelp")
         actions.button("Save", disabled="^site.busy").dataController(func="save")
         top.span("^site.message", role="status", class_="site-message")
@@ -319,7 +376,11 @@ class Page(AdminPage):
         pane.dataSetter("site.seo_page", (root or [first_page])[0])
         pane.dataSetter("site.seo_version", 0)
         tabs.contentPane(title="SEO", pageName="seo", overflow="hidden").remote(
-            "seo_panel", site=site, page_id="^site.seo_page", version="^site.seo_version"
+            "seo_panel",
+            site=site,
+            page_id="^site.seo_page",
+            version="^site.seo_version",
+            language=language,
         )
         pane.dataSetter("site.pub_version", 0)
         pane.dataSetter("site.pub_panel", "")
@@ -397,6 +458,10 @@ class Page(AdminPage):
         head = editor.div(class_="editor-head")
         head.strong("^site.editor_title")
         head.button("Close", class_="button--quiet").dataController(func="closeEditor")
+        pane.dataFormula("site.editor_main_hidden", "!main", main="^site.editor_main", _init=True)
+        original = editor.div(class_="editor-main", hidden="^site.editor_main_hidden")
+        original.span("Main language", class_="muted")
+        original.htmlPreview(value="^site.editor_main", height="120px")
         views = editor.tabContainer(height="300px", tabMode="underline")
         views.contentPane(title="CodeMirror", pageName="code").codeMirror(
             value="^site.editor_text", language="html", height="100%"
@@ -407,18 +472,26 @@ class Page(AdminPage):
         views.contentPane(title="Preview", pageName="preview").htmlPreview(
             value="^site.editor_text", height="100%"
         )
-        editor.button("Save", disabled="^site.busy").dataController(func="saveContent")
+        row = editor.div(class_="editor-actions")
+        row.button("Save", disabled="^site.busy").dataController(func="saveContent")
+        pane.dataFormula(
+            "site.confirm_hidden", "state !== 'to_review'", state="^site.editor_state", _init=True
+        )
+        row.button(
+            "Confirm translation", class_="button--secondary", hidden="^site.confirm_hidden"
+        ).dataController(func="confirmTranslation")
+        row.span("^site.editor_note", class_="muted")
         editor.div(class_="update-plan").remote("plan_view", plan="^site.plan_json")
 
     @source(auth="editor")
-    async def seo_panel(self, pane, site="", page_id="", version=0):
+    async def seo_panel(self, pane, site="", page_id="", version=0, language=""):
         read = await execute_service("site_read", {"site_id": site})
         problems = await execute_service("seo_check", {"site_id": site})
         pages = {item["id"]: item for item in read["pages"]}
         if page_id not in pages:
             pane.p("This site has no page yet.", class_="muted seo-empty")
             return
-        item = pages[page_id]
+        item = localized(pages[page_id], read["languages"], language)
         images = {a["id"]: a["name"] for a in read["assets"] if a["mime_type"].startswith("image/")}
         layout = pane.borderContainer(height="100%", class_="seo-tab")
         self.seo_summary(layout.contentPane(region="top").div(class_="seo-checks"), problems)
@@ -460,9 +533,13 @@ class Page(AdminPage):
     def seo_form(self, pane, form, item, images):
         stored, inherited = item["seo"], item["seo_inherited"]
         is_root, is_missing = item["url"] == "/", item["url"] == "/404/"
-        fields = [*ROOT_FIELDS, *PAGE_FIELDS] if is_root else list(PAGE_FIELDS)
+        main = item["language"] is None
+        root_fields = ROOT_FIELDS if main else tuple(f for f in ROOT_FIELDS if f != "origin")
+        fields = [*root_fields, *PAGE_FIELDS] if is_root else list(PAGE_FIELDS)
         initial = {
             "page": item["id"],
+            "language": item["language"],
+            "languages": ", ".join(item["languages"]),
             "url": item["url"],
             "fields": {name: stored.get(name, "") for name in dict.fromkeys(fields)},
             "images": [{"image": i["image"], "alt": i["alt"] or ""} for i in item["images"]],
@@ -470,6 +547,7 @@ class Page(AdminPage):
         pane.dataSetter("site.seo_initial", json.dumps(initial))
         pane.dataSetter("site.seo_message", "")
         pane.dataSetter("site.seo.url", item["url"])
+        pane.dataSetter("site.seo.languages", initial["languages"])
         for name, value in initial["fields"].items():
             pane.dataSetter("site.seo." + name, value)
         for index, image in enumerate(initial["images"]):
@@ -500,8 +578,12 @@ class Page(AdminPage):
         if is_root:
             box = form.fieldset(class_="seo-box")
             box.legend("Site defaults · root page only")
+            if main:
+                hint = "Main language first, such as it, en, de"
+                row(box, "Languages", "languages", hint)
             row(box, "Site name", "site_name", "Empty: " + inherited["site_name"])
-            row(box, "Public origin", "origin", "Scheme and host, such as https://example.org")
+            if main:
+                row(box, "Public origin", "origin", "Scheme and host, such as https://example.org")
             row(box, "Organisation", "organisation")
             row(box, "Sharing image", "social_image", kind="select", options=image_options(""))
             robots = [("", "— default: index, follow —"), *((r, r) for r in ROBOTS)]
@@ -710,7 +792,7 @@ class Page(AdminPage):
         for name, value in {
             "pub_maintenance": state["maintenance"],
             "pub_state": state["state"] or "",
-            "pub_plan": json.dumps([item["page_id"] for item in plan]),
+            "pub_plan": json.dumps([item["entry"] for item in plan]),
             "pub_link": "",
             "pub_hours": "8",
             "pub_target": "site",
@@ -748,7 +830,7 @@ class Page(AdminPage):
             literal_text(note, "span", address_note(state))
         stage = layout.contentPane(region="center", class_="pub-stage")
         self.publish_panel(stage, plan)
-        self.rollback_panel(stage, read["pages"], site)
+        self.rollback_panel(stage, read["pages"], site, read["languages"])
         self.private_panel(stage, state)
         if state["address"] and not hidden:
             stage.iframe(
@@ -780,7 +862,7 @@ class Page(AdminPage):
         panel.button("Publish selected pages").dataController(func="publishSelected")
         panel.div("Warnings never block Publish.", class_="muted pub-small")
 
-    def rollback_panel(self, stage, pages, site):
+    def rollback_panel(self, stage, pages, site, languages):
         panel = stage.div(class_="pub-panel", hidden="^site.pub_hide_rollback")
         head = panel.div(class_="pub-panel-head")
         head.strong("Rollback")
@@ -788,7 +870,11 @@ class Page(AdminPage):
         menu = panel.select(value="^site.pub_target", aria_label="What to roll back")
         menu.option("Whole site", value="site")
         for page in pages:
-            menu.option("Page: " + page["name"], value=page["id"])
+            for code in languages:
+                # The main language's entry is the page id; the others add their code.
+                entry = page["id"] if code == languages[0] else f"{page['id']}.{code}"
+                suffix = f" · {code.upper()}" if len(languages) > 1 else ""
+                menu.option("Page: " + page["name"] + suffix, value=entry)
         panel.div(class_="pub-versions").remote(
             "rollback_view", site=site, target="^site.pub_target"
         )

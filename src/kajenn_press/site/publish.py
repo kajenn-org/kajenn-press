@@ -14,6 +14,7 @@ from genro_storage import StorageManager
 from ..catalog.errors import IntegrityError
 from ..domain import DomainError
 from ..publication.routes import origin
+from .languages import language_url, site_languages
 from .private import PREFIX, private_token
 from .published import (
     SCHEMA,
@@ -35,6 +36,11 @@ from .store import require_versioning
 MOUNT = "releases"
 BINDINGS_PATH = "bindings.json"
 DEFAULT_REFRESH = 600
+
+
+def entry_name(page_id, language, main):
+    """The index entry of a page in a language: the page id for the main language."""
+    return page_id if language == main else f"{page_id}.{language}"
 
 
 def refresh_seconds(site, page_id):
@@ -68,58 +74,70 @@ class Publisher:
     def index_path(self, site_id):
         return f"sites/{site_id}/index.json"
 
-    def page_path(self, site_id, page_id):
-        return f"sites/{site_id}/pages/{page_id}.zip"
+    def page_path(self, site_id, entry):
+        """The object of an index entry: `<page id>` or `<page id>.<language>` (N9-D5)."""
+        return f"sites/{site_id}/pages/{entry}.zip"
 
     def index(self, site_id, version_id=None):
         """The site index online, or None before the first Publish.
 
-        The current index written before N6 (schema 1, without `indexable`) also reads as
-        None: the next Publish writes every selected page and a new index.
+        A current index of an earlier schema (before N6 or N9) also reads as None: the next
+        Publish writes every selected page and a new index.
         """
         node = self.node(self.index_path(site_id), version_id)
         if not node.exists():
             return None
         raw = node.read_bytes()
-        if version_id is None and index_schema(raw) == SCHEMA - 1:
+        schema = index_schema(raw)
+        if version_id is None and isinstance(schema, int) and schema < SCHEMA:
             return None
         return read_index(raw)
 
     def plan(self, site):
-        """Each page with its state against the index online; changes are selected."""
+        """Each page in each language with its state against the index online; changes
+        are selected. `entry` is what Publish selects: the page id for the main language,
+        `<page id>.<language>` for the others."""
         index = self.index(site.site_id) or {"pages": {}}
         online = index["pages"]
         problems = seo_check(site)
-        plan = []
+        languages = site_languages(site)
+        plan, known = [], set()
         for node in site.section("pages").nodes:
             page_id = node.label
-            entry = online.get(page_id)
-            state = (
-                "new"
-                if entry is None
-                else "unchanged"
-                if entry["fingerprint"] == page_fingerprint(site, page_id)
-                else "changed"
-            )
             check = site.page_check(page_id)
             warnings = [f"empty slot {name}" for name in check["empty_slots"]]
             warnings += [f"unplaced content {key}" for key in check["unplaced"]]
             warnings += [p["message"] for p in problems if p["page_id"] == page_id]
-            plan.append(
-                {
-                    "page_id": page_id,
-                    "name": node.attr["name"],
-                    "url": node.attr["url"],
-                    "state": state,
-                    "selected": state != "unchanged",
-                    "warnings": warnings,
-                }
-            )
-        for page_id, entry in online.items():
-            if site.section("pages").get_node(page_id) is None:
+            for language in languages:
+                entry_id = entry_name(page_id, language, languages[0])
+                known.add(entry_id)
+                entry = online.get(entry_id)
+                state = (
+                    "new"
+                    if entry is None
+                    else "unchanged"
+                    if entry["fingerprint"] == page_fingerprint(site, page_id, language)
+                    else "changed"
+                )
                 plan.append(
                     {
                         "page_id": page_id,
+                        "entry": entry_id,
+                        "language": language,
+                        "name": node.attr["name"],
+                        "url": language_url(site, page_id, language),
+                        "state": state,
+                        "selected": state != "unchanged",
+                        "warnings": warnings if language == languages[0] else [],
+                    }
+                )
+        for entry_id, entry in online.items():
+            if entry_id not in known:
+                plan.append(
+                    {
+                        "page_id": entry_id.partition(".")[0],
+                        "entry": entry_id,
+                        "language": entry["language"],
                         "name": None,
                         "url": entry["url"],
                         "state": "removed",
@@ -222,26 +240,29 @@ class Publisher:
         index = self.index(site.site_id) or {"pages": {}, "maintenance": False}
         pages = dict(index["pages"])
         published, failed = [], []
-        for page_id in selected:
-            if site.section("pages").get_node(page_id) is None:
-                if page_id not in pages:
-                    raise DomainError("not_found", f"No page {page_id}", resource_id=page_id)
-                pages.pop(page_id)
-                published.append({"page_id": page_id, "state": "removed"})
+        for entry_id, page_id, language in self.selected_entries(site, pages, selected):
+            if language is None:
+                pages.pop(entry_id)
+                published.append({"page_id": page_id, "entry": entry_id, "state": "removed"})
                 continue
-            request = page_request(site, page_id, self.connections, published=True)
+            request = page_request(
+                site, page_id, self.connections, published=True, language=language
+            )
             result = self.worker.render_page(request)
             if result["status"] != "succeeded":
-                failed.append({"page_id": page_id, "diagnostics": result["diagnostics"]})
+                failed.append(
+                    {"page_id": page_id, "entry": entry_id, "diagnostics": result["diagnostics"]}
+                )
                 continue
             assets = {name: data for _url, name, data in page_assets(site, page_id, True).values()}
             image = social_image_file(site, page_id)
             if image is not None:
                 assets[image[0]] = image[1]
-            url = site.node("pages", page_id).attr["url"]
-            fingerprint = page_fingerprint(site, page_id)
+            url = language_url(site, page_id, language)
+            fingerprint = page_fingerprint(site, page_id, language)
             refresh = refresh_seconds(site, page_id)
             stored = {k: v for k, v in request.items() if k != "connections"}
+            seen = indexable(effective_seo(site, page_id, language=language))
             raw = pack_page(
                 PublishedPage(
                     page_id,
@@ -250,23 +271,25 @@ class Publisher:
                     site.node("pages", page_id).value.to_tytx(transport="json"),
                     result["html"],
                     assets,
-                    indexable(effective_seo(site, page_id)),
+                    seen,
+                    language,
                     json.dumps(stored, sort_keys=True) if refresh else None,
                     refresh,
                 )
             )
-            node = self.node(self.page_path(site.site_id, page_id))
+            node = self.node(self.page_path(site.site_id, entry_id))
             node.write_bytes(raw)
-            pages[page_id] = {
+            pages[entry_id] = {
                 "url": url,
-                "key": self.page_path(site.site_id, page_id),
+                "key": self.page_path(site.site_id, entry_id),
                 "version_id": node.versions[-1]["version_id"],
                 "fingerprint": fingerprint,
                 "assets": sorted(assets),
                 "refresh": refresh,
-                "indexable": indexable(effective_seo(site, page_id)),
+                "indexable": seen,
+                "language": language,
             }
-            published.append({"page_id": page_id, "state": "published"})
+            published.append({"page_id": page_id, "entry": entry_id, "state": "published"})
         try:
             raw_index = make_index(
                 site.site_id, source_version, pages, site.redirects(), index["maintenance"]
@@ -281,6 +304,29 @@ class Publisher:
             "failed": failed,
             "index_version": node.versions[-1]["version_id"],
         }
+
+    def selected_entries(self, site, online, selected):
+        """(entry, page id, language) for each selection; language None removes the entry.
+
+        A page id selects every language of the page; `<page id>.<language>` one language.
+        """
+        languages = site_languages(site)
+        found = []
+        for item in selected:
+            page_id, _, language = item.partition(".")
+            if site.section("pages").get_node(page_id) is None or (
+                language and language not in languages
+            ):
+                gone = [
+                    e for e in online if e == item or (not language and e.partition(".")[0] == item)
+                ]
+                if not gone:
+                    raise DomainError("not_found", f"No page {item}", resource_id=item)
+                found += [(entry, page_id, None) for entry in gone]
+                continue
+            for code in [language] if language else languages:
+                found.append((entry_name(page_id, code, languages[0]), page_id, code))
+        return found
 
     def page_versions(self, site_id, page_id):
         """Versions of a page object, oldest first, with the one online marked."""
@@ -300,7 +346,10 @@ class Publisher:
         ]
 
     def page_rollback(self, site_id, page_id, version_id):
-        """Put an earlier version of a page online: a new index pinning it."""
+        """Put an earlier version of a page online: a new index pinning it.
+
+        `page_id` is an index entry: the page id (main language) or `<page id>.<language>`.
+        """
         index = self.index(site_id)
         if index is None:
             raise DomainError("not_found", f"Site {site_id} was never published")
@@ -308,7 +357,7 @@ class Publisher:
         if version_id not in {v["version_id"] for v in self.page_versions(site_id, page_id)}:
             raise DomainError("not_found", f"No version {version_id} of page {page_id}")
         earlier = unpack_page(self.node(key, version_id).read_bytes())
-        if earlier.page_id != page_id:
+        if earlier.page_id != page_id.partition(".")[0]:
             raise IntegrityError("Page object holds another page")
         pages = {
             **index["pages"],
@@ -320,6 +369,7 @@ class Publisher:
                 "assets": sorted(earlier.assets),
                 "refresh": earlier.refresh,
                 "indexable": earlier.indexable,
+                "language": earlier.language,
             },
         }
         try:

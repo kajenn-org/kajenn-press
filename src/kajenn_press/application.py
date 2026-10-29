@@ -294,19 +294,47 @@ class PressApplication(McpOpenApiApplication):
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def page_url_set(self, site_id: str, key: str, page_id: str, url: str, _request=None) -> dict:
-        """Move a page to a new URL path; the old path redirects to it."""
+    def page_url_set(
+        self,
+        site_id: str,
+        key: str,
+        page_id: str,
+        url: str,
+        language: str | None = None,
+        _request=None,
+    ) -> dict:
+        """Move a page to a new URL path, in the main language or another one (without
+        its prefix); the old path redirects to it."""
         return self._site(
-            _request, "page_url_set", site_id=site_id, key=key, page_id=page_id, url=url
+            _request,
+            "page_url_set",
+            site_id=site_id,
+            key=key,
+            page_id=page_id,
+            url=url,
+            language=language,
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def page_seo_set(
-        self, site_id: str, key: str, page_id: str, fields: dict, _request=None
+        self,
+        site_id: str,
+        key: str,
+        page_id: str,
+        fields: dict,
+        language: str | None = None,
+        _request=None,
     ) -> dict:
-        """Set SEO fields of a page; an empty value clears the field (root page: site defaults)."""
+        """Set SEO fields of a page, in the main language or another one; an empty value
+        clears the field (root page: site defaults)."""
         return self._site(
-            _request, "page_seo_set", site_id=site_id, key=key, page_id=page_id, fields=fields
+            _request,
+            "page_seo_set",
+            site_id=site_id,
+            key=key,
+            page_id=page_id,
+            fields=fields,
+            language=language,
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
@@ -322,6 +350,74 @@ class PressApplication(McpOpenApiApplication):
             page_id=page_id,
             image=image,
             alt=alt,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_languages_set(self, site_id: str, key: str, languages: list, _request=None) -> dict:
+        """Set the site's languages (BCP 47 tags such as it, en), main language first."""
+        return self._site(
+            _request, "site_languages_set", site_id=site_id, key=key, languages=languages
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def content_translate(
+        self,
+        site_id: str,
+        key: str,
+        content_id: str,
+        language: str,
+        text: str,
+        proposed: bool = False,
+        _request=None,
+    ) -> dict:
+        """Write the translation of a content into one of the site's other languages."""
+        return self._site(
+            _request,
+            "content_translate",
+            site_id=site_id,
+            key=key,
+            content_id=content_id,
+            language=language,
+            text=text,
+            proposed=proposed,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_text_set(
+        self,
+        site_id: str,
+        key: str,
+        name: str,
+        text: str,
+        language: str | None = None,
+        proposed: bool = False,
+        _request=None,
+    ) -> dict:
+        """Set a template text of the site (such as a menu label), main language by default;
+        templates read it as ^texts.<name>."""
+        return self._site(
+            _request,
+            "site_text_set",
+            site_id=site_id,
+            key=key,
+            name=name,
+            text=text,
+            language=language,
+            proposed=proposed,
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def translation_confirm(
+        self, site_id: str, key: str, translation: str, language: str, _request=None
+    ) -> dict:
+        """Confirm a translation proposed by Help me (translation: content_<id> or text_<name>)."""
+        return self._site(
+            _request,
+            "translation_confirm",
+            site_id=site_id,
+            key=key,
+            translation=translation,
+            language=language,
         )
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
@@ -477,9 +573,14 @@ class PressApplication(McpOpenApiApplication):
         return self._site(_request, "seo_check", site_id=site_id, page_id=page_id)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
-    def page_render(self, site_id: str, page_id: str, _request=None) -> dict:
-        """Static HTML of a page, rendered in the worker."""
-        return self._site(_request, "page_render", site_id=site_id, page_id=page_id)
+    def page_render(
+        self, site_id: str, page_id: str, language: str | None = None, _request=None
+    ) -> dict:
+        """Static HTML of a page in a language (main by default), rendered in the worker;
+        slots shown in the main language for lack of a translation carry kpress_fallback."""
+        return self._site(
+            _request, "page_render", site_id=site_id, page_id=page_id, language=language
+        )
 
 
 def create_server(root, *, auth, grants, administration=None, sites=None):

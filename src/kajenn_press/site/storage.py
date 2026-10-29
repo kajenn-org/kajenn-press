@@ -38,17 +38,24 @@ def site_from_envelope(envelope):
         bag = Bag.from_tytx(envelope["site"])
     except (BagException, TypeError, ValueError) as exc:
         raise IntegrityError("Site source is not a readable Bag") from exc
-    add_seo_sections(bag)
+    add_missing_sections(bag)
     check_structure(bag)
     return Site(bag)
 
 
-def add_seo_sections(bag):
-    """Sources saved before N6 have pages without the `seo` section: add it empty."""
+def add_missing_sections(bag):
+    """Sources saved before N6 and N9 lack the sections those added: add them empty.
+
+    Any other missing section is still refused by `check_structure`.
+    """
+    for section in ("texts", "translations"):
+        if bag.get_node(section) is None:
+            bag.set_item(section, Bag())
     pages = bag.get_item("pages")
     for page in pages.values() if isinstance(pages, Bag) else ():
-        if isinstance(page, Bag) and page.get_node("seo") is None:
-            page.set_item("seo", Bag())
+        for section in ("seo", "translations", "languages"):
+            if isinstance(page, Bag) and page.get_node(section) is None:
+                page.set_item(section, Bag())
 
 
 def check_structure(bag):
