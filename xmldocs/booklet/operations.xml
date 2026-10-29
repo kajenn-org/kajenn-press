@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<booklet id="booklet/operations" title="The site operations over REST and MCP" date="2026-10-29" lang="en" author="Giovanni Porcari">
+  <purpose>
+    <p>How a program or an agent works on Kajenn Press sites through the 45 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
+  </purpose>
+
+  <requires>
+    <list>
+      <item>A websites installation with site sources; <c>capabilities</c> says which parts are configured (<c>sites</c>, <c>publishing</c>, <c>rendering</c>) and lists the operations.</item>
+      <item>A bearer token of an identity with the <c>editor</c> tag and grants on the sites (<c>read</c>, <c>write</c>, <c>create_site</c>, <c>build</c>, <c>publish</c>).</item>
+    </list>
+  </requires>
+
+  <step id="s-call" title="Call an operation">
+    <p>Every operation is a route of one application on the websites root, reachable two ways with the same arguments:</p>
+    <list>
+      <item>REST: <c>POST /&lt;operation&gt;</c> with a JSON object of arguments.</item>
+      <item>MCP: <c>POST /mcp</c>, JSON-RPC <c>tools/call</c> with <c>name</c> the operation and <c>arguments</c> the same object; <c>tools/list</c> lists them.</item>
+    </list>
+    <p>Both answer <c>{"ok": true, "result": …}</c> or <c>{"ok": false, "error": {"code", "message", …}}</c>. Over REST the error codes map to HTTP statuses: <c>unauthenticated</c> 401, <c>forbidden</c> 403, <c>not_found</c> 404, <c>conflict</c> 409, <c>unavailable</c> 503, any other 422.</p>
+    <example title="Add a content over REST">
+      <code lang="bash"><![CDATA[
+curl -s -X POST https://kpress.example/content_add \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"site_id": "…", "key": "intro-1", "name": "Intro", "format": "html", "text": "<p>Hello</p>"}'
+]]></code>
+    </example>
+  </step>
+
+  <step id="s-session" title="Hold the site while changing it">
+    <p>Changes go to the caller's working copy of the site and need its editing lock: <c>site_open</c> takes the site (<c>force</c> takes it from another holder), <c>site_save</c> writes the working copy as a new S3 version of the source, <c>site_close</c> releases it. The lock expires after 30 minutes without changes.</p>
+    <p>Every change carries an idempotency <c>key</c> chosen by the caller: repeating a call with the same key and the same arguments returns the first result without running it again; the same key with other arguments is refused. Keys are kept 24 hours.</p>
+  </step>
+
+  <step id="s-reference" title="The operations">
+    <p>Every operation except <c>site_list</c>, <c>starters_list</c>, <c>site_new</c> and <c>site_import</c> also takes <c>site_id</c>. "Lock" says whether the caller must hold the site; "Key" whether the call takes an idempotency key.</p>
+    <table title="Reading the site">
+      <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
+      <row><cell><c>copies_update_plan</c></cell><cell>original_id</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>Copies of an original, with differences and what Update would select.</cell></row>
+      <row><cell><c>page_check</c></cell><cell>page_id</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>Empty slots and unplaced contents of a page.</cell></row>
+      <row><cell><c>page_render</c></cell><cell>page_id, language</cell><cell>build</cell><cell>no</cell><cell>no</cell><cell>Static HTML of a page in a language (main by default), rendered in the worker; slots shown in the main language for lack of a translation carry kpress_fallback.</cell></row>
+      <row><cell><c>seo_check</c></cell><cell>page_id</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>SEO problems of one page or of the whole site: titles, descriptions, alt, links.</cell></row>
+      <row><cell><c>site_export</c></cell><cell>version_id</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>A saved version of the site as one zip, in base64.</cell></row>
+      <row><cell><c>site_read</c></cell><cell>—</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>Templates, contents with use counts, assets, pages and the holder.</cell></row>
+      <row><cell><c>site_versions</c></cell><cell>—</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>S3 versions of the site source, oldest first.</cell></row>
+      <row><cell><c>template_switch_plan</c></cell><cell>page_id, template_id</cell><cell>read</cell><cell>no</cell><cell>no</cell><cell>Proposed slot mapping, by name, for a page switching template.</cell></row>
+    </table>
+    <table title="Editing (working copy)">
+      <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
+      <row><cell><c>asset_add</c></cell><cell>name, kind, data_base64, mime_type</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add a CSS, JavaScript or media asset.</cell></row>
+      <row><cell><c>content_add</c></cell><cell>name, format, text</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add an HTML or Markdown content.</cell></row>
+      <row><cell><c>content_save</c></cell><cell>content_id, text</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Replace the text of a content; page copies change only through copies_update.</cell></row>
+      <row><cell><c>content_translate</c></cell><cell>content_id, language, text, proposed</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Write the translation of a content into one of the site&#x27;s other languages.</cell></row>
+      <row><cell><c>copies_update</c></cell><cell>original_id, selected</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Replace the selected copies, given as [page_id, path], with the original.</cell></row>
+      <row><cell><c>folder_add</c></cell><cell>name, parent</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add a logical folder to the Pages tree.</cell></row>
+      <row><cell><c>page_add</c></cell><cell>name, template_id</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add a page with a copy of a site template.</cell></row>
+      <row><cell><c>page_alt_set</c></cell><cell>page_id, image, alt</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Set the alt text of one image in this page&#x27;s copy (a local change of the copy).</cell></row>
+      <row><cell><c>page_asset_add</c></cell><cell>page_id, asset_id</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Copy an asset into a page.</cell></row>
+      <row><cell><c>page_seo_set</c></cell><cell>page_id, fields, language</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Set SEO fields of a page, in the main language or another one; an empty value clears the field (root page: site defaults).</cell></row>
+      <row><cell><c>page_url_set</c></cell><cell>page_id, url, language</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Move a page to a new URL path, in the main language or another one (without its prefix); the old path redirects to it.</cell></row>
+      <row><cell><c>site_languages_set</c></cell><cell>languages</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Set the site&#x27;s languages (BCP 47 tags such as it, en), main language first.</cell></row>
+      <row><cell><c>site_text_set</c></cell><cell>name, text, language, proposed</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Set a template text of the site (such as a menu label), main language by default; templates read it as ^texts.&lt;name&gt;.</cell></row>
+      <row><cell><c>slot_assign</c></cell><cell>page_id, slot, content_id</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Copy a content into a slot of a page.</cell></row>
+      <row><cell><c>template_add</c></cell><cell>name, engine, source, python_source</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Add a template (engine gramlot or htmlbuilder): a plain Source in TYTX JSON, or Python build code defining build(source, data).</cell></row>
+      <row><cell><c>template_switch</c></cell><cell>page_id, template_id, mapping</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Switch a page&#x27;s template with the confirmed slot mapping.</cell></row>
+      <row><cell><c>translation_confirm</c></cell><cell>translation, language</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Confirm a translation proposed by Help me (translation: content_&lt;id&gt; or text_&lt;name&gt;).</cell></row>
+      <row><cell><c>tree_move</c></cell><cell>item_id, parent, position</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Move a page or folder in the Pages tree (drag and drop).</cell></row>
+      <row><cell><c>unplaced_place</c></cell><cell>page_id, copy_id, slot</cell><cell>write</cell><cell>yes</cell><cell>yes</cell><cell>Move an unplaced content copy into a free slot.</cell></row>
+    </table>
+    <table title="Editing session">
+      <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
+      <row><cell><c>site_close</c></cell><cell>—</cell><cell>write</cell><cell>yes</cell><cell>no</cell><cell>Release the site.</cell></row>
+      <row><cell><c>site_open</c></cell><cell>force</cell><cell>write</cell><cell>takes it</cell><cell>no</cell><cell>Take the site for editing; force takes it from another holder.</cell></row>
+      <row><cell><c>site_restore</c></cell><cell>version_id</cell><cell>write</cell><cell>yes</cell><cell>no</cell><cell>Make an older version current again, as a new version.</cell></row>
+      <row><cell><c>site_save</c></cell><cell>—</cell><cell>write</cell><cell>yes</cell><cell>no</cell><cell>Save the working copy as a new S3 version.</cell></row>
+    </table>
+    <table title="Sites and Library">
+      <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
+      <row><cell><c>site_import</c></cell><cell>data_base64, name</cell><cell>create_site</cell><cell>no</cell><cell>yes</cell><cell>A new site from an exported zip; the importer holds it.</cell></row>
+      <row><cell><c>site_list</c></cell><cell>—</cell><cell>read (filters)</cell><cell>no</cell><cell>no</cell><cell>Sites with a source the caller can read, and who holds each.</cell></row>
+      <row><cell><c>site_new</c></cell><cell>name, starter_id</cell><cell>create_site</cell><cell>no</cell><cell>yes</cell><cell>Create a site source, empty or from a starting site; the creator holds it.</cell></row>
+      <row><cell><c>starter_save</c></cell><cell>name</cell><cell>library write, site read</cell><cell>no</cell><cell>yes</cell><cell>Keep the latest saved version of a site in the Library as a starting site.</cell></row>
+      <row><cell><c>starters_list</c></cell><cell>—</cell><cell>library read</cell><cell>no</cell><cell>no</cell><cell>Starting sites in the Library.</cell></row>
+    </table>
+    <table title="Publication">
+      <row head="true"><cell>Operation</cell><cell>Arguments</cell><cell>Permission</cell><cell>Lock</cell><cell>Key</cell><cell>What it does</cell></row>
+      <row><cell><c>maintenance_set</c></cell><cell>on</cell><cell>publish, write</cell><cell>yes</cell><cell>yes</cell><cell>Put the published site in maintenance (503) or take it out.</cell></row>
+      <row><cell><c>page_rollback</c></cell><cell>page_id, version_id</cell><cell>publish, write</cell><cell>yes</cell><cell>yes</cell><cell>Put an earlier published version of a page online.</cell></row>
+      <row><cell><c>page_versions</c></cell><cell>page_id</cell><cell>publish</cell><cell>no</cell><cell>no</cell><cell>Published versions of a page, oldest first, with the one online marked.</cell></row>
+      <row><cell><c>private_link</c></cell><cell>hours</cell><cell>publish</cell><cell>no</cell><cell>no</cell><cell>A link that shows the real site while private or in maintenance (8 or 168 hours).</cell></row>
+      <row><cell><c>publication_state</c></cell><cell>—</cell><cell>publish</cell><cell>no</cell><cell>no</cell><cell>Address, public or private, maintenance, last Publish and pages changed since.</cell></row>
+      <row><cell><c>publish</c></cell><cell>selected</cell><cell>publish, write</cell><cell>yes</cell><cell>yes</cell><cell>Save the source and publish the selected pages; the site index is written last.</cell></row>
+      <row><cell><c>publish_plan</c></cell><cell>—</cell><cell>publish</cell><cell>no</cell><cell>no</cell><cell>Pages changed since the last publication, selected, with their warnings.</cell></row>
+      <row><cell><c>site_rollback</c></cell><cell>version_id</cell><cell>publish, write</cell><cell>yes</cell><cell>yes</cell><cell>Restore a source version and publish the whole site from it.</cell></row>
+      <row><cell><c>site_visibility_set</c></cell><cell>state</cell><cell>publish, write</cell><cell>yes</cell><cell>yes</cell><cell>Make the site public or private at its address (the root page&#x27;s public origin).</cell></row>
+    </table>
+  </step>
+
+  <rules>
+    <rule level="must" why="A repeated call is recognised by its key.">Use a new key for every distinct change and the same key when retrying it.</rule>
+    <rule level="must" why="Other holders' changes are lost when a site is taken.">Save before closing or leaving a site for long.</rule>
+    <rule level="should" why="The plan names exactly what changed and what is wrong.">Read <c>publish_plan</c> before <c>publish</c>.</rule>
+  </rules>
+
+  <limits>
+    <limit source="src/kajenn_press/site/service.py:107">One holder edits a site at a time; there is no merge of concurrent changes.</limit>
+  </limits>
+
+  <facts>
+    <fact source="src/kajenn_press/site/service.py:92" method="test" verified="2026-10-29">The operations are the union of READS, CHANGES, CONTROLS, LIBRARY and PUBLISHING: 45, each a route of <c>PressApplication</c> (<c>tests/site/test_site_service.py</c>).</fact>
+    <fact source="src/kajenn_press/application.py:18" method="read" verified="2026-10-29">REST maps <c>unauthenticated</c>, <c>forbidden</c>, <c>not_found</c>, <c>conflict</c>, <c>unavailable</c> to 401, 403, 404, 409, 503 and other errors to 422.</fact>
+    <fact source="tests/api/support.py:49" method="test" verified="2026-10-29">REST calls are <c>POST /&lt;operation&gt;</c>; MCP calls are JSON-RPC <c>tools/call</c> on <c>/mcp</c>.</fact>
+    <fact source="src/kajenn_press/site/receipts.py:24" method="read" verified="2026-10-29">Idempotency receipts are kept 24 hours.</fact>
+    <fact source="src/kajenn_press/site/lock.py:15" method="read" verified="2026-10-29">The editing lock expires after 30 minutes.</fact>
+  </facts>
+
+  <related>
+    <doc id="booklet/site-tab"/>
+    <doc id="booklet/publication"/>
+  </related>
+</booklet>

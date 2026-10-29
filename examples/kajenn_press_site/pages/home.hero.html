@@ -1,18 +1,18 @@
 <div class="hero wrap">
 <div>
-<p class="eyebrow"><span class="dot"></span>Editorial publishing · Genro family</p>
-<h1>Write it. Review it. <em>Release</em> it.</h1>
-<p class="lead">Kajenn Press manages a website as editorial content with exact history. Every publication is a complete, immutable release. Returning to a previous release is one command.</p>
+<p class="eyebrow"><span class="dot"></span>Website editing · Genro family</p>
+<h1>Build it. Review it. <em>Publish</em> it.</h1>
+<p class="lead">Kajenn Press builds a website page by page in the browser, in one or more languages, and publishes each page as its own versioned object. Going back to an earlier version of a page is one command.</p>
 <div class="actions"><a class="button" href="/features/">See the features →</a><a class="button secondary" href="/get-started/">Get started</a></div>
 </div>
-<div class="codebox"><div class="codebar"><span>template.py</span><span>Gramlot or HtmlBuilder</span></div><pre><code><span class="kw">def</span> build(source, data):
-    document = source.html(lang=<span class="str">"^language"</span>)
-    document.head().title(<span class="str">"^page.title"</span>)
-    body = document.body()
-    body.h1(<span class="str">"^page.title"</span>)
-    body.div(<span class="str">"^blocks.body"</span>)
+<div class="codebox"><div class="codebar"><span>layout.py</span><span>Gramlot</span></div><pre><code><span class="kw">def</span> build(source, data):
+    doc = source.html(lang=<span class="str">"en"</span>)
+    doc.head().title(<span class="str">"^page.title"</span>)
+    body = doc.body()
+    body.nav().a(<span class="str">"^texts.nav_home"</span>, href=<span class="str">"^texts.href_home"</span>)
+    body.div(node_label=<span class="str">"body"</span>, kpress_slot=<span class="str">"body"</span>)
 
-<span class="comment"># The template builds the page structure.</span>
-<span class="comment"># Editors fill the named blocks.</span>
-<span class="comment"># A build renders full static HTML.</span></code></pre></div>
-</div><div class="wrap"><div class="trustline"><span>Exact revisions</span><span>Gramlot and HtmlBuilder templates</span><span>Private previews</span><span>Atomic releases</span><span>Rollback</span><span>REST and MCP</span></div></div>
+<span class="comment"># The template builds the layout once.</span>
+<span class="comment"># Each page fills its slots with contents.</span>
+<span class="comment"># Publish renders static HTML per language.</span></code></pre></div>
+</div><div class="wrap"><div class="trustline"><span>Visual editor</span><span>Gramlot and HtmlBuilder templates</span><span>Per-page publication</span><span>S3 versions</span><span>Languages</span><span>Help me</span><span>REST and MCP</span></div></div>

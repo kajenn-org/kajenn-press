@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!-- generated from publication.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Publication and serving</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>Publication and serving</h1><div class="doc-meta"><span>booklet/publication</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
+    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, and how rollback, maintenance, private sites and private links work.</p>
+  </section><section class="part requires"><h2>Requirements</h2>
+    <ul>
+      <li>A release bucket with S3 versioning, written by websites and read by site servers with read-only keys.</li>
+      <li>The site's root page with a public origin: it is the site's address.</li>
+    </ul>
+  </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-objects"><h3><span class="step-num">1.</span>What Publish writes</h3>
+    <p>Publish renders each selected page in each selected language and writes one zip object per page and language, then the site index, then the bindings. Every write is a new S3 version: nothing is overwritten in place.</p>
+    <div class="table-wrap"><table><caption>Objects in the release bucket</caption>
+      <tr><th>Key</th><th>Content</th></tr>
+      <tr><td><code>sites/&lt;site&gt;/pages/&lt;page&gt;.zip</code></td><td>The page in the main language.</td></tr>
+      <tr><td><code>sites/&lt;site&gt;/pages/&lt;page&gt;.&lt;language&gt;.zip</code></td><td>The page in another language.</td></tr>
+      <tr><td><code>sites/&lt;site&gt;/index.json</code></td><td>The site index: for every page and language, its URL, object key, the S3 version online, fingerprint, assets, refresh time, whether it is indexable and its language; the redirects; maintenance.</td></tr>
+      <tr><td><code>bindings.json</code></td><td>Public origin → site id and state (public or private), for every site.</td></tr>
+    </table></div>
+    <p>A page object holds <code>page.json</code> (the page Bag, URL, fingerprint, the SHA-256 of the HTML, language), <code>index.html</code> (the pre-rendered page), its assets by content address, and for a page whose Data uses resolvers <code>request.json</code>, the render request without connections. The index is written after the pages and pins their versions, so a reader never sees half a publication.</p>
+    <p>A page is selected when its fingerprint differs from the one online: name, URL, the page as its language sees it, effective SEO, site texts and the site's languages. A translation changes only its own language.</p>
+  </section><section class="section step" id="s-serving"><h3><span class="step-num">2.</span>How a site server answers</h3>
+    <p>A site server reads <code>bindings.json</code> and each site's index at most every cache interval, keeping the last valid ones, so a new address or a new publication needs no restart. For a request it finds the site by origin, then:</p>
+    <ol>
+      <li>a private site answers 404 and a site in maintenance 503, unless the browser holds the cookie of a valid private link;</li>
+      <li><code>/robots.txt</code> and <code>/sitemap.xml</code> come from the index; the sitemap lists every indexable page in every language; a root page that is not indexable closes the whole site to robots;</li>
+      <li>a redirect source answers 301 to its target, a path without its final slash 301 to the slashed one, a path with the main language's prefix 301 to the path without it;</li>
+      <li><code>/_assets/&lt;sha256&gt;.&lt;ext&gt;</code> answers the asset with an immutable cache header;</li>
+      <li>a page URL answers its HTML; a page with resolvers is rendered again by the worker when its refresh time has passed and kept in a local cache;</li>
+      <li>anything else answers the 404 page of the path's language, else the main one.</li>
+    </ol>
+    <p>Public pages carry no cookie and no session; only the private link sets one.</p>
+  </section><section class="section step" id="s-rollback"><h3><span class="step-num">3.</span>Roll back</h3>
+    <ul>
+      <li><b>A page in one language</b>: <code>page_rollback</code> pins an earlier S3 version of its object in a new index; the other pages and languages stay as they are.</li>
+      <li><b>The whole site</b>: <code>site_rollback</code> restores a saved source version and publishes every page that differs from it.</li>
+    </ul>
+  </section><section class="section step" id="s-private"><h3><span class="step-num">4.</span>Maintenance, private sites and private links</h3>
+    <p><code>maintenance_set</code> writes a new index with the maintenance flag; pages stay as they are. <code>site_visibility_set</code> makes the site private or public at its address, even before the first Publish.</p>
+    <p><code>private_link</code> returns <code>&lt;address&gt;/_private/&lt;token&gt;</code>, valid 8 hours or 7 days. The token names the site and its expiry and is signed with HMAC-SHA256 under a secret shared by websites and the site servers. Opening it sets an HttpOnly cookie for that host (Secure on https, SameSite=Lax) and redirects to <code>/</code>; with it, the real site shows and its responses are not stored by shared caches. Rotating the secret revokes every link.</p>
+  </section></section><section class="part rules"><h2>Rules</h2>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Give each site its own public origin.</div><div class="muted why">Publish refuses an address that belongs to another site.</div></div>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Give the site servers keys that can read object versions (<code>GetObjectVersion</code>, <code>ListBucketVersions</code>) and nothing else.</div><div class="muted why">Pages are read by pinned version.</div></div>
+    <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Give private links the shortest validity that serves.</div><div class="muted why">A link works until it expires and cannot be revoked one by one.</div></div>
+  </section><section class="part limits"><h2>Current limits</h2>
+    <div class="box limit"><div>An index of an earlier schema reads as absent: the next Publish writes every page again; until then the site server answers 503 for that site.</div><div class="box-foot"><code class="source">src/kajenn_press/site/publish.py:81</code></div></div>
+    <div class="box limit"><div>A site server serves the sites of one release bucket; there is no registry of servers yet.</div></div>
+  </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/published.py:27</code><span class="muted">2026-10-29</span></div><div>The page object and index schema is 3; entries carry <code>language</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/publish.py:41</code><span class="muted">2026-10-29</span></div><div>The main language's entry is the page id; another language's is <code>&lt;page&gt;.&lt;language&gt;</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/publish.py:236</code><span class="muted">2026-10-29</span></div><div>Publish writes the pages, then the index, then the binding of the site's address.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/published.py:50</code><span class="muted">2026-10-29</span></div><div>A translation changes the fingerprint of its own language only.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:68</code><span class="muted">2026-10-29</span></div><div>A running site server serves an address set after it started and stops serving the old one.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:272</code><span class="muted">2026-10-29</span></div><div>The main language's prefixed path answers 301 to the unprefixed one.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:346</code><span class="muted">2026-10-29</span></div><div>The sitemap lists indexable pages of every language; a noindex root gives <code>Disallow: /</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/private.py:35</code><span class="muted">2026-10-29</span></div><div>Private links last 8 or 168 hours; forged, foreign and expired tokens are refused.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:224</code><span class="muted">2026-10-29</span></div><div>A valid private link answers 303 with an HttpOnly cookie for its host.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">tests/docker/test_docker_composition_contract.py:1</code><span class="muted">2026-10-29</span></div><div>The Docker composition publishes the example site in two languages, serves it, and opens it through a private link during maintenance.</div></div>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../booklet/site-tab.html">booklet/site-tab</a></li>
+    <li><a href="../booklet/operations.html">booklet/operations</a></li>
+  </ul></section></main></body></html>

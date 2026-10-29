@@ -307,7 +307,7 @@ def test_the_example_site_has_no_seo_problem_and_serves_its_seo(setup, tmp_path)
     assert run(service, "seo_check", site_id=site) == []
     home, features, sitemap = get(server(setup, site, tmp_path), "/", "/features/", "/sitemap.xml")
     assert '<link rel="canonical" href="http://site.localhost/">' in home.text
-    assert '<meta name="description" content="Kajenn Press manages a website' in home.text
+    assert '<meta name="description" content="Kajenn Press builds a website' in home.text
     assert '<meta property="og:site_name" content="Kajenn Press">' in features.text
     assert f"<loc>{ORIGIN}/get-started/</loc>" in sitemap.text
 

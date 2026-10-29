@@ -22,9 +22,18 @@ administration, whose site tab has the Visual editor, SEO and Published site tab
 Help me: a Sonnet chat that builds pages, templates and contents through the same
 operations, with tokens and cost shown per chat and per site.
 
-The design is in `xmldocs/proposal/site-tab-redesign` and the plan in `.phased/roadmap.md`.
-The documents `docs/01`–`docs/14` describe the previous catalog and release model and are
-rewritten with the documentation macro (N10).
+## Booklets
+
+| Booklet | For |
+|---|---|
+| [Building a site in the site tab](xmldocs/booklet/site-tab.md) | Operators: pages, slots, copies, SEO, languages, Help me, publication |
+| [Writing a template](xmldocs/booklet/templates.md) | Template authors: build code, slots, site texts, assets, resolvers |
+| [The site operations over REST and MCP](xmldocs/booklet/operations.md) | Programs and agents: the 45 operations, keys, lock, errors |
+| [Publication and serving](xmldocs/booklet/publication.md) | Objects in the release bucket, the site server, rollback, private links |
+| [Installing and running](xmldocs/booklet/install.md) | Docker composition, external buckets, Help me key, tests |
+
+The design and its decisions are in `xmldocs/proposal/site-tab-redesign`; the plan of work
+in `.phased/roadmap.md`.
 
 ## Layout
 

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!-- generated from operations.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>The site operations over REST and MCP</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>The site operations over REST and MCP</h1><div class="doc-meta"><span>booklet/operations</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
+    <p>How a program or an agent works on Kajenn Press sites through the 45 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
+  </section><section class="part requires"><h2>Requirements</h2>
+    <ul>
+      <li>A websites installation with site sources; <code>capabilities</code> says which parts are configured (<code>sites</code>, <code>publishing</code>, <code>rendering</code>) and lists the operations.</li>
+      <li>A bearer token of an identity with the <code>editor</code> tag and grants on the sites (<code>read</code>, <code>write</code>, <code>create_site</code>, <code>build</code>, <code>publish</code>).</li>
+    </ul>
+  </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-call"><h3><span class="step-num">1.</span>Call an operation</h3>
+    <p>Every operation is a route of one application on the websites root, reachable two ways with the same arguments:</p>
+    <ul>
+      <li>REST: <code>POST /&lt;operation&gt;</code> with a JSON object of arguments.</li>
+      <li>MCP: <code>POST /mcp</code>, JSON-RPC <code>tools/call</code> with <code>name</code> the operation and <code>arguments</code> the same object; <code>tools/list</code> lists them.</li>
+    </ul>
+    <p>Both answer <code>{"ok": true, "result": …}</code> or <code>{"ok": false, "error": {"code", "message", …}}</code>. Over REST the error codes map to HTTP statuses: <code>unauthenticated</code> 401, <code>forbidden</code> 403, <code>not_found</code> 404, <code>conflict</code> 409, <code>unavailable</code> 503, any other 422.</p>
+    <div class="box example"><div class="box-head"><b>Add a content over REST</b></div>
+      <figure class="code"><figcaption>bash</figcaption><pre><code>curl -s -X POST https://kpress.example/content_add \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"site_id": "…", "key": "intro-1", "name": "Intro", "format": "html", "text": "&lt;p&gt;Hello&lt;/p&gt;"}'</code></pre></figure>
+    </div>
+  </section><section class="section step" id="s-session"><h3><span class="step-num">2.</span>Hold the site while changing it</h3>
+    <p>Changes go to the caller's working copy of the site and need its editing lock: <code>site_open</code> takes the site (<code>force</code> takes it from another holder), <code>site_save</code> writes the working copy as a new S3 version of the source, <code>site_close</code> releases it. The lock expires after 30 minutes without changes.</p>
+    <p>Every change carries an idempotency <code>key</code> chosen by the caller: repeating a call with the same key and the same arguments returns the first result without running it again; the same key with other arguments is refused. Keys are kept 24 hours.</p>
+  </section><section class="section step" id="s-reference"><h3><span class="step-num">3.</span>The operations</h3>
+    <p>Every operation except <code>site_list</code>, <code>starters_list</code>, <code>site_new</code> and <code>site_import</code> also takes <code>site_id</code>. "Lock" says whether the caller must hold the site; "Key" whether the call takes an idempotency key.</p>
+    <div class="table-wrap"><table><caption>Reading the site</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>copies_update_plan</code></td><td>original_id</td><td>read</td><td>no</td><td>no</td><td>Copies of an original, with differences and what Update would select.</td></tr>
+      <tr><td><code>page_check</code></td><td>page_id</td><td>read</td><td>no</td><td>no</td><td>Empty slots and unplaced contents of a page.</td></tr>
+      <tr><td><code>page_render</code></td><td>page_id, language</td><td>build</td><td>no</td><td>no</td><td>Static HTML of a page in a language (main by default), rendered in the worker; slots shown in the main language for lack of a translation carry kpress_fallback.</td></tr>
+      <tr><td><code>seo_check</code></td><td>page_id</td><td>read</td><td>no</td><td>no</td><td>SEO problems of one page or of the whole site: titles, descriptions, alt, links.</td></tr>
+      <tr><td><code>site_export</code></td><td>version_id</td><td>read</td><td>no</td><td>no</td><td>A saved version of the site as one zip, in base64.</td></tr>
+      <tr><td><code>site_read</code></td><td>—</td><td>read</td><td>no</td><td>no</td><td>Templates, contents with use counts, assets, pages and the holder.</td></tr>
+      <tr><td><code>site_versions</code></td><td>—</td><td>read</td><td>no</td><td>no</td><td>S3 versions of the site source, oldest first.</td></tr>
+      <tr><td><code>template_switch_plan</code></td><td>page_id, template_id</td><td>read</td><td>no</td><td>no</td><td>Proposed slot mapping, by name, for a page switching template.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table><caption>Editing (working copy)</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>asset_add</code></td><td>name, kind, data_base64, mime_type</td><td>write</td><td>yes</td><td>yes</td><td>Add a CSS, JavaScript or media asset.</td></tr>
+      <tr><td><code>content_add</code></td><td>name, format, text</td><td>write</td><td>yes</td><td>yes</td><td>Add an HTML or Markdown content.</td></tr>
+      <tr><td><code>content_save</code></td><td>content_id, text</td><td>write</td><td>yes</td><td>yes</td><td>Replace the text of a content; page copies change only through copies_update.</td></tr>
+      <tr><td><code>content_translate</code></td><td>content_id, language, text, proposed</td><td>write</td><td>yes</td><td>yes</td><td>Write the translation of a content into one of the site's other languages.</td></tr>
+      <tr><td><code>copies_update</code></td><td>original_id, selected</td><td>write</td><td>yes</td><td>yes</td><td>Replace the selected copies, given as [page_id, path], with the original.</td></tr>
+      <tr><td><code>folder_add</code></td><td>name, parent</td><td>write</td><td>yes</td><td>yes</td><td>Add a logical folder to the Pages tree.</td></tr>
+      <tr><td><code>page_add</code></td><td>name, template_id</td><td>write</td><td>yes</td><td>yes</td><td>Add a page with a copy of a site template.</td></tr>
+      <tr><td><code>page_alt_set</code></td><td>page_id, image, alt</td><td>write</td><td>yes</td><td>yes</td><td>Set the alt text of one image in this page's copy (a local change of the copy).</td></tr>
+      <tr><td><code>page_asset_add</code></td><td>page_id, asset_id</td><td>write</td><td>yes</td><td>yes</td><td>Copy an asset into a page.</td></tr>
+      <tr><td><code>page_seo_set</code></td><td>page_id, fields, language</td><td>write</td><td>yes</td><td>yes</td><td>Set SEO fields of a page, in the main language or another one; an empty value clears the field (root page: site defaults).</td></tr>
+      <tr><td><code>page_url_set</code></td><td>page_id, url, language</td><td>write</td><td>yes</td><td>yes</td><td>Move a page to a new URL path, in the main language or another one (without its prefix); the old path redirects to it.</td></tr>
+      <tr><td><code>site_languages_set</code></td><td>languages</td><td>write</td><td>yes</td><td>yes</td><td>Set the site's languages (BCP 47 tags such as it, en), main language first.</td></tr>
+      <tr><td><code>site_text_set</code></td><td>name, text, language, proposed</td><td>write</td><td>yes</td><td>yes</td><td>Set a template text of the site (such as a menu label), main language by default; templates read it as ^texts.&lt;name&gt;.</td></tr>
+      <tr><td><code>slot_assign</code></td><td>page_id, slot, content_id</td><td>write</td><td>yes</td><td>yes</td><td>Copy a content into a slot of a page.</td></tr>
+      <tr><td><code>template_add</code></td><td>name, engine, source, python_source</td><td>write</td><td>yes</td><td>yes</td><td>Add a template (engine gramlot or htmlbuilder): a plain Source in TYTX JSON, or Python build code defining build(source, data).</td></tr>
+      <tr><td><code>template_switch</code></td><td>page_id, template_id, mapping</td><td>write</td><td>yes</td><td>yes</td><td>Switch a page's template with the confirmed slot mapping.</td></tr>
+      <tr><td><code>translation_confirm</code></td><td>translation, language</td><td>write</td><td>yes</td><td>yes</td><td>Confirm a translation proposed by Help me (translation: content_&lt;id&gt; or text_&lt;name&gt;).</td></tr>
+      <tr><td><code>tree_move</code></td><td>item_id, parent, position</td><td>write</td><td>yes</td><td>yes</td><td>Move a page or folder in the Pages tree (drag and drop).</td></tr>
+      <tr><td><code>unplaced_place</code></td><td>page_id, copy_id, slot</td><td>write</td><td>yes</td><td>yes</td><td>Move an unplaced content copy into a free slot.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table><caption>Editing session</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>site_close</code></td><td>—</td><td>write</td><td>yes</td><td>no</td><td>Release the site.</td></tr>
+      <tr><td><code>site_open</code></td><td>force</td><td>write</td><td>takes it</td><td>no</td><td>Take the site for editing; force takes it from another holder.</td></tr>
+      <tr><td><code>site_restore</code></td><td>version_id</td><td>write</td><td>yes</td><td>no</td><td>Make an older version current again, as a new version.</td></tr>
+      <tr><td><code>site_save</code></td><td>—</td><td>write</td><td>yes</td><td>no</td><td>Save the working copy as a new S3 version.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table><caption>Sites and Library</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>site_import</code></td><td>data_base64, name</td><td>create_site</td><td>no</td><td>yes</td><td>A new site from an exported zip; the importer holds it.</td></tr>
+      <tr><td><code>site_list</code></td><td>—</td><td>read (filters)</td><td>no</td><td>no</td><td>Sites with a source the caller can read, and who holds each.</td></tr>
+      <tr><td><code>site_new</code></td><td>name, starter_id</td><td>create_site</td><td>no</td><td>yes</td><td>Create a site source, empty or from a starting site; the creator holds it.</td></tr>
+      <tr><td><code>starter_save</code></td><td>name</td><td>library write, site read</td><td>no</td><td>yes</td><td>Keep the latest saved version of a site in the Library as a starting site.</td></tr>
+      <tr><td><code>starters_list</code></td><td>—</td><td>library read</td><td>no</td><td>no</td><td>Starting sites in the Library.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table><caption>Publication</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>maintenance_set</code></td><td>on</td><td>publish, write</td><td>yes</td><td>yes</td><td>Put the published site in maintenance (503) or take it out.</td></tr>
+      <tr><td><code>page_rollback</code></td><td>page_id, version_id</td><td>publish, write</td><td>yes</td><td>yes</td><td>Put an earlier published version of a page online.</td></tr>
+      <tr><td><code>page_versions</code></td><td>page_id</td><td>publish</td><td>no</td><td>no</td><td>Published versions of a page, oldest first, with the one online marked.</td></tr>
+      <tr><td><code>private_link</code></td><td>hours</td><td>publish</td><td>no</td><td>no</td><td>A link that shows the real site while private or in maintenance (8 or 168 hours).</td></tr>
+      <tr><td><code>publication_state</code></td><td>—</td><td>publish</td><td>no</td><td>no</td><td>Address, public or private, maintenance, last Publish and pages changed since.</td></tr>
+      <tr><td><code>publish</code></td><td>selected</td><td>publish, write</td><td>yes</td><td>yes</td><td>Save the source and publish the selected pages; the site index is written last.</td></tr>
+      <tr><td><code>publish_plan</code></td><td>—</td><td>publish</td><td>no</td><td>no</td><td>Pages changed since the last publication, selected, with their warnings.</td></tr>
+      <tr><td><code>site_rollback</code></td><td>version_id</td><td>publish, write</td><td>yes</td><td>yes</td><td>Restore a source version and publish the whole site from it.</td></tr>
+      <tr><td><code>site_visibility_set</code></td><td>state</td><td>publish, write</td><td>yes</td><td>yes</td><td>Make the site public or private at its address (the root page's public origin).</td></tr>
+    </table></div>
+  </section></section><section class="part rules"><h2>Rules</h2>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Use a new key for every distinct change and the same key when retrying it.</div><div class="muted why">A repeated call is recognised by its key.</div></div>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Save before closing or leaving a site for long.</div><div class="muted why">Other holders' changes are lost when a site is taken.</div></div>
+    <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Read <code>publish_plan</code> before <code>publish</code>.</div><div class="muted why">The plan names exactly what changed and what is wrong.</div></div>
+  </section><section class="part limits"><h2>Current limits</h2>
+    <div class="box limit"><div>One holder edits a site at a time; there is no merge of concurrent changes.</div><div class="box-foot"><code class="source">src/kajenn_press/site/service.py:107</code></div></div>
+  </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:92</code><span class="muted">2026-10-29</span></div><div>The operations are the union of READS, CHANGES, CONTROLS, LIBRARY and PUBLISHING: 45, each a route of <code>PressApplication</code> (<code>tests/site/test_site_service.py</code>).</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/application.py:18</code><span class="muted">2026-10-29</span></div><div>REST maps <code>unauthenticated</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>unavailable</code> to 401, 403, 404, 409, 503 and other errors to 422.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">tests/api/support.py:49</code><span class="muted">2026-10-29</span></div><div>REST calls are <code>POST /&lt;operation&gt;</code>; MCP calls are JSON-RPC <code>tools/call</code> on <code>/mcp</code>.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/receipts.py:24</code><span class="muted">2026-10-29</span></div><div>Idempotency receipts are kept 24 hours.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/lock.py:15</code><span class="muted">2026-10-29</span></div><div>The editing lock expires after 30 minutes.</div></div>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../booklet/site-tab.html">booklet/site-tab</a></li>
+    <li><a href="../booklet/publication.html">booklet/publication</a></li>
+  </ul></section></main></body></html>

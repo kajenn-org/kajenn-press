@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<booklet id="booklet/publication" title="Publication and serving" date="2026-10-29" lang="en" author="Giovanni Porcari">
+  <purpose>
+    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, and how rollback, maintenance, private sites and private links work.</p>
+  </purpose>
+
+  <requires>
+    <list>
+      <item>A release bucket with S3 versioning, written by websites and read by site servers with read-only keys.</item>
+      <item>The site's root page with a public origin: it is the site's address.</item>
+    </list>
+  </requires>
+
+  <step id="s-objects" title="What Publish writes">
+    <p>Publish renders each selected page in each selected language and writes one zip object per page and language, then the site index, then the bindings. Every write is a new S3 version: nothing is overwritten in place.</p>
+    <table title="Objects in the release bucket">
+      <row head="true"><cell>Key</cell><cell>Content</cell></row>
+      <row><cell><c>sites/&lt;site&gt;/pages/&lt;page&gt;.zip</c></cell><cell>The page in the main language.</cell></row>
+      <row><cell><c>sites/&lt;site&gt;/pages/&lt;page&gt;.&lt;language&gt;.zip</c></cell><cell>The page in another language.</cell></row>
+      <row><cell><c>sites/&lt;site&gt;/index.json</c></cell><cell>The site index: for every page and language, its URL, object key, the S3 version online, fingerprint, assets, refresh time, whether it is indexable and its language; the redirects; maintenance.</cell></row>
+      <row><cell><c>bindings.json</c></cell><cell>Public origin → site id and state (public or private), for every site.</cell></row>
+    </table>
+    <p>A page object holds <c>page.json</c> (the page Bag, URL, fingerprint, the SHA-256 of the HTML, language), <c>index.html</c> (the pre-rendered page), its assets by content address, and for a page whose Data uses resolvers <c>request.json</c>, the render request without connections. The index is written after the pages and pins their versions, so a reader never sees half a publication.</p>
+    <p>A page is selected when its fingerprint differs from the one online: name, URL, the page as its language sees it, effective SEO, site texts and the site's languages. A translation changes only its own language.</p>
+  </step>
+
+  <step id="s-serving" title="How a site server answers">
+    <p>A site server reads <c>bindings.json</c> and each site's index at most every cache interval, keeping the last valid ones, so a new address or a new publication needs no restart. For a request it finds the site by origin, then:</p>
+    <list ordered="true">
+      <item>a private site answers 404 and a site in maintenance 503, unless the browser holds the cookie of a valid private link;</item>
+      <item><c>/robots.txt</c> and <c>/sitemap.xml</c> come from the index; the sitemap lists every indexable page in every language; a root page that is not indexable closes the whole site to robots;</item>
+      <item>a redirect source answers 301 to its target, a path without its final slash 301 to the slashed one, a path with the main language's prefix 301 to the path without it;</item>
+      <item><c>/_assets/&lt;sha256&gt;.&lt;ext&gt;</c> answers the asset with an immutable cache header;</item>
+      <item>a page URL answers its HTML; a page with resolvers is rendered again by the worker when its refresh time has passed and kept in a local cache;</item>
+      <item>anything else answers the 404 page of the path's language, else the main one.</item>
+    </list>
+    <p>Public pages carry no cookie and no session; only the private link sets one.</p>
+  </step>
+
+  <step id="s-rollback" title="Roll back">
+    <list>
+      <item><b>A page in one language</b>: <c>page_rollback</c> pins an earlier S3 version of its object in a new index; the other pages and languages stay as they are.</item>
+      <item><b>The whole site</b>: <c>site_rollback</c> restores a saved source version and publishes every page that differs from it.</item>
+    </list>
+  </step>
+
+  <step id="s-private" title="Maintenance, private sites and private links">
+    <p><c>maintenance_set</c> writes a new index with the maintenance flag; pages stay as they are. <c>site_visibility_set</c> makes the site private or public at its address, even before the first Publish.</p>
+    <p><c>private_link</c> returns <c>&lt;address&gt;/_private/&lt;token&gt;</c>, valid 8 hours or 7 days. The token names the site and its expiry and is signed with HMAC-SHA256 under a secret shared by websites and the site servers. Opening it sets an HttpOnly cookie for that host (Secure on https, SameSite=Lax) and redirects to <c>/</c>; with it, the real site shows and its responses are not stored by shared caches. Rotating the secret revokes every link.</p>
+  </step>
+
+  <rules>
+    <rule level="must" why="Publish refuses an address that belongs to another site.">Give each site its own public origin.</rule>
+    <rule level="must" why="Pages are read by pinned version.">Give the site servers keys that can read object versions (<c>GetObjectVersion</c>, <c>ListBucketVersions</c>) and nothing else.</rule>
+    <rule level="should" why="A link works until it expires and cannot be revoked one by one.">Give private links the shortest validity that serves.</rule>
+  </rules>
+
+  <limits>
+    <limit source="src/kajenn_press/site/publish.py:81">An index of an earlier schema reads as absent: the next Publish writes every page again; until then the site server answers 503 for that site.</limit>
+    <limit>A site server serves the sites of one release bucket; there is no registry of servers yet.</limit>
+  </limits>
+
+  <facts>
+    <fact source="src/kajenn_press/site/published.py:27" method="read" verified="2026-10-29">The page object and index schema is 3; entries carry <c>language</c>.</fact>
+    <fact source="src/kajenn_press/site/publish.py:41" method="test" verified="2026-10-29">The main language's entry is the page id; another language's is <c>&lt;page&gt;.&lt;language&gt;</c>.</fact>
+    <fact source="src/kajenn_press/site/publish.py:236" method="test" verified="2026-10-29">Publish writes the pages, then the index, then the binding of the site's address.</fact>
+    <fact source="src/kajenn_press/site/published.py:50" method="test" verified="2026-10-29">A translation changes the fingerprint of its own language only.</fact>
+    <fact source="src/kajenn_press/site/serving.py:68" method="test" verified="2026-10-29">A running site server serves an address set after it started and stops serving the old one.</fact>
+    <fact source="src/kajenn_press/site/serving.py:272" method="test" verified="2026-10-29">The main language's prefixed path answers 301 to the unprefixed one.</fact>
+    <fact source="src/kajenn_press/site/serving.py:346" method="test" verified="2026-10-29">The sitemap lists indexable pages of every language; a noindex root gives <c>Disallow: /</c>.</fact>
+    <fact source="src/kajenn_press/site/private.py:35" method="test" verified="2026-10-29">Private links last 8 or 168 hours; forged, foreign and expired tokens are refused.</fact>
+    <fact source="src/kajenn_press/site/serving.py:224" method="test" verified="2026-10-29">A valid private link answers 303 with an HttpOnly cookie for its host.</fact>
+    <fact source="tests/docker/test_docker_composition_contract.py:1" method="run" verified="2026-10-29">The Docker composition publishes the example site in two languages, serves it, and opens it through a private link during maintenance.</fact>
+  </facts>
+
+  <related>
+    <doc id="booklet/site-tab"/>
+    <doc id="booklet/operations"/>
+  </related>
+</booklet>

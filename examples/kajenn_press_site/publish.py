@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PAGES = (
-    ("home", "Kajenn Press · Editorial publishing with releases", "/"),
+    ("home", "Kajenn Press · Website editing, page by page", "/"),
     ("features", "Features · Kajenn Press", "/features/"),
     ("start", "Get started · Kajenn Press", "/get-started/"),
 )
@@ -30,17 +30,17 @@ TEXTS = {
     "href_features": ("/features/", "/it/features/"),
     "href_start": ("/get-started/", "/it/get-started/"),
     "footer_about": (
-        "Write, review and publish sites as complete releases, with exact history and rollback.",
-        "Scrivi, rivedi e pubblica siti come release complete, con storia esatta e rollback.",
+        "Build, translate and publish sites page by page, with S3 versions and rollback.",
+        "Costruisci, traduci e pubblica siti pagina per pagina, con versioni S3 e rollback.",
     ),
     "footer_family": ("Part of the Genro family.", "Parte della famiglia Genro."),
     "footer_learn": ("Learn", "Scopri"),
     "footer_links": ("Family", "Famiglia"),
 }
 DESCRIPTIONS = {
-    "home": "Kajenn Press manages a website as editorial content with exact history.",
+    "home": "Kajenn Press builds a website page by page and publishes each page as a versioned object.",
     "features": "What Kajenn Press does today.",
-    "start": "Run Kajenn Press locally and call it through REST and MCP.",
+    "start": "Run Kajenn Press locally with Docker and call it through REST and MCP.",
 }
 
 

@@ -152,13 +152,13 @@ def test_site_server_serves_the_site_published_page_by_page(composition):
         time.sleep(2)
     assert "published site" in compose("logs", "site-publisher").stdout
     status, home = press_get("/")
-    assert status == 200 and b"Write it. Review it." in home
+    assert status == 200 and b"Build it. Review it." in home
     assert press_get("/features/")[0] == 200 and press_get("/get-started/")[0] == 200
     assert b"http://press.localhost:8877/features/" in press_get("/sitemap.xml")[1]
     assert b'<link rel="canonical" href="http://press.localhost:8877/">' in home
-    assert b'<meta name="description" content="Kajenn Press manages a website' in home
+    assert b'<meta name="description" content="Kajenn Press builds a website' in home
     status, italian = press_get("/it/")
-    assert status == 200 and b'<html lang="it"' in italian and b"Scrivilo." in italian
+    assert status == 200 and b'<html lang="it"' in italian and b"Costruiscilo." in italian
     assert b'hreflang="it" href="http://press.localhost:8877/it/"' in home
     assert b"<loc>http://press.localhost:8877/it/features/</loc>" in press_get("/sitemap.xml")[1]
     assert press_get("/en/features/")[0] == 301

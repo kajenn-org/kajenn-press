@@ -1,18 +1,18 @@
 <div class="hero wrap">
 <div>
-<p class="eyebrow"><span class="dot"></span>Pubblicazione editoriale · famiglia Genro</p>
-<h1>Scrivilo. Rivedilo. <em>Pubblicalo</em>.</h1>
-<p class="lead">Kajenn Press gestisce un sito come contenuto editoriale con una storia esatta. Ogni pubblicazione è una release completa e immutabile. Tornare a una release precedente è un solo comando.</p>
+<p class="eyebrow"><span class="dot"></span>Editor di siti · famiglia Genro</p>
+<h1>Costruiscilo. Rivedilo. <em>Pubblicalo</em>.</h1>
+<p class="lead">Kajenn Press costruisce un sito pagina per pagina nel browser, in una o più lingue, e pubblica ogni pagina come oggetto con le sue versioni. Tornare a una versione precedente di una pagina è un solo comando.</p>
 <div class="actions"><a class="button" href="/it/features/">Le funzioni →</a><a class="button secondary" href="/it/get-started/">Per iniziare</a></div>
 </div>
-<div class="codebox"><div class="codebar"><span>template.py</span><span>Gramlot or HtmlBuilder</span></div><pre><code><span class="kw">def</span> build(source, data):
-    document = source.html(lang=<span class="str">"^language"</span>)
-    document.head().title(<span class="str">"^page.title"</span>)
-    body = document.body()
-    body.h1(<span class="str">"^page.title"</span>)
-    body.div(<span class="str">"^blocks.body"</span>)
+<div class="codebox"><div class="codebar"><span>layout.py</span><span>Gramlot</span></div><pre><code><span class="kw">def</span> build(source, data):
+    doc = source.html(lang=<span class="str">"en"</span>)
+    doc.head().title(<span class="str">"^page.title"</span>)
+    body = doc.body()
+    body.nav().a(<span class="str">"^texts.nav_home"</span>, href=<span class="str">"^texts.href_home"</span>)
+    body.div(node_label=<span class="str">"body"</span>, kpress_slot=<span class="str">"body"</span>)
 
-<span class="comment"># The template builds the page structure.</span>
-<span class="comment"># Editors fill the named blocks.</span>
-<span class="comment"># A build renders full static HTML.</span></code></pre></div>
-</div><div class="wrap"><div class="trustline"><span>Revisioni esatte</span><span>Template Gramlot e HtmlBuilder</span><span>Anteprime private</span><span>Release atomiche</span><span>Rollback</span><span>REST e MCP</span></div></div>
+<span class="comment"># Il template costruisce il layout una volta.</span>
+<span class="comment"># Ogni pagina riempie i suoi slot con i contenuti.</span>
+<span class="comment"># Publish produce HTML statico per lingua.</span></code></pre></div>
+</div><div class="wrap"><div class="trustline"><span>Editor visuale</span><span>Template Gramlot e HtmlBuilder</span><span>Pubblicazione per pagina</span><span>Versioni S3</span><span>Lingue</span><span>Help me</span><span>REST e MCP</span></div></div>
