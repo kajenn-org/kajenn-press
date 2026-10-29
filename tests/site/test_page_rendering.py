@@ -16,7 +16,7 @@ from kajenn_press.site.render import page_request
 
 EXAMPLE = Path(__file__).parents[2] / "examples" / "kajenn_press_site"
 PAGES = (
-    ("home", "Kajenn Press · Editorial publishing with releases"),
+    ("home", "Kajenn Press · Website editing, page by page"),
     ("features", "Features · Kajenn Press"),
     ("start", "Get started · Kajenn Press"),
 )

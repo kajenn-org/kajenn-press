@@ -52,7 +52,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
   - Files: `xmldocs/booklet/install.{xml,md,html}`, `deploy/docker/README.md` (pointer).
   - Done: the commands are the ones the Docker tests run.
 
-- [ ] **Phase 6**: The example site describes the current product
+- [x] **Phase 6**: The example site describes the current product
+  > Done: the six pages rewritten on the current product (site tab, templates and slots, copies and Update, S3 versions, per-page publication, site server, SEO, languages, Help me, Docker start), with the same structure and classes; Italian home hero updated; home page name, descriptions and footer texts no longer name releases; test assertions follow the new texts. Suites: main 207 passed, 12 skipped; Docker 9 passed.
   - Files: `examples/kajenn_press_site/pages/*.html`, `publish.py` (descriptions), `tests/site/`, `tests/docker/`.
   - Done: no page names channels, candidates, builds or releases of the old model; full and Docker suites green.
 
