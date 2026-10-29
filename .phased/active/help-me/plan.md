@@ -35,7 +35,8 @@ Known API facts (Claude API reference, cached 2026-10-06): model `claude-sonnet-
 
 ## Work Plan
 
-- [ ] **Phase 1**: Tools from the site operations
+- [x] **Phase 1**: Tools from the site operations
+  > Done: `src/kajenn_press/help/tools.py`: 21 tools (6 reads including `publish_plan`, 14 editing changes, `site_save`) whose schemas and descriptions come from the route signatures and docstrings of `PressApplication`; `site_id` and the idempotency key (`help-<tool call id>`) are filled in, never asked of the model; `asset_add` is left out (Sonnet would have to write base64: Phase 2 adds text and SVG assets). `SiteService.execute` takes `via`, recorded on changes and on `site_save`. Errors and refusals come back as `is_error` results with the service's code and message. Known fact: `template_add` with `python_source` runs model-written Python in the render worker, as it runs an editor's; Help me acts under the editor's grants. Tests: `tests/help/test_tools.py` (3). Main suite: 173 passed, 10 skipped.
   - Files: a new `src/kajenn_press/help/tools.py`, `src/kajenn_press/site/service.py`, `tests/help/`.
   - Details: per N8-D1 and N8-D2: tool definitions (name, description, JSON schema with `strict`) built from the allowed operations; execution through `SiteService.execute` with the operator identity, an idempotency key per tool call, and the audit marked `via="help_me"`; errors returned as `is_error` tool results in the words of the service.
   - Done: every allowed operation has a tool whose schema matches its arguments; publishing operations have none; a change made through a tool is audited as the user's via Help me.
