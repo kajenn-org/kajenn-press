@@ -16,7 +16,9 @@ languages: each content and site text has one translation per language, marked m
 to update or to review; URLs carry the language as a prefix (the main language has none);
 pages carry `hreflang` and the sitemap lists every language. A site's address is its root
 page's public origin: Publish binds it in the release bucket, where running site servers
-read it. A site can be private, or in maintenance, and still be seen through a signed
+read it. Go live puts a site on a registered server: it shows the DNS records to create,
+checks them, publishes, and asks the server's agent to configure nginx, Caddy or Traefik
+and obtain the certificate. A site can be private, or in maintenance, and still be seen through a signed
 private link. The same operations are offered on REST, MCP and in the Gramlot
 administration, whose site tab has the Visual editor, SEO and Published site tabs, and
 Help me: a Sonnet chat that builds pages, templates and contents through the same
@@ -28,7 +30,7 @@ operations, with tokens and cost shown per chat and per site.
 |---|---|
 | [Building a site in the site tab](xmldocs/booklet/site-tab.md) | Operators: pages, slots, copies, SEO, languages, Help me, publication |
 | [Writing a template](xmldocs/booklet/templates.md) | Template authors: build code, slots, site texts, assets, resolvers |
-| [The site operations over REST and MCP](xmldocs/booklet/operations.md) | Programs and agents: the 45 operations, keys, lock, errors |
+| [The site operations over REST and MCP](xmldocs/booklet/operations.md) | Programs and agents: the 52 operations, keys, lock, errors |
 | [Publication and serving](xmldocs/booklet/publication.md) | Objects in the release bucket, the site server, rollback, private links |
 | [Installing and running](xmldocs/booklet/install.md) | Docker composition, external buckets, Help me key, tests |
 
@@ -39,11 +41,13 @@ in `.phased/roadmap.md`.
 
 | Path | Content |
 |---|---|
-| `src/kajenn_press/site/` | Site and page model, slots, copies and Update, linked templates, SEO and its checks, source store on S3, editing lock, receipts, Publish, rollback, addresses and private links, the site server |
+| `src/kajenn_press/site/` | Site and page model, slots, copies and Update, linked templates, SEO and its checks, source store on S3, editing lock, receipts, Publish, rollback, addresses and private links, the site server, server registry, DNS records and go live |
 | `src/kajenn_press/rendering/` | Render worker: Gramlot/HtmlBuilder engines, content preparation (nh3), page rendering, connection resolvers |
 | `src/kajenn_press/application.py` | Kajenn REST/MCP application of the site operations, `create_server` |
 | `src/kajenn_press/help/` | Help me: tools from the site operations, SVG cleaning, the chat loop and its store |
 | `src/kajenn_press/admin/` | Gramlot administration: navigation Sites/Library, the site tab with the Visual editor, SEO and Published site tabs |
+| `src/kajenn_press/agent/` | The server agent and its nginx, Caddy and Traefik drivers |
+| `deploy/agent/` | Install script of a server for published sites, agent and site server units, sudoers lines, Caddyfile |
 | `deploy/docker/` | Docker composition (manager, RustFS, demo publisher and site server), nginx example, Hetzner runbook |
 | `examples/kajenn_press_site/` | The Kajenn Press site in English and Italian: layout, contents, site texts, assets and `publish.py` |
 

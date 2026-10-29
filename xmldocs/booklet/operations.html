@@ -79,7 +79,7 @@ caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
 th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: var(--panel); }
   </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>The site operations over REST and MCP</h1><div class="doc-meta"><span>booklet/operations</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
-    <p>How a program or an agent works on Kajenn Press sites through the 45 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
+    <p>How a program or an agent works on Kajenn Press sites through the 52 site operations, the same ones the administration and Help me use: how to call them, what each needs, and what it answers.</p>
   </section><section class="part requires"><h2>Requirements</h2>
     <ul>
       <li>A websites installation with site sources; <code>capabilities</code> says which parts are configured (<code>sites</code>, <code>publishing</code>, <code>rendering</code>) and lists the operations.</li>
@@ -161,6 +161,16 @@ th { background: var(--panel); }
       <tr><td><code>publish_plan</code></td><td>—</td><td>publish</td><td>no</td><td>no</td><td>Pages changed since the last publication, selected, with their warnings.</td></tr>
       <tr><td><code>site_rollback</code></td><td>version_id</td><td>publish, write</td><td>yes</td><td>yes</td><td>Restore a source version and publish the whole site from it.</td></tr>
       <tr><td><code>site_visibility_set</code></td><td>state</td><td>publish, write</td><td>yes</td><td>yes</td><td>Make the site public or private at its address (the root page's public origin).</td></tr>
+      <tr><td><code>site_server_set</code></td><td>server, alias</td><td>publish, write</td><td>yes</td><td>yes</td><td>Choose the registered server that serves the site; with alias, the other name (with or without <code>www.</code>) answers 301 to the address.</td></tr>
+      <tr><td><code>dns_plan</code></td><td>—</td><td>publish</td><td>no</td><td>no</td><td>The A and AAAA records to create for the address and its alias, towards the server's addresses.</td></tr>
+      <tr><td><code>dns_check</code></td><td>—</td><td>publish</td><td>no</td><td>no</td><td>What public resolvers (1.1.1.1, 8.8.8.8) answer for each record: ok, missing, wrong or unknown.</td></tr>
+      <tr><td><code>site_go_live</code></td><td>—</td><td>publish, write</td><td>yes</td><td>yes</td><td>Check the DNS records, publish, ask the server's agent to serve the address and obtain its certificate, then check the address; reports each step.</td></tr>
+    </table></div>
+    <div class="table-wrap"><table><caption>Servers</caption>
+      <tr><th>Operation</th><th>Arguments</th><th>Permission</th><th>Lock</th><th>Key</th><th>What it does</th></tr>
+      <tr><td><code>server_list</code></td><td>—</td><td>any principal</td><td>no</td><td>no</td><td>The registered servers with their addresses and agent URL.</td></tr>
+      <tr><td><code>server_add</code></td><td>name, ipv4, ipv6, agent_url</td><td>servers (installation)</td><td>no</td><td>yes</td><td>Register a server; the agent URL is https, or http on the loopback.</td></tr>
+      <tr><td><code>server_remove</code></td><td>name</td><td>servers (installation)</td><td>no</td><td>yes</td><td>Remove a server that serves no site.</td></tr>
     </table></div>
   </section></section><section class="part rules"><h2>Rules</h2>
     <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Use a new key for every distinct change and the same key when retrying it.</div><div class="muted why">A repeated call is recognised by its key.</div></div>
@@ -169,7 +179,7 @@ th { background: var(--panel); }
   </section><section class="part limits"><h2>Current limits</h2>
     <div class="box limit"><div>One holder edits a site at a time; there is no merge of concurrent changes.</div><div class="box-foot"><code class="source">src/kajenn_press/site/service.py:107</code></div></div>
   </section><section class="part facts"><h2>Verified facts</h2>
-    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:92</code><span class="muted">2026-10-29</span></div><div>The operations are the union of READS, CHANGES, CONTROLS, LIBRARY and PUBLISHING: 45, each a route of <code>PressApplication</code> (<code>tests/site/test_site_service.py</code>).</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/service.py:107</code><span class="muted">2026-10-29</span></div><div>The operations are the union of READS, CHANGES, CONTROLS, LIBRARY, PUBLISHING and SERVERS: 52, each a route of <code>PressApplication</code> (<code>tests/site/test_site_service.py</code>).</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/application.py:18</code><span class="muted">2026-10-29</span></div><div>REST maps <code>unauthenticated</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>unavailable</code> to 401, 403, 404, 409, 503 and other errors to 422.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">tests/api/support.py:49</code><span class="muted">2026-10-29</span></div><div>REST calls are <code>POST /&lt;operation&gt;</code>; MCP calls are JSON-RPC <code>tools/call</code> on <code>/mcp</code>.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/receipts.py:24</code><span class="muted">2026-10-29</span></div><div>Idempotency receipts are kept 24 hours.</div></div>

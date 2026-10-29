@@ -11,9 +11,11 @@ from kajenn_press.catalog.errors import IntegrityError
 from kajenn_press.site.model import Site
 from kajenn_press.site.published import (
     PublishedPage,
+    make_bindings,
     make_index,
     pack_page,
     page_fingerprint,
+    read_bindings,
     read_index,
     unpack_page,
 )
@@ -112,3 +114,32 @@ def test_fingerprint_follows_name_url_and_content():
     moved = page_fingerprint(site, page)
     site.assign_content(page, "body", site.add_content("C", "html", "<p>c</p>"))
     assert len({first, renamed, moved, page_fingerprint(site, page)}) == 4
+
+
+def test_bindings_of_schema_1_are_read_with_the_default_server():
+    old = b'{"bindings":{"https://a.example":{"site_id":"s1","state":"public"}},"schema":1}'
+    assert read_bindings(old) == {
+        "https://a.example": {
+            "site_id": "s1",
+            "state": "public",
+            "server": "default",
+            "redirect": None,
+        }
+    }
+    with pytest.raises(IntegrityError, match="not its site's address"):
+        make_bindings(
+            {
+                "https://a.example": {
+                    "site_id": "s1",
+                    "state": "public",
+                    "server": "w",
+                    "redirect": None,
+                },
+                "https://www.a.example": {
+                    "site_id": "s2",
+                    "state": "public",
+                    "server": "w",
+                    "redirect": "https://a.example",
+                },
+            }
+        )

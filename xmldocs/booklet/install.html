@@ -111,9 +111,21 @@ docker compose -f deploy/docker/compose.yaml exec websites cat /secrets/operator
     </table></div>
     <figure class="code"><figcaption>bash</figcaption><pre><code>docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s3.yaml up -d --build</code></pre></figure>
     <p>websites refuses to start with a bucket whose versioning is not enabled.</p>
-  </section><section class="section step" id="s-help"><h3><span class="step-num">3.</span>Enable Help me</h3>
+  </section><section class="section step" id="s-site-server"><h3><span class="step-num">3.</span>Prepare a server for published sites</h3>
+    <p>A server that serves published sites runs the site server (the <code>kajenn-child</code> image) on <code>127.0.0.1:8877</code> and the server agent, behind nginx, Caddy or Traefik already installed. On a Debian or Ubuntu host with Docker, as root:</p>
+    <figure class="code"><figcaption>bash</figcaption><pre><code>sh deploy/agent/install.sh nginx /path/to/kajenn-press</code></pre></figure>
+    <p>The script creates the user <code>kpress-agent</code>, installs the agent in <code>/opt/kpress-agent</code> with its systemd unit, the sudoers lines of the chosen proxy only, a new token in <code>/etc/kpress-agent/token</code>, and the site server unit with its environment in <code>/etc/kpress-site</code>. It starts nothing and prints what is left:</p>
+    <ul>
+      <li>in <code>agent.env</code>, the manager's address (<code>AGENT_ALLOWED</code>) and the agent's certificate and key; for nginx, the ACME e-mail;</li>
+      <li>in <code>site.env</code>, the server's name as registered and the release bucket; in <code>secrets</code>, its read-only keys and the private-link secret;</li>
+      <li>the token copied to the manager as <code>&lt;agent_tokens&gt;/&lt;server&gt;.token</code>;</li>
+      <li>the proxy: nginx includes <code>/etc/nginx/kpress.d/*.conf</code>; Caddy uses <code>deploy/agent/Caddyfile</code>; Traefik watches <code>/etc/traefik/kpress</code>;</li>
+      <li>the firewall: 80 and 443 open, the agent's port 8890 only from the manager.</li>
+    </ul>
+    <p>Then register the server on the manager with <code>server_add</code> (name, addresses, agent URL) and start both units.</p>
+  </section><section class="section step" id="s-help"><h3><span class="step-num">4.</span>Enable Help me</h3>
     <p>Put the installation's Claude API key in a private file readable by websites, name it in <code>KPRESS_HELP_KEY_FILE</code>, and add <code>compose.help.yaml</code> to every Compose command. The key is never generated and never enters a volume. Without it, the Help me pane says Help me is not configured.</p>
-  </section><section class="section step" id="s-tests"><h3><span class="step-num">4.</span>Run the tests</h3>
+  </section><section class="section step" id="s-tests"><h3><span class="step-num">5.</span>Run the tests</h3>
     <p>The full suite needs a render interpreter and a disposable S3 endpoint; the administration tests an interpreter with the <code>admin</code> extra; the Docker tests drive the composition and delete its volumes.</p>
     <figure class="code"><figcaption>bash</figcaption><pre><code>KAJENN_RENDER_PYTHON=/path/to/render/python KAJENN_RELEASE_S3=/path/to/s3.json .venv/bin/python -m pytest -q tests
 KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=importlib tests/docker</code></pre></figure>
@@ -122,6 +134,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
     <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Run <code>tests/docker</code> on a server with a real installation.</div><div class="muted why">They delete the composition's volumes.</div></div>
     <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Enable versioning on both buckets before the first start.</div><div class="muted why">Pages and sources are read and restored by version.</div></div>
     <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Give site servers keys that read the source bucket.</div><div class="muted why">Project-wide keys would let a site server read the sources.</div></div>
+    <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Expose the agent's port to any address but the manager's.</div><div class="muted why">The agent changes the proxy's configuration.</div></div>
   </section><section class="part limits"><h2>Current limits</h2>
     <div class="box limit"><div>The hashed dependency locks target <code>aarch64</code> Linux.</div><div class="box-foot"><code class="source">deploy/docker/lock.sh:7</code></div></div>
     <div class="box limit"><div>Kajenn has no ACME client: TLS comes from the reverse proxy.</div></div>
@@ -130,6 +143,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">deploy/docker/credentials.py:32</code><span class="muted">2026-10-29</span></div><div>One private-link secret is written to both the websites and the site-server volumes.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/store.py:19</code><span class="muted">2026-10-29</span></div><div>websites refuses a source or release bucket whose versioning is not enabled.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">deploy/docker/websites.py:58</code><span class="muted">2026-10-29</span></div><div>Help me is configured only when <code>ANTHROPIC_API_KEY_FILE</code> names a file.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">deploy/agent/install.sh:1</code><span class="muted">2026-10-29</span></div><div>In a Debian container, the script installed the agent for nginx and for Caddy with the proxy's sudoers lines only; the installed agent answered 200 with its token and 401 with another.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">tests/docker/test_external_s3_contract.py:1</code><span class="muted">2026-10-29</span></div><div>The external-bucket composition writes sources and releases to the given buckets.</div></div>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../booklet/publication.html">booklet/publication</a></li>

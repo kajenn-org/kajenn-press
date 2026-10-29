@@ -18,6 +18,8 @@ from genro_bag import Bag, BagException
 from ..catalog.filesystem import digest, private_directory
 from ..domain import DomainError
 from ..rendering.contract import RenderProblem
+from .dns import dns_check, dns_plan, public_lookup
+from .golive import AgentClient, address_answers, go_live
 from .languages import (
     confirm_translation,
     language_url,
@@ -30,7 +32,7 @@ from .languages import (
 )
 from .lock import EditingLock
 from .model import ENGINES, Site, new_id
-from .published import page_fingerprint
+from .published import DEFAULT_SERVER, page_fingerprint
 from .receipts import Receipts
 from .render import page_request
 from .seo import (
@@ -41,6 +43,7 @@ from .seo import (
     set_page_seo,
     stored_seo,
 )
+from .servers import ServerRegistry
 from .slots import template_slots
 from .storage import WorkingCopy, unpack
 
@@ -77,6 +80,7 @@ CHANGES = {
 }
 CONTROLS = {"site_new", "site_open", "site_close", "site_save", "site_restore"}
 LIBRARY = {"site_import", "starter_save", "starters_list", "site_list"}
+SERVERS = {"server_add", "server_list", "server_remove"}
 PUBLISHING = {
     "publish_plan",
     "publish",
@@ -87,9 +91,20 @@ PUBLISHING = {
     "site_visibility_set",
     "private_link",
     "publication_state",
+    "site_server_set",
+    "dns_plan",
+    "dns_check",
+    "site_go_live",
 }
-PUBLISHING_READS = {"publish_plan", "page_versions", "private_link", "publication_state"}
-OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING
+PUBLISHING_READS = {
+    "publish_plan",
+    "page_versions",
+    "private_link",
+    "publication_state",
+    "dns_plan",
+    "dns_check",
+}
+OPERATIONS = READS | CHANGES | CONTROLS | LIBRARY | PUBLISHING | SERVERS
 PERMISSIONS = {"page_render": "build", "site_versions": "read"}
 
 
@@ -105,7 +120,16 @@ def decode_base64(value):
 
 
 class SiteService:
-    def __init__(self, root, store, policy, worker=None, connections=None, publisher=None):
+    def __init__(
+        self,
+        root,
+        store,
+        policy,
+        worker=None,
+        connections=None,
+        publisher=None,
+        agent_tokens=None,
+    ):
         self.root = private_directory(root)
         self.store = store
         self.policy = policy
@@ -113,6 +137,11 @@ class SiteService:
         self.connections = connections or {}
         self.publisher = publisher
         self.lock = EditingLock(self.root / "locks")
+        self.servers = ServerRegistry(store)
+        # Public resolvers, real agents and real addresses; tests replace them (N7b-D3).
+        self.dns_lookup = public_lookup
+        self.agents = AgentClient(agent_tokens) if agent_tokens else None
+        self.address_answers = address_answers
         self.receipts = Receipts(self.root / "receipts")
         self._mutex = RLock()
 
@@ -147,8 +176,15 @@ class SiteService:
             if operation in ("site_new", "site_import"):
                 self.policy.require(identity, "installation", "create_site")
                 return handler(identity, **params)
-            if operation == "site_list":
+            if operation in ("site_list", "server_list"):
                 return handler(identity, **params)
+            if operation in SERVERS:
+                # Registering servers is an installation grant (N7b-D2).
+                self.policy.require(identity, "installation", "servers")
+                key = params.pop("key")
+                return self.receipts.run(
+                    identity, key, operation, params, lambda: handler(identity, key, **params)
+                )
             if operation == "starters_list":
                 self.policy.require(identity, "library", "read")
                 return handler(identity, **params)
@@ -309,6 +345,61 @@ class SiteService:
     def _publication_state(self, identity, site_id):
         return self.publisher.state(self.site(identity, site_id))
 
+    def _site_server_set(self, identity, site_id, key, server, alias=True):
+        """Choose the server and whether the other name redirects; a bound site moves."""
+
+        def run():
+            if server != DEFAULT_SERVER:
+                self.servers.get(server)
+            copy = self.working_copy(site_id)
+            site = copy.load()
+            info = site.bag.get_node("info").attr
+            info["server"] = server
+            info["alias"] = bool(alias)
+            site.record(identity, "site_server_set", now(), server=server)
+            copy.save(site)
+            self.publisher.set_server(site)
+            return {"server": server, "alias": bool(alias)}
+
+        arguments = {"site_id": site_id, "server": server, "alias": bool(alias)}
+        return self.receipts.run(identity, key, "site_server_set", arguments, run)
+
+    def site_dns_plan(self, identity, site_id):
+        """The records the site's address and alias need on its server (d-dns)."""
+        site = self.site(identity, site_id)
+        address = self.publisher.site_address(site)
+        if address is None:
+            raise DomainError("invalid_input", "Give the root page a public origin first")
+        server = site.bag.get_node("info").attr.get("server")
+        if not server or server == DEFAULT_SERVER:
+            raise DomainError("invalid_input", "Choose a registered server for the site first")
+        origins = self.publisher.site_origins(site, address)
+        return dns_plan(origins, self.servers.get(server))
+
+    def _dns_plan(self, identity, site_id):
+        return self.site_dns_plan(identity, site_id)
+
+    def _dns_check(self, identity, site_id):
+        return self.dns_check_plan(self.site_dns_plan(identity, site_id))
+
+    def dns_check_plan(self, plan):
+        return dns_check(plan, self.dns_lookup)
+
+    def _site_go_live(self, identity, site_id, key):
+        """DNS check, Publish, the agent's domain and certificate, the address answering."""
+        if self.agents is None:
+            raise DomainError("unavailable", "Configure the agent tokens directory first")
+
+        def publish():
+            site = self.working_copy(site_id).load()
+            selected = [p["entry"] for p in self.publisher.plan(site) if p["selected"]]
+            return self._publish(identity, site_id, key + "-publish", selected)
+
+        def run():
+            return go_live(self, identity, site_id, publish)
+
+        return self.receipts.run(identity, key, "site_go_live", {"site_id": site_id}, run)
+
     def _private_link(self, identity, site_id, hours=8):
         return self.publisher.private_link(site_id, hours)
 
@@ -325,6 +416,21 @@ class SiteService:
             for item in self.store.sites()
             if self.policy.allows(identity, "site:" + item["site_id"], "read")
         ]
+
+    def _server_list(self, identity):
+        return [{"name": name, **entry} for name, entry in sorted(self.servers.servers().items())]
+
+    def _server_add(self, identity, key, name, ipv4, ipv6, agent_url):
+        return self.servers.add(name, ipv4, ipv6, agent_url)
+
+    def _server_remove(self, identity, key, name):
+        bound = []
+        if self.publisher is not None:
+            # One site has its address and possibly an alias: count sites, not origins.
+            entries = self.publisher.bindings().values()
+            bound = sorted({e["site_id"] for e in entries if e["server"] == name})
+        self.servers.remove(name, bound)
+        return {"name": name}
 
     def _starters_list(self, identity):
         return self.store.starters()
@@ -407,6 +513,7 @@ class SiteService:
             "site_id": site.site_id,
             "name": site.name,
             "languages": site_languages(site),
+            "server": site.bag.get_node("info").attr.get("server", ""),
             "texts": {
                 n.label: {
                     "text": n.value,

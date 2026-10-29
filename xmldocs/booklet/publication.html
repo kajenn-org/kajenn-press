@@ -79,7 +79,7 @@ caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
 th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
 th { background: var(--panel); }
   </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>Publication and serving</h1><div class="doc-meta"><span>booklet/publication</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
-    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, and how rollback, maintenance, private sites and private links work.</p>
+    <p>What Publish writes to the release bucket, how a site server reads it and answers visitors, how a site goes live on a registered server, and how rollback, maintenance, private sites and private links work.</p>
   </section><section class="part requires"><h2>Requirements</h2>
     <ul>
       <li>A release bucket with S3 versioning, written by websites and read by site servers with read-only keys.</li>
@@ -92,7 +92,7 @@ th { background: var(--panel); }
       <tr><td><code>sites/&lt;site&gt;/pages/&lt;page&gt;.zip</code></td><td>The page in the main language.</td></tr>
       <tr><td><code>sites/&lt;site&gt;/pages/&lt;page&gt;.&lt;language&gt;.zip</code></td><td>The page in another language.</td></tr>
       <tr><td><code>sites/&lt;site&gt;/index.json</code></td><td>The site index: for every page and language, its URL, object key, the S3 version online, fingerprint, assets, refresh time, whether it is indexable and its language; the redirects; maintenance.</td></tr>
-      <tr><td><code>bindings.json</code></td><td>Public origin → site id and state (public or private), for every site.</td></tr>
+      <tr><td><code>bindings.json</code></td><td>Public origin → site id, state (public or private), server, and for an alias the address it redirects to; for every site.</td></tr>
     </table></div>
     <p>A page object holds <code>page.json</code> (the page Bag, URL, fingerprint, the SHA-256 of the HTML, language), <code>index.html</code> (the pre-rendered page), its assets by content address, and for a page whose Data uses resolvers <code>request.json</code>, the render request without connections. The index is written after the pages and pins their versions, so a reader never sees half a publication.</p>
     <p>A page is selected when its fingerprint differs from the one online: name, URL, the page as its language sees it, effective SEO, site texts and the site's languages. A translation changes only its own language.</p>
@@ -106,13 +106,28 @@ th { background: var(--panel); }
       <li>a page URL answers its HTML; a page with resolvers is rendered again by the worker when its refresh time has passed and kept in a local cache;</li>
       <li>anything else answers the 404 page of the path's language, else the main one.</li>
     </ol>
+    <p>A site server serves only the origins bound to its own name (<code>SITE_SERVER_NAME</code>, default <code>default</code>); an alias answers 301 to the address with the same path. <code>/_kpress/ask?domain=&lt;name&gt;</code> answers 200 only for a name bound to it: Caddy asks it before obtaining a certificate on demand.</p>
     <p>Public pages carry no cookie and no session; only the private link sets one.</p>
-  </section><section class="section step" id="s-rollback"><h3><span class="step-num">3.</span>Roll back</h3>
+  </section><section class="section step" id="s-golive"><h3><span class="step-num">3.</span>Go live on a registered server</h3>
+    <p>Servers are registered in <code>servers.json</code> of the source bucket by name, IPv4 and IPv6 addresses and agent URL (<code>server_add</code>, grant <code>servers</code>). A server runs a site server and the server agent behind nginx, Caddy or Traefik; the agent is a small service with four actions (<code>domain_add</code>, <code>domain_remove</code>, <code>domain_status</code>, <code>proxy_reload</code>), a bearer token per server and an allow-list of client addresses.</p>
+    <ol>
+      <li><code>site_server_set</code> chooses the server; with <code>alias</code>, the other name answers 301 to the address.</li>
+      <li><code>dns_plan</code> lists the A and AAAA records to create; <code>dns_check</code> reads them through 1.1.1.1 and 8.8.8.8.</li>
+      <li><code>site_go_live</code> checks the records, publishes, calls <code>domain_add</code> on the agent, which configures the proxy and obtains the certificate, then checks the address. It stops at the first failed step and reports each one.</li>
+    </ol>
+    <p>The same steps move a site to another server: the binding names the new server, and the old one stops serving it at its next read of <code>bindings.json</code>.</p>
+    <div class="table-wrap"><table><caption>What the agent does per proxy</caption>
+      <tr><th>Proxy</th><th>Configuration</th><th>Certificate</th></tr>
+      <tr><td>nginx</td><td>One server block per site in the agent's directory; <code>nginx -t</code> and reload.</td><td><code>certbot certonly --webroot</code>.</td></tr>
+      <tr><td>Caddy</td><td>None: the binding is the configuration.</td><td>On demand, after the <code>ask</code> endpoint.</td></tr>
+      <tr><td>Traefik</td><td>One file per site in the file provider's directory.</td><td>The configured certificate resolver.</td></tr>
+    </table></div>
+  </section><section class="section step" id="s-rollback"><h3><span class="step-num">4.</span>Roll back</h3>
     <ul>
       <li><b>A page in one language</b>: <code>page_rollback</code> pins an earlier S3 version of its object in a new index; the other pages and languages stay as they are.</li>
       <li><b>The whole site</b>: <code>site_rollback</code> restores a saved source version and publishes every page that differs from it.</li>
     </ul>
-  </section><section class="section step" id="s-private"><h3><span class="step-num">4.</span>Maintenance, private sites and private links</h3>
+  </section><section class="section step" id="s-private"><h3><span class="step-num">5.</span>Maintenance, private sites and private links</h3>
     <p><code>maintenance_set</code> writes a new index with the maintenance flag; pages stay as they are. <code>site_visibility_set</code> makes the site private or public at its address, even before the first Publish.</p>
     <p><code>private_link</code> returns <code>&lt;address&gt;/_private/&lt;token&gt;</code>, valid 8 hours or 7 days. The token names the site and its expiry and is signed with HMAC-SHA256 under a secret shared by websites and the site servers. Opening it sets an HttpOnly cookie for that host (Secure on https, SameSite=Lax) and redirects to <code>/</code>; with it, the real site shows and its responses are not stored by shared caches. Rotating the secret revokes every link.</p>
   </section></section><section class="part rules"><h2>Rules</h2>
@@ -121,7 +136,8 @@ th { background: var(--panel); }
     <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Give private links the shortest validity that serves.</div><div class="muted why">A link works until it expires and cannot be revoked one by one.</div></div>
   </section><section class="part limits"><h2>Current limits</h2>
     <div class="box limit"><div>An index of an earlier schema reads as absent: the next Publish writes every page again; until then the site server answers 503 for that site.</div><div class="box-foot"><code class="source">src/kajenn_press/site/publish.py:81</code></div></div>
-    <div class="box limit"><div>A site server serves the sites of one release bucket; there is no registry of servers yet.</div></div>
+    <div class="box limit"><div>A site server serves the sites of one release bucket.</div></div>
+    <div class="box limit"><div>The agent runs the proxy commands through <code>sudo</code>, limited to the lines of <code>deploy/agent/sudoers-kpress-agent</code>.</div></div>
   </section><section class="part facts"><h2>Verified facts</h2>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/published.py:27</code><span class="muted">2026-10-29</span></div><div>The page object and index schema is 3; entries carry <code>language</code>.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/publish.py:41</code><span class="muted">2026-10-29</span></div><div>The main language's entry is the page id; another language's is <code>&lt;page&gt;.&lt;language&gt;</code>.</div></div>
@@ -132,6 +148,9 @@ th { background: var(--panel); }
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:346</code><span class="muted">2026-10-29</span></div><div>The sitemap lists indexable pages of every language; a noindex root gives <code>Disallow: /</code>.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/private.py:35</code><span class="muted">2026-10-29</span></div><div>Private links last 8 or 168 hours; forged, foreign and expired tokens are refused.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:224</code><span class="muted">2026-10-29</span></div><div>A valid private link answers 303 with an HttpOnly cookie for its host.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/serving.py:71</code><span class="muted">2026-10-29</span></div><div>A site server serves only the origins bound to its name; moving a site to another server moves its serving.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/golive.py:59</code><span class="muted">2026-10-29</span></div><div><code>site_go_live</code> reports dns, publish, certificate and online, and stops at the first failed step.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">tests/docker/test_proxies_contract.py:1</code><span class="muted">2026-10-29</span></div><div>Caddy with its internal CA obtains a certificate on demand only for a name the site server binds; nginx accepts the agent's block; Traefik loads the agent's router.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">tests/docker/test_docker_composition_contract.py:1</code><span class="muted">2026-10-29</span></div><div>The Docker composition publishes the example site in two languages, serves it, and opens it through a private link during maintenance.</div></div>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../booklet/site-tab.html">booklet/site-tab</a></li>

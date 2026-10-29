@@ -121,14 +121,21 @@ th { background: var(--panel); }
       <li><b>Maintenance on</b> makes the site answer 503 to visitors.</li>
       <li><b>Private link</b> creates a link valid 8 hours or 7 days that shows the real site while it is private or in maintenance, and switches the site between private (404 to visitors) and public.</li>
     </ul>
-    <p>The site gets its address at the first Publish after the root page has a public origin; a site server bound to the release bucket serves it without restart (booklet <em>Publication and serving</em>).</p>
+    <p><b>Go live…</b> puts the site online on a registered server, or moves it to another one:</p>
+    <ol>
+      <li><b>Server</b>: one of the registered servers, with its addresses.</li>
+      <li><b>Address</b>: the domain and which name is the address (the domain or <code>www.</code>); the other answers 301. <b>Save server and address</b> writes the root page's public origin and the server.</li>
+      <li><b>DNS records</b>: the records to create at the DNS provider and what public resolvers see; <b>Check again</b> reads them again.</li>
+      <li><b>Publish and go live</b>: publishes, asks the server to serve the address and obtain its certificate, checks the address, and shows each step.</li>
+    </ol>
+    <p>A site server reads its addresses from the release bucket and serves a new one without restart (booklet <em>Publication and serving</em>).</p>
   </section></section><section class="part rules"><h2>Rules</h2>
     <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Take the site before editing it.</div><div class="muted why">Changes are refused to anyone but the holder of the site.</div></div>
     <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Save after a coherent piece of work.</div><div class="muted why">A working copy is lost when someone else takes the site.</div></div>
     <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Edit a shared content inside one page when every page should change: edit the content.</div><div class="muted why">A copy changed in the page is left out of Update.</div></div>
   </section><section class="part limits"><h2>Current limits</h2>
     <div class="box limit"><div>SEO checks run in the main language only.</div><div class="box-foot"><code class="source">src/kajenn_press/site/seo.py:398</code></div></div>
-    <div class="box limit"><div>The first publication on a server other than the installation's own (registry, DNS, TLS) is not available yet.</div></div>
+    <div class="box limit"><div>Servers are registered through <code>server_add</code> (REST or MCP); the tab has no form for it.</div></div>
     <div class="box limit"><div>While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.</div></div>
   </section><section class="part facts"><h2>Verified facts</h2>
     <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:33</code><span class="muted">2026-10-29</span></div><div>The navigation lists Sites (with holder and <code>+ new site</code>) and Library (starting sites).</div></div>
@@ -141,6 +148,7 @@ th { background: var(--panel); }
     <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:357</code><span class="muted">2026-10-29</span></div><div>The language selector re-renders the Visual editor and outlines main-text slots in red in the preview.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/help/tools.py:45</code><span class="muted">2026-10-29</span></div><div>Translations written by Help me are always to review.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/help/chat.py:111</code><span class="muted">2026-10-29</span></div><div>A Help me turn from the tab added a page and saved the site against the Claude API.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:895</code><span class="muted">2026-10-29</span></div><div>Go live on the local demo saved server and address, showed the DNS records seen, and reported dns, publish, certificate and online.</div></div>
     <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:783</code><span class="muted">2026-10-29</span></div><div>The Published site tab published one page, set maintenance, created a private link and rolled back one page on the local demo.</div></div>
   </section><section class="part related"><h2>Related documents</h2><ul>
     <li><a href="../booklet/templates.html">booklet/templates</a></li>

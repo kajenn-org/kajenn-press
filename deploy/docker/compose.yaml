@@ -95,6 +95,7 @@ services:
       RELEASE_S3_ACCESS_FILE: /secrets/storage_access
       RELEASE_S3_SECRET_FILE: /secrets/storage_secret
       PRIVATE_LINK_SECRET_FILE: /secrets/private_link
+      SITE_FORWARDED_ALLOW_IPS: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
     ports:
       - "127.0.0.1:8877:8877"
     volumes:

@@ -17,7 +17,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote
 from uuid import uuid4
 from xml.sax.saxutils import escape
 
@@ -33,10 +33,12 @@ from ..domain import DomainError
 from ..publication.routes import origin, request_path
 from .private import COOKIE, PREFIX, cookie_token, valid_token
 from .publish import BINDINGS_PATH
-from .published import read_bindings, read_index, unpack_page
+from .published import DEFAULT_SERVER, read_bindings, read_index, unpack_page
 from .seo import NOT_FOUND_URL, ROOT_URL
 
 MOUNT = "releases"
+# Asked by Caddy before it obtains a certificate for a name; only bound names pass.
+ASK_PATH = "/_kpress/ask"
 HEADERS = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
@@ -68,8 +70,8 @@ def read_release(storage, path, version_id=None, attempts=5):
 class Bindings:
     """`bindings.json`, reread at most every `cache_seconds`; the last valid one is kept."""
 
-    def __init__(self, storage, cache_seconds):
-        self.storage, self.cache_seconds = storage, cache_seconds
+    def __init__(self, storage, cache_seconds, server):
+        self.storage, self.cache_seconds, self.server = storage, cache_seconds, server
         self.loaded, self.loaded_at = {}, None
 
     def get(self, public_origin):
@@ -80,7 +82,18 @@ class Bindings:
                 # Missing or unreadable bindings keep the last valid ones (none at start).
                 pass
             self.loaded_at = time.monotonic()
-        return self.loaded.get(public_origin)
+        entry = self.loaded.get(public_origin)
+        # A site server serves only the sites bound to it (d-server-registry).
+        return entry if entry is not None and entry["server"] == self.server else None
+
+    def hosts(self):
+        """The host names bound to this server, address and alias."""
+        self.get("")
+        return {
+            origin.partition("://")[2].split(":")[0]
+            for origin, entry in self.loaded.items()
+            if entry["server"] == self.server
+        }
 
 
 class SiteReader:
@@ -171,12 +184,13 @@ class SiteServerApplication(BaseApplication):
         worker=None,
         connections=None,
         private_secret=None,
+        server=DEFAULT_SERVER,
         **kwargs,
     ):
         storage = StorageManager()
         storage.configure([{"name": MOUNT, **release_storage}])
         self.storage, self.cache_seconds = storage, cache_seconds
-        self.bindings = Bindings(storage, cache_seconds)
+        self.bindings = Bindings(storage, cache_seconds, server)
         self.private_secret = private_secret
         self.readers = {}
         self.renders = RenderCache(cache_root, worker, connections or {}) if worker else None
@@ -201,6 +215,10 @@ class SiteServerApplication(BaseApplication):
         bound = self.bindings.get(binding)
         if bound is None:
             raise DomainError("not_found", "Unknown site")
+        if bound["redirect"] is not None:
+            # The alias of an address answers 301 to it, keeping the path (d-www).
+            location = bound["redirect"] + quote(path, safe="/")
+            return Response(status_code=301, headers={**HEADERS, "location": location})
         if path.startswith(PREFIX):
             return self.private_entry(binding, bound["site_id"], path.removeprefix(PREFIX))
         allowed = self.allowed(bound["site_id"], token)
@@ -302,6 +320,14 @@ class SiteServerApplication(BaseApplication):
         if scope["type"] != "http":
             await send({"type": "websocket.close", "code": 1008})
             return
+        if scope["path"] == ASK_PATH:
+            # Caddy's on-demand TLS asks before obtaining a certificate (d-tls-proxy).
+            query = parse_qs(scope.get("query_string", b"").decode("latin-1"))
+            domain = (query.get("domain") or [""])[0].lower()
+            bound = await asyncio.to_thread(self.bindings.hosts)
+            status = 200 if domain in bound else 404
+            await Response("", status_code=status, headers=HEADERS)(scope, receive, send)
+            return
         try:
             binding = self.binding(scope)
             path = request_path(scope.get("raw_path", scope["path"].encode()))
@@ -368,6 +394,7 @@ def create_site_server(
     worker=None,
     connections=None,
     private_secret=None,
+    server=DEFAULT_SERVER,
 ):
     """A Kajenn server whose root application serves the sites bound in `bindings.json`."""
     return AsgiServer(
@@ -385,6 +412,7 @@ def create_site_server(
                     "worker": worker,
                     "connections": connections,
                     "private_secret": private_secret,
+                    "server": server,
                 },
             ),
         ],

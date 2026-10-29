@@ -64,7 +64,14 @@ The Published site tab shows the state of the site (Not published, Public, Priva
 - **Maintenance on** makes the site answer 503 to visitors.
 - **Private link** creates a link valid 8 hours or 7 days that shows the real site while it is private or in maintenance, and switches the site between private (404 to visitors) and public.
 
-The site gets its address at the first Publish after the root page has a public origin; a site server bound to the release bucket serves it without restart (booklet *Publication and serving*).
+**Go live…** puts the site online on a registered server, or moves it to another one:
+
+1. **Server**: one of the registered servers, with its addresses.
+2. **Address**: the domain and which name is the address (the domain or `www.`); the other answers 301. **Save server and address** writes the root page's public origin and the server.
+3. **DNS records**: the records to create at the DNS provider and what public resolvers see; **Check again** reads them again.
+4. **Publish and go live**: publishes, asks the server to serve the address and obtain its certificate, checks the address, and shows each step.
+
+A site server reads its addresses from the release bucket and serves a new one without restart (booklet *Publication and serving*).
 
 ### Rules
 
@@ -75,7 +82,7 @@ The site gets its address at the first Publish after the root page has a public 
 ### Current limits
 
 - SEO checks run in the main language only. · `src/kajenn_press/site/seo.py:398`
-- The first publication on a server other than the installation's own (registry, DNS, TLS) is not available yet.
+- Servers are registered through `server_add` (REST or MCP); the tab has no form for it.
 - While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.
 
 ### Verified facts
@@ -90,6 +97,7 @@ The site gets its address at the first Publish after the root page has a public 
 - `RUN` `src/kajenn_press/admin/pages/site.py:357` · 2026-10-29 — The language selector re-renders the Visual editor and outlines main-text slots in red in the preview.
 - `TEST` `src/kajenn_press/help/tools.py:45` · 2026-10-29 — Translations written by Help me are always to review.
 - `RUN` `src/kajenn_press/help/chat.py:111` · 2026-10-29 — A Help me turn from the tab added a page and saved the site against the Claude API.
+- `RUN` `src/kajenn_press/admin/pages/site.py:895` · 2026-10-29 — Go live on the local demo saved server and address, showed the DNS records seen, and reported dns, publish, certificate and online.
 - `RUN` `src/kajenn_press/admin/pages/site.py:783` · 2026-10-29 — The Published site tab published one page, set maintenance, created a private link and rolled back one page on the local demo.
 
 ### Related documents

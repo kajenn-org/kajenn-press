@@ -44,6 +44,8 @@ COMMANDS = frozenset(
         "content_translate",
         "translation_confirm",
         "site_languages_set",
+        "site_server_set",
+        "site_go_live",
         "publish",
         "page_rollback",
         "site_rollback",
@@ -385,6 +387,8 @@ class Page(AdminPage):
         pane.dataSetter("site.pub_version", 0)
         pane.dataSetter("site.pub_panel", "")
         pane.dataSetter("site.pub_message", "")
+        # Outside the stage: a go live rebuilds the stage and its result must stay.
+        pane.dataSetter("site.gl_result", "")
         tabs.contentPane(title="Published site", pageName="published", overflow="hidden").remote(
             "published_panel", site=site, version="^site.pub_version"
         )
@@ -799,7 +803,7 @@ class Page(AdminPage):
             "pub_rollback_version": "",
         }.items():
             pane.dataSetter("site." + name, value)
-        for name in ("publish", "rollback", "private"):
+        for name in ("publish", "rollback", "private", "golive"):
             pane.dataFormula(
                 f"site.pub_hide_{name}", f"p !== '{name}'", p="^site.pub_panel", _init=True
             )
@@ -824,6 +828,7 @@ class Page(AdminPage):
         actions.button("Private link", class_="button--secondary").dataController(
             func="showPrivate"
         )
+        actions.button("Go live…", class_="button--secondary").dataController(func="showGoLive")
         bar.span("^site.pub_message", role="status", class_="pub-message")
         if state["next_address"] or state["address_problem"]:
             note = layout.contentPane(region="bottom").div(class_="pub-note")
@@ -832,6 +837,8 @@ class Page(AdminPage):
         self.publish_panel(stage, plan)
         self.rollback_panel(stage, read["pages"], site, read["languages"])
         self.private_panel(stage, state)
+        servers = await execute_service("server_list", {})
+        self.golive_panel(pane, stage, site, read, servers)
         if state["address"] and not hidden:
             stage.iframe(
                 src=state["address"] + "/",
@@ -844,6 +851,8 @@ class Page(AdminPage):
             literal_text(box, "p", stage_message(state))
             if state["address"]:
                 box.button("Open with a private link").dataController(func="openPrivate")
+            else:
+                box.button("Go live…").dataController(func="showGoLive")
 
     def publish_panel(self, stage, plan):
         panel = stage.div(class_="pub-panel", hidden="^site.pub_hide_publish")
@@ -882,6 +891,72 @@ class Page(AdminPage):
             "Whole site: restores a saved source version and republishes its pages.",
             class_="muted pub-small",
         )
+
+    def golive_panel(self, pane, stage, site, read, servers):
+        """The first publication, or a move, step by step (proposal, First publication)."""
+        root = next((p for p in read["pages"] if p["url"] == "/"), None)
+        origin = (root or {}).get("seo_effective", {}).get("origin", "")
+        host = origin.partition("://")[2]
+        bare = host.removeprefix("www.")
+        current = read.get("server", "")
+        for name, value in {
+            "gl_root": root["id"] if root else "",
+            "gl_server": current or (servers[0]["name"] if servers else ""),
+            "gl_domain": bare,
+            "gl_canonical": "www" if host.startswith("www.") else "bare",
+            "gl_dns_version": 0,
+        }.items():
+            pane.dataSetter("site." + name, value)
+        panel = stage.div(class_="pub-panel golive", hidden="^site.pub_hide_golive")
+        head = panel.div(class_="pub-panel-head")
+        head.strong("Go live")
+        head.button("Close", class_="button--quiet").dataController(func="closePanel")
+        one = panel.fieldset(class_="gl-step")
+        one.legend("1 · Server")
+        if not servers:
+            one.p("No server is registered: register one with server_add.", class_="muted")
+        menu = one.select(value="^site.gl_server", aria_label="Server")
+        for server in servers:
+            addresses = ", ".join(server["ipv4"] + server["ipv6"])
+            menu.option(f"{server['name']} · {addresses}", value=server["name"])
+        two = panel.fieldset(class_="gl-step")
+        two.legend("2 · Address")
+        two.input(value="^site.gl_domain", placeholder="bottega.example", aria_label="Domain")
+        choice = two.select(value="^site.gl_canonical", aria_label="Address")
+        choice.option("the domain; www answers 301", value="bare")
+        choice.option("www.; the domain answers 301", value="www")
+        two.button("Save server and address").dataController(func="goLiveSave")
+        three = panel.fieldset(class_="gl-step")
+        three.legend("3 · DNS records")
+        three.div().remote("dns_view", site=site, version="^site.gl_dns_version")
+        three.button("Check again", class_="button--secondary").dataController(func="goLiveCheck")
+        four = panel.fieldset(class_="gl-step")
+        four.legend("4 · Publish and certificate")
+        four.button("Publish and go live").dataController(func="goLiveRun")
+        four.div("^site.gl_result", class_="gl-result")
+
+    @source(auth="editor")
+    async def dns_view(self, pane, site="", version=0):
+        try:
+            checked = await execute_service("dns_check", {"site_id": site})
+        except DomainError as error:
+            literal_text(pane, "p", str(error), class_="muted")
+            return
+        table = pane.table(class_="gl-dns")
+        head = table.tr()
+        for title in ("Name", "Type", "Value", "Seen"):
+            head.th(title)
+        marks = {"ok": "✓", "missing": "✗ not found", "unknown": "? no answer"}
+        for record in checked["records"]:
+            row = table.tr()
+            literal_text(row, "td", record["name"])
+            row.td(record["type"])
+            literal_text(row, "td", ", ".join(record["expected"]))
+            seen = marks.get(record["state"])
+            if seen is None:
+                found = sorted({v for vs in record["answers"].values() for v in vs or []})
+                seen = "✗ " + ", ".join(found)
+            literal_text(row, "td", seen, class_="gl-" + record["state"])
 
     @source(auth="editor")
     async def rollback_view(self, pane, site="", target="site"):

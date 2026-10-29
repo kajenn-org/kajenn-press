@@ -1,0 +1,6 @@
+# /etc/sudoers.d/kpress-agent: the only commands the agent may run as root.
+# Keep the lines of the installed proxy only.
+kpress-agent ALL=(root) NOPASSWD: /usr/sbin/nginx -t
+kpress-agent ALL=(root) NOPASSWD: /usr/bin/systemctl reload nginx
+kpress-agent ALL=(root) NOPASSWD: /usr/bin/certbot certonly --webroot *
+kpress-agent ALL=(root) NOPASSWD: /usr/bin/systemctl reload caddy

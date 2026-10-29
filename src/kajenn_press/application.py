@@ -73,6 +73,7 @@ class PressApplication(McpOpenApiApplication):
             releases = config.pop("releases", None)
             private_secret = config.pop("private_secret", None)
             help_config = config.pop("help", None)
+            agent_tokens = config.pop("agent_tokens", None)
             self.sites = SiteService(
                 config.pop("root", self.root / "sites"),
                 SourceStore(config.pop("sources")),
@@ -82,6 +83,7 @@ class PressApplication(McpOpenApiApplication):
                 publisher=Publisher(releases, worker, connections, private_secret)
                 if releases
                 else None,
+                agent_tokens=agent_tokens,
             )
             if config:
                 raise ValueError("Unknown site configuration")
@@ -150,6 +152,25 @@ class PressApplication(McpOpenApiApplication):
     def starter_save(self, key: str, site_id: str, name: str, _request=None) -> dict:
         """Keep the latest saved version of a site in the Library as a starting site."""
         return self._site(_request, "starter_save", key=key, site_id=site_id, name=name)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_list(self, _request=None) -> dict:
+        """The servers that can serve published sites: name, addresses, agent URL."""
+        return self._site(_request, "server_list")
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_add(
+        self, key: str, name: str, ipv4: list, ipv6: list, agent_url: str, _request=None
+    ) -> dict:
+        """Register a server (grant servers): public IPv4 and IPv6 addresses and its agent URL."""
+        return self._site(
+            _request, "server_add", key=key, name=name, ipv4=ipv4, ipv6=ipv6, agent_url=agent_url
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def server_remove(self, key: str, name: str, _request=None) -> dict:
+        """Remove a server that serves no site (grant servers)."""
+        return self._site(_request, "server_remove", key=key, name=name)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def site_list(self, _request=None) -> dict:
@@ -551,6 +572,32 @@ class PressApplication(McpOpenApiApplication):
     def site_visibility_set(self, site_id: str, key: str, state: str, _request=None) -> dict:
         """Make the site public or private at its address (the root page's public origin)."""
         return self._site(_request, "site_visibility_set", site_id=site_id, key=key, state=state)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_server_set(
+        self, site_id: str, key: str, server: str, alias: bool = True, _request=None
+    ) -> dict:
+        """Choose the server of the site and whether the other name (with or without www.)
+        redirects to its address; a site already online moves to that server."""
+        return self._site(
+            _request, "site_server_set", site_id=site_id, key=key, server=server, alias=alias
+        )
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def dns_plan(self, site_id: str, _request=None) -> dict:
+        """The DNS records the site's address (and alias) need towards its server."""
+        return self._site(_request, "dns_plan", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def dns_check(self, site_id: str, _request=None) -> dict:
+        """What public resolvers answer for each record of the site, and whether all are right."""
+        return self._site(_request, "dns_check", site_id=site_id)
+
+    @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
+    def site_go_live(self, site_id: str, key: str, _request=None) -> dict:
+        """Put the site online on its server: DNS check, Publish, the agent serves its names
+        with TLS, the address answers; each step reports its outcome."""
+        return self._site(_request, "site_go_live", site_id=site_id, key=key)
 
     @route(channel_channels="mcp,rest", auth_rule="editor", openapi_method="post")
     def publication_state(self, site_id: str, _request=None) -> dict:

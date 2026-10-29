@@ -1,0 +1,17 @@
+# systemd unit of the server agent; the agent runs as kpress-agent, never as root.
+[Unit]
+Description=kajenn-press server agent
+After=network-online.target
+
+[Service]
+User=kpress-agent
+EnvironmentFile=/etc/kpress-agent/agent.env
+ExecStart=/opt/kpress-agent/venv/bin/python /opt/kpress-agent/agent.py
+Restart=on-failure
+NoNewPrivileges=false
+ProtectSystem=full
+# The proxy directories the agent writes (nginx, Traefik).
+ReadWritePaths=-/etc/nginx/kpress.d -/etc/traefik/kpress
+
+[Install]
+WantedBy=multi-user.target

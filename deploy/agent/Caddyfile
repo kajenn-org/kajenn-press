@@ -1,0 +1,14 @@
+# Caddy in front of a site server with on-demand TLS (d-tls-proxy): Caddy obtains a
+# certificate for a name only when the site server says the name is bound to it.
+{
+	on_demand_tls {
+		ask http://127.0.0.1:8877/_kpress/ask
+	}
+}
+
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy 127.0.0.1:8877
+}

@@ -119,14 +119,25 @@ Library
     </section>
 
     <section title="First publication">
+      <p>The Published site tab of a site never published guides the operator:</p>
       <list ordered="true">
-        <item>Choose the Kajenn server among the ones registered in Kajenn Press.</item>
-        <item>Enter the domain and whether <c>www</c> is served too.</item>
-        <item>DNS: with the provider's credentials Kajenn Press creates the records; without them it shows the exact records to create and checks when they become visible.</item>
-        <item>The TLS certificate is automatic, because the server is a Kajenn server.</item>
-        <item>All pages are published, the address is checked and the site appears in the Published site iframe.</item>
+        <item>Choose the server among the ones registered in Kajenn Press.</item>
+        <item>Enter the domain and choose which of the domain and <c>www.</c> is the address; the other answers 301 to it.</item>
+        <item>DNS: Kajenn Press shows the exact records to create (A and AAAA for both names, towards the server's addresses) and checks when they become visible. Creating them through a provider's API comes later, Route 53 first.</item>
+        <item>Publish: the pages are published, the server's agent configures the proxy for the domain and obtains the certificate, and the tab shows the outcome.</item>
+        <item>The address is checked and the site appears in the Published site iframe.</item>
       </list>
+      <p>A site can move to another server: the binding moves and the tab shows the new DNS records to create.</p>
       <p>Whether a Python process is needed to re-render follows from the presence of resolvers in the templates; the operator is not asked.</p>
+    </section>
+
+    <section title="Servers">
+      <list>
+        <item>A server is a host that runs the Kajenn site server image. Kajenn Press keeps a registry of servers: name, public IPv4 and IPv6 addresses, the address of its agent. Every server reads the same release bucket; each site's binding names the server that serves it.</item>
+        <item>TLS comes from the proxy already installed on the server: nginx with certbot, Caddy or Traefik. Kajenn Press provides the site server image, which speaks plain HTTP, and one driver per proxy.</item>
+        <item>Each server runs an agent: a small Kajenn application that Kajenn Press calls to add or remove a domain, read the state of its certificate and reload the proxy. The agent has a fixed set of actions and no generic shell, answers only the manager with its own token on a limited network, and runs as a user without root, allowed by sudo only to reload the proxy and run certbot.</item>
+        <item>The manager host on Hetzner stays a manager: public sites are served by separate servers.</item>
+      </list>
     </section>
 
     <section title="Help me">
@@ -350,6 +361,43 @@ Library
       <option id="d-lang-visitor-selector" title="A selector in the template; no redirect by browser language"/>
       <option id="d-lang-visitor-redirect" title="Automatic redirect from the root"/>
       <choice option="d-lang-visitor-selector" by="GP" date="2026-10-29">Every URL shows the same page to everyone, robots included.</choice>
+    </decision>
+    <decision id="d-tls-proxy" status="decided">
+      <question>Where does TLS come from?</question>
+      <option id="d-tls-proxy-installed" title="The proxy installed on the server (nginx, Caddy, Traefik), through a driver per proxy"/>
+      <option id="d-tls-proxy-caddy" title="Caddy always, in front of every site server"/>
+      <option id="d-tls-proxy-kajenn" title="An ACME client inside Kajenn"/>
+      <choice option="d-tls-proxy-installed" by="GP" date="2026-10-29">Kajenn Press provides the image; the host keeps its own proxy.</choice>
+    </decision>
+    <decision id="d-server-agent" status="decided">
+      <question>How does Kajenn Press act on a server?</question>
+      <option id="d-server-agent-app" title="An agent application with fixed actions, called by the manager"/>
+      <option id="d-server-agent-timer" title="A script on the server, run by a timer, reading the bindings"/>
+      <choice option="d-server-agent-app" by="GP" date="2026-10-29">The tab shows the outcome at once; no generic shell, own token, limited network, no root.</choice>
+    </decision>
+    <decision id="d-server-registry" status="decided">
+      <question>What is a server and where is it registered?</question>
+      <option id="d-server-registry-shared" title="Registered in the source bucket; every server reads one release bucket; bindings name the server"/>
+      <option id="d-server-registry-bucket" title="One release bucket per server, in the installation's configuration"/>
+      <choice option="d-server-registry-shared" by="GP" date="2026-10-29">Adding a server needs no restart; moving a site moves one binding.</choice>
+    </decision>
+    <decision id="d-dns" status="decided">
+      <question>How is DNS set up?</question>
+      <option id="d-dns-show" title="Show the records and check them; provider APIs later, Route 53 first"/>
+      <option id="d-dns-route53" title="Route 53 credentials from the start"/>
+      <choice option="d-dns-show" by="GP" date="2026-10-29">Works with any provider today.</choice>
+    </decision>
+    <decision id="d-www" status="decided">
+      <question>How are the domain and www served?</question>
+      <option id="d-www-canonical" title="One is the address; the other answers 301 to it"/>
+      <option id="d-www-one" title="Only the name entered"/>
+      <choice option="d-www-canonical" by="GP" date="2026-10-29">Visitors reach the site with or without www, on one canonical address.</choice>
+    </decision>
+    <decision id="d-manager-host" status="decided">
+      <question>Does the Hetzner manager host serve public sites?</question>
+      <option id="d-manager-host-no" title="No: public sites go to separate servers"/>
+      <option id="d-manager-host-yes" title="Yes, behind its nginx"/>
+      <choice option="d-manager-host-no" by="GP" date="2026-10-29">The manager keeps the source keys away from public traffic.</choice>
     </decision>
   </decisions>
 

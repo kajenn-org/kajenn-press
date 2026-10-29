@@ -17,6 +17,7 @@ from ..publication.routes import origin
 from .languages import language_url, site_languages
 from .private import PREFIX, private_token
 from .published import (
+    DEFAULT_SERVER,
     SCHEMA,
     STATES,
     PublishedPage,
@@ -36,6 +37,12 @@ from .store import require_versioning
 MOUNT = "releases"
 BINDINGS_PATH = "bindings.json"
 DEFAULT_REFRESH = 600
+
+
+def alias_origin(address):
+    """The other name of an address: with `www.` added, or removed (d-www)."""
+    scheme, _, host = address.partition("://")
+    return f"{scheme}://{host[4:]}" if host.startswith("www.") else f"{scheme}://www.{host}"
 
 
 def entry_name(page_id, language, main):
@@ -153,9 +160,9 @@ class Publisher:
         return read_bindings(node.read_bytes()) if node.exists() else {}
 
     def binding(self, site_id):
-        """(origin, entry) of a site, or (None, None) when it has no address."""
+        """(address, entry) of a site, or (None, None) when it has no address."""
         for public_origin, entry in self.bindings().items():
-            if entry["site_id"] == site_id:
+            if entry["site_id"] == site_id and entry["redirect"] is None:
                 return public_origin, entry
         return None, None
 
@@ -166,27 +173,46 @@ class Publisher:
         # `origin` refuses http outside loopback hosts with a DomainError of its own.
         return origin(value) if value else None
 
-    def check_address(self, site_id, public_origin):
-        if public_origin is None:
-            return
-        entry = self.bindings().get(public_origin)
-        if entry is not None and entry["site_id"] != site_id:
-            raise DomainError("conflict", f"{public_origin} is the address of another site")
+    def site_origins(self, site, address):
+        """The address and, when the site wants it, its alias (d-www)."""
+        if address is None:
+            return []
+        info = site.bag.get_node("info").attr
+        return [address, alias_origin(address)] if info.get("alias") else [address]
 
-    def bind(self, site_id, public_origin, state=None):
-        """Give a site its address (or none); the state is kept unless given."""
-        self.check_address(site_id, public_origin)
+    def check_address(self, site_id, origins):
         bindings = self.bindings()
-        _previous, entry = self.binding(site_id)
-        bindings = {o: e for o, e in bindings.items() if e["site_id"] != site_id}
-        if public_origin is not None:
-            kept = entry["state"] if entry is not None else "public"
-            bindings[public_origin] = {"site_id": site_id, "state": state or kept}
+        for public_origin in origins:
+            entry = bindings.get(public_origin)
+            if entry is not None and entry["site_id"] != site_id:
+                raise DomainError("conflict", f"{public_origin} is the address of another site")
+
+    def bind(self, site, public_origin, state=None):
+        """Give a site its address (or none) on its server; the state is kept unless given."""
+        origins = self.site_origins(site, public_origin)
+        self.check_address(site.site_id, origins)
+        _previous, entry = self.binding(site.site_id)
+        bindings = {o: e for o, e in self.bindings().items() if e["site_id"] != site.site_id}
+        kept = entry["state"] if entry is not None else "public"
+        server = site.bag.get_node("info").attr.get("server") or DEFAULT_SERVER
+        for found in origins:
+            bindings[found] = {
+                "site_id": site.site_id,
+                "state": state or kept,
+                "server": server,
+                "redirect": None if found == public_origin else public_origin,
+            }
         try:
             raw = make_bindings(bindings)
         except IntegrityError as exc:
             raise DomainError("conflict", str(exc)) from exc
         self.node(BINDINGS_PATH).write_bytes(raw)
+
+    def set_server(self, site):
+        """Rebind a site already bound after its server or alias changed (move, d-www)."""
+        address, _entry = self.binding(site.site_id)
+        if address is not None:
+            self.bind(site, address)
 
     def state(self, site):
         """What the Published site tab shows: address, state, last Publish, pending changes."""
@@ -217,7 +243,7 @@ class Publisher:
         address = self.site_address(site)
         if address is None:
             raise DomainError("invalid_input", "Give the root page a public origin first")
-        self.bind(site.site_id, address, state)
+        self.bind(site, address, state)
         return {"address": address, "state": state}
 
     def private_link(self, site_id, hours):
@@ -236,7 +262,7 @@ class Publisher:
     def publish(self, site, source_version, selected):
         """Write the selected pages, then the index and the address; returns what happened."""
         address = self.site_address(site)
-        self.check_address(site.site_id, address)
+        self.check_address(site.site_id, self.site_origins(site, address))
         index = self.index(site.site_id) or {"pages": {}, "maintenance": False}
         pages = dict(index["pages"])
         published, failed = [], []
@@ -298,7 +324,7 @@ class Publisher:
             raise DomainError("conflict", str(exc)) from exc
         node = self.node(self.index_path(site.site_id))
         node.write_bytes(raw_index)
-        self.bind(site.site_id, address)
+        self.bind(site, address)
         return {
             "published": published,
             "failed": failed,

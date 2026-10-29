@@ -257,6 +257,32 @@ export class Logic {
     showRollback(node, _args) { node.SET('site.pub_panel', 'rollback'); }
     showPrivate(node, _args) { node.SET('site.pub_panel', 'private'); }
     closePanel(node, _args) { node.SET('site.pub_panel', ''); }
+    showGoLive(node, _args) { node.SET('site.pub_panel', 'golive'); }
+    async goLiveSave(node, _args) {
+        const site = this.siteId(node), domain = (node.GET('site.gl_domain') || '').trim().toLowerCase();
+        if (!domain) { node.SET('site.gl_result', 'Write the domain first.'); return; }
+        const address = 'https://' + (node.GET('site.gl_canonical') === 'www' ? 'www.' + domain : domain);
+        try {
+            await this.callCommand('page_seo_set', {site_id: site, key: crypto.randomUUID(),
+                page_id: node.GET('site.gl_root'), fields: {origin: address}});
+            await this.callCommand('site_server_set', {site_id: site, key: crypto.randomUUID(),
+                server: node.GET('site.gl_server'), alias: true});
+            node.SET('site.gl_result', 'Saved: ' + address);
+            node.SET('site.gl_dns_version', node.GET('site.gl_dns_version') + 1);
+        } catch (error) { node.SET('site.gl_result', error.message); }
+    }
+    goLiveCheck(node, _args) { node.SET('site.gl_dns_version', node.GET('site.gl_dns_version') + 1); }
+    async goLiveRun(node, _args) {
+        node.SET('site.busy', true);
+        node.SET('site.gl_result', 'Publishing and asking the server…');
+        try {
+            const result = await this.callCommand('site_go_live', {site_id: this.siteId(node), key: crypto.randomUUID()});
+            const lines = result.steps.map(s => (s.ok ? '✓ ' : '✗ ') + s.step + (s.ok ? '' : ': ' + (typeof s.detail === 'string' ? s.detail : 'see the DNS records')));
+            node.SET('site.gl_result', lines.join(' · ') + (result.ok ? ' · online at ' + result.address : ''));
+            if (result.ok) node.SET('site.pub_version', node.GET('site.pub_version') + 1);
+        } catch (error) { node.SET('site.gl_result', error.message); }
+        node.SET('site.busy', false);
+    }
     async publishCommand(node, operation, arguments_, done) {
         node.SET('site.busy', true);
         try {

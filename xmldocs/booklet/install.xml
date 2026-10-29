@@ -45,6 +45,22 @@ docker compose -f deploy/docker/compose.yaml -f deploy/docker/compose.external-s
     <p>websites refuses to start with a bucket whose versioning is not enabled.</p>
   </step>
 
+  <step id="s-site-server" title="Prepare a server for published sites">
+    <p>A server that serves published sites runs the site server (the <c>kajenn-child</c> image) on <c>127.0.0.1:8877</c> and the server agent, behind nginx, Caddy or Traefik already installed. On a Debian or Ubuntu host with Docker, as root:</p>
+    <code lang="bash"><![CDATA[
+sh deploy/agent/install.sh nginx /path/to/kajenn-press
+]]></code>
+    <p>The script creates the user <c>kpress-agent</c>, installs the agent in <c>/opt/kpress-agent</c> with its systemd unit, the sudoers lines of the chosen proxy only, a new token in <c>/etc/kpress-agent/token</c>, and the site server unit with its environment in <c>/etc/kpress-site</c>. It starts nothing and prints what is left:</p>
+    <list>
+      <item>in <c>agent.env</c>, the manager's address (<c>AGENT_ALLOWED</c>) and the agent's certificate and key; for nginx, the ACME e-mail;</item>
+      <item>in <c>site.env</c>, the server's name as registered and the release bucket; in <c>secrets</c>, its read-only keys and the private-link secret;</item>
+      <item>the token copied to the manager as <c>&lt;agent_tokens&gt;/&lt;server&gt;.token</c>;</item>
+      <item>the proxy: nginx includes <c>/etc/nginx/kpress.d/*.conf</c>; Caddy uses <c>deploy/agent/Caddyfile</c>; Traefik watches <c>/etc/traefik/kpress</c>;</item>
+      <item>the firewall: 80 and 443 open, the agent's port 8890 only from the manager.</item>
+    </list>
+    <p>Then register the server on the manager with <c>server_add</c> (name, addresses, agent URL) and start both units.</p>
+  </step>
+
   <step id="s-help" title="Enable Help me">
     <p>Put the installation's Claude API key in a private file readable by websites, name it in <c>KPRESS_HELP_KEY_FILE</c>, and add <c>compose.help.yaml</c> to every Compose command. The key is never generated and never enters a volume. Without it, the Help me pane says Help me is not configured.</p>
   </step>
@@ -62,6 +78,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
     <rule level="must-not" why="They delete the composition's volumes.">Run <c>tests/docker</c> on a server with a real installation.</rule>
     <rule level="must" why="Pages and sources are read and restored by version.">Enable versioning on both buckets before the first start.</rule>
     <rule level="must-not" why="Project-wide keys would let a site server read the sources.">Give site servers keys that read the source bucket.</rule>
+    <rule level="must-not" why="The agent changes the proxy's configuration.">Expose the agent's port to any address but the manager's.</rule>
   </rules>
 
   <limits>
@@ -74,6 +91,7 @@ KAJENN_DOCKER=1 PYTHONPATH=src .venv/bin/python -m pytest -q --import-mode=impor
     <fact source="deploy/docker/credentials.py:32" method="read" verified="2026-10-29">One private-link secret is written to both the websites and the site-server volumes.</fact>
     <fact source="src/kajenn_press/site/store.py:19" method="read" verified="2026-10-29">websites refuses a source or release bucket whose versioning is not enabled.</fact>
     <fact source="deploy/docker/websites.py:58" method="read" verified="2026-10-29">Help me is configured only when <c>ANTHROPIC_API_KEY_FILE</c> names a file.</fact>
+    <fact source="deploy/agent/install.sh:1" method="run" verified="2026-10-29">In a Debian container, the script installed the agent for nginx and for Caddy with the proxy's sudoers lines only; the installed agent answered 200 with its token and 401 with another.</fact>
     <fact source="tests/docker/test_external_s3_contract.py:1" method="run" verified="2026-10-29">The external-bucket composition writes sources and releases to the given buckets.</fact>
   </facts>
 
