@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!-- generated from site-tab.xml by xmldocs: do not edit, edit the XML -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Building a site in the site tab</title><style>
+:root {
+  --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8; --panel: #f3f1ec;
+  --code-bg: #f0eee8; --accent: #2f5d8a;
+  --ok: #2e7d4f; --warn: #a86b00; --bad: #b23b3b; --info: #2f5d8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+    --code-bg: #26262a; --accent: #8fb4dc;
+    --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --fg: #e8e6e1; --muted: #9a9890; --line: #33332f; --panel: #212123;
+  --code-bg: #26262a; --accent: #8fb4dc;
+  --ok: #6cc28f; --warn: #e0a940; --bad: #e57373; --info: #8fb4dc;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; }
+a { color: var(--accent); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+pre code { display: block; padding: 12px 14px; background: none; }
+figure { margin: 16px 0; }
+figure.code { background: var(--code-bg); border-radius: 8px; }
+figure.code figcaption { font-size: 0.8rem; color: var(--muted); padding: 8px 14px 0; }
+figure.diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+figure.embed figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+figure.embed svg { max-width: 100%; height: auto; }
+.tag-script { color: var(--bad); }
+figure.diagram figcaption { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 8px; }
+.doc-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.9em; }
+.box { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel);
+  border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.box-foot { margin-top: 6px; }
+.box.fact { border-left-color: var(--info); }
+.box.rule-must { border-left-color: var(--ok); }
+.box.rule-must-not { border-left-color: var(--bad); }
+.box.rule-should { border-left-color: var(--warn); }
+.box.limit { border-left-color: var(--warn); }
+.box.decision-open, .box.decision-proposed { border-left-color: var(--warn); }
+.box.decision-decided { border-left-color: var(--ok); }
+.box.decision-rejected { border-left-color: var(--bad); }
+.box.example { border-left-color: var(--accent); }
+.box.done { border-left-color: var(--ok); }
+.tag-done { color: var(--ok); }
+.tag-doing, .tag-in-progress { color: var(--info); }
+.tag-todo { color: var(--muted); }
+.tag-approved { color: var(--ok); }
+.source { font-size: 0.8rem; }
+.why { margin-top: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 7px; border-radius: 10px; border: 1px solid currentColor; color: var(--muted); }
+.tag-test, .tag-run, .tag-must, .tag-decided, .tag-accepted { color: var(--ok); }
+.tag-read, .tag-review { color: var(--info); }
+.tag-should, .tag-open, .tag-proposed, .tag-draft { color: var(--warn); }
+.tag-must-not, .tag-rejected { color: var(--bad); }
+.options li { margin: 6px 0; }
+.options li.chosen b { color: var(--ok); }
+.choice { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.step-num { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+caption { text-align: left; color: var(--muted); padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+  </style></head><body><main><header class="doc-head"><div class="doc-type">Instruction booklet</div><h1>Building a site in the site tab</h1><div class="doc-meta"><span>booklet/site-tab</span><span>2026-10-29</span><span>Giovanni Porcari</span></div></header><section class="part purpose"><h2>Purpose</h2>
+    <p>How an operator builds, translates and publishes a site in the Kajenn Press administration: the navigation, the site tab with its three tabs (Visual editor, SEO, Published site), languages and Help me.</p>
+  </section><section class="part requires"><h2>Requirements</h2>
+    <ul>
+      <li>A websites installation with site sources: a source bucket and a release bucket, both with S3 versioning (booklet <em>Installing and running</em>).</li>
+      <li>An account with the <code>editor</code> tag and grants <code>read</code>, <code>write</code>, <code>create_site</code>, <code>build</code> and <code>publish</code> on the sites it works on.</li>
+      <li>For Help me, the installation's Claude API key.</li>
+    </ul>
+  </section><section class="part steps"><h2>Steps</h2><section class="section step" id="s-open"><h3><span class="step-num">1.</span>Open or create a site</h3>
+    <p>The navigation tree has two groups. <b>Sites</b> lists every site the account can read, with who is editing it, and <b>+ new site</b>; <b>Library</b> lists the starting sites. A site opens in a tab of its own.</p>
+    <p>Opening a site takes it: one person edits a site at a time. The others see who holds it and can only look; <b>Take the site</b> takes it from the holder, whose unsaved changes are lost. The lock expires after 30 minutes without changes.</p>
+    <p><b>Save</b> writes the site as a new S3 version of its source. Every change before that lives in the holder's working copy.</p>
+  </section><section class="section step" id="s-pages"><h3><span class="step-num">2.</span>Pages, slots and contents</h3>
+    <p>The Visual editor has a drawer with two trees and, in the centre, the page rendered as it will be published.</p>
+    <ul>
+      <li><b>Pages</b>: pages and folders. Folders only organise the editor; they never change URLs. Each page shows its slots and the content assigned to each. <b>+ page</b> adds a page with the site's template, <b>+ folder</b> a folder; pages and folders move by drag and drop.</li>
+      <li><b>Contents</b>: every HTML or Markdown content of the site. An unused content is in italics; a content used by several pages shows how many. <b>+ content</b> adds one.</li>
+    </ul>
+    <p>A content is placed by dropping it on a slot in the Pages tree, or by choosing it in the slot's menu and pressing <b>Assign</b>. <b>Show slots</b> outlines the slots in the preview; a click on a slot opens it.</p>
+    <p>A page holds a <em>copy</em> of each content it shows. Editing a content in the block editor changes the original; <b>Save</b> then shows the Update plan: every page holding a copy, selected unless its copy was changed in the page. <b>Update and render</b> brings the selected copies up to date. A page with a copy older than its original shows ↻; a page changed since the last Publish shows ●.</p>
+  </section><section class="section step" id="s-seo"><h3><span class="step-num">3.</span>SEO</h3>
+    <p>The SEO tab lists the pages with the state of their checks. For the selected page it shows the public URL, title, description, canonical, robots, social share fields, the images with their alt texts and JSON-LD. An empty field shows, beside it, the value it takes: the root page's for description, robots and sharing image, the page name for the title.</p>
+    <p>The root page (URL <code>/</code>) also holds the site defaults: languages, site name, public origin, organisation, sharing image and robots. The public origin is the site's address.</p>
+    <p>Changing a page's URL adds a 301 redirect from the old one. The right column shows the page as a search result and as a social share, and the checks of the page: duplicate titles, missing descriptions, images without alt, broken internal links, iframe slots without fallback, missing origin. Publish shows the same checks as warnings; they never block it.</p>
+  </section><section class="section step" id="s-languages"><h3><span class="step-num">4.</span>Languages</h3>
+    <p>The site's languages are set in the root page's site defaults, main language first, as tags such as <code>it, en</code>. With several languages, a selector in the site bar sets the language shown by the Visual editor, the SEO tab and the preview.</p>
+    <ul>
+      <li>A content shown in another language has its own translation. In the Pages and Contents trees a translation is marked ○ missing, ↻ to update (its main text changed since) or ◐ to review (proposed by Help me).</li>
+      <li>A missing translation shows the main text: the preview outlines those slots in red, the published page shows the main text without marks.</li>
+      <li>The block editor shows the main text above the translation; <b>Save</b> writes the translation, <b>Confirm translation</b> accepts one proposed by Help me.</li>
+      <li>In the SEO tab each language has its own URL and fields; the URL of another language is written without its prefix, which Kajenn Press adds (<code>/en/about/</code>). An empty field takes the main language's value.</li>
+    </ul>
+  </section><section class="section step" id="s-help"><h3><span class="step-num">5.</span>Help me</h3>
+    <p><b>Help me</b> opens a chat with Sonnet beside the Visual editor. It reads the site, asks what the site is for, offers palettes, font stacks and SVG logo sketches as cards to click, and builds templates, contents, assets, pages, slots, SEO and translations; it saves when a piece of work is done. Its translations stay to review until the operator confirms them.</p>
+    <p>Help me works under the lock of the operator who opened it; its changes are recorded as the operator's, made through Help me. It cannot publish, roll back, change maintenance or visibility, or create links: those stay in the Published site tab. Each chat is kept with the site and can be resumed from the chat menu; the cost line shows tokens and dollars per chat and per site, for information only.</p>
+  </section><section class="section step" id="s-publish"><h3><span class="step-num">6.</span>Publish and manage the published site</h3>
+    <p>The Published site tab shows the state of the site (Not published, Public, Private, Maintenance), its address, the last Publish and the pages changed since, and the published site itself.</p>
+    <ul>
+      <li><b>Publish…</b> lists every page in every language with its state (new, changed, unchanged, removed) and warnings; changed pages are selected. Each language publishes on its own.</li>
+      <li><b>Rollback…</b> puts an earlier version of one page in one language online, or restores a saved source version of the whole site and republishes it.</li>
+      <li><b>Maintenance on</b> makes the site answer 503 to visitors.</li>
+      <li><b>Private link</b> creates a link valid 8 hours or 7 days that shows the real site while it is private or in maintenance, and switches the site between private (404 to visitors) and public.</li>
+    </ul>
+    <p>The site gets its address at the first Publish after the root page has a public origin; a site server bound to the release bucket serves it without restart (booklet <em>Publication and serving</em>).</p>
+  </section></section><section class="part rules"><h2>Rules</h2>
+    <div class="box rule rule-must"><div class="box-head"><span class="tag tag-must">must</span></div><div>Take the site before editing it.</div><div class="muted why">Changes are refused to anyone but the holder of the site.</div></div>
+    <div class="box rule rule-should"><div class="box-head"><span class="tag tag-should">should</span></div><div>Save after a coherent piece of work.</div><div class="muted why">A working copy is lost when someone else takes the site.</div></div>
+    <div class="box rule rule-must-not"><div class="box-head"><span class="tag tag-must-not">must-not</span></div><div>Edit a shared content inside one page when every page should change: edit the content.</div><div class="muted why">A copy changed in the page is left out of Update.</div></div>
+  </section><section class="part limits"><h2>Current limits</h2>
+    <div class="box limit"><div>SEO checks run in the main language only.</div><div class="box-foot"><code class="source">src/kajenn_press/site/seo.py:398</code></div></div>
+    <div class="box limit"><div>The first publication on a server other than the installation's own (registry, DNS, TLS) is not available yet.</div></div>
+    <div class="box limit"><div>While the site is private or in maintenance, the private link opens in a new browser tab: inside the administration's frame the browser does not send its cookie.</div></div>
+  </section><section class="part facts"><h2>Verified facts</h2>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/index.py:33</code><span class="muted">2026-10-29</span></div><div>The navigation lists Sites (with holder and <code>+ new site</code>) and Library (starting sites).</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/lock.py:15</code><span class="muted">2026-10-29</span></div><div>The editing lock expires after 30 minutes without activity.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/site/service.py:344</code><span class="muted">2026-10-29</span></div><div><code>site_save</code> writes the working copy as a new version of the source zip.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/model.py:471</code><span class="muted">2026-10-29</span></div><div>The Update plan selects every copy not changed in its page that differs from the original, translations included.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-read">read</span><code class="source">src/kajenn_press/admin/pages/site.py:593</code><span class="muted">2026-10-29</span></div><div>Changing a page URL adds a 301 redirect from the old one.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/seo.py:137</code><span class="muted">2026-10-29</span></div><div>An empty SEO field takes the root page's value, never the parent's; in another language, the main language's value.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/site/languages.py:117</code><span class="muted">2026-10-29</span></div><div>A translation is missing, to update, to review or done.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:357</code><span class="muted">2026-10-29</span></div><div>The language selector re-renders the Visual editor and outlines main-text slots in red in the preview.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-test">test</span><code class="source">src/kajenn_press/help/tools.py:45</code><span class="muted">2026-10-29</span></div><div>Translations written by Help me are always to review.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/help/chat.py:111</code><span class="muted">2026-10-29</span></div><div>A Help me turn from the tab added a page and saved the site against the Claude API.</div></div>
+    <div class="box fact"><div class="box-head"><span class="tag tag-run">run</span><code class="source">src/kajenn_press/admin/pages/site.py:783</code><span class="muted">2026-10-29</span></div><div>The Published site tab published one page, set maintenance, created a private link and rolled back one page on the local demo.</div></div>
+  </section><section class="part related"><h2>Related documents</h2><ul>
+    <li><a href="../booklet/templates.html">booklet/templates</a></li>
+    <li><a href="../booklet/publication.html">booklet/publication</a></li>
+    <li><a href="../proposal/site-tab-redesign.html">proposal/site-tab-redesign</a></li>
+  </ul></section></main></body></html>

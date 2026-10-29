@@ -27,7 +27,8 @@ Entry: main `bd7d3a6`. The design lives in `xmldocs/proposal/site-tab-redesign.x
 
 ## Work Plan
 
-- [ ] **Phase 1**: Booklet "Building a site in the site tab"
+- [x] **Phase 1**: Booklet "Building a site in the site tab"
+  > Done: `xmldocs/booklet/site-tab.xml` (6 steps: open or create, pages and slots, SEO, languages, Help me, publish; rules, limits, 11 facts with sources), valid, rendered, read in the browser.
   - Files: `xmldocs/booklet/site-tab.{xml,md,html}`.
   - Done: every step is a path through the tab that exists today, with the facts that back it.
 
