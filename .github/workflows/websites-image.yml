@@ -1,0 +1,43 @@
+name: Publish websites image
+# Build deploy/docker/Dockerfile.websites and publish
+# ghcr.io/kajenn-org/kajenn-press-websites:<commit 12> and :main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'README.md'
+      - 'deploy/docker/Dockerfile.websites'
+      - 'deploy/docker/requirements-websites.txt'
+      - 'deploy/docker/requirements-render.txt'
+      - 'deploy/docker/websites.py'
+      - 'examples/kajenn_press_site/**'
+      - '.github/workflows/websites-image.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: websites-image
+  cancel-in-progress: false
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          tag=ghcr.io/kajenn-org/kajenn-press-websites
+          short=${GITHUB_SHA:0:12}
+          docker build -f deploy/docker/Dockerfile.websites -t "$tag:$short" -t "$tag:main" \
+            --label org.opencontainers.image.source=https://github.com/kajenn-org/kajenn-press \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" .
+          docker push "$tag:$short"
+          docker push "$tag:main"
+          echo "Published $tag:$short" >> "$GITHUB_STEP_SUMMARY"

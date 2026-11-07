@@ -130,3 +130,11 @@ docker run -d --name kajenn-press-test-rustfs -p 127.0.0.1:19100:9000 -e RUSTFS_
 ```bash
 .venv/bin/python -m pytest -q tests
 ```
+
+## Published image
+
+The workflow `Publish websites image` (`.github/workflows/websites-image.yml`)
+builds `Dockerfile.websites` on every push to `main` that touches the image
+inputs, and on demand. It publishes `ghcr.io/kajenn-org/kajenn-press-websites`
+with two tags: the first 12 characters of the commit and `main`. A cluster that
+runs kpress pins the commit tag; `main` follows the branch.
